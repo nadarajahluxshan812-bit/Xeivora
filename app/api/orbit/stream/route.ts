@@ -1,4 +1,4 @@
-const { subscribeOrbitStream } = require("@/lib/server/orbit-store");
+const { createDefaultOrbitSnapshot } = require("@/lib/server/orbit-default");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -10,6 +10,21 @@ function toChunk(payload: string) {
 }
 
 export async function GET(request: Request) {
+  let subscribeOrbitStream = null;
+  let fallbackSnapshot = createDefaultOrbitSnapshot();
+
+  try {
+    const orbitStore = require("@/lib/server/orbit-store");
+    subscribeOrbitStream = orbitStore.subscribeOrbitStream;
+    fallbackSnapshot =
+      typeof orbitStore.getOrbitSnapshot === "function" ? orbitStore.getOrbitSnapshot() : fallbackSnapshot;
+  } catch (error) {
+    console.warn(
+      "[Xeivora] Orbit stream runtime fell back to built-in demo data.",
+      error instanceof Error ? error.message : error
+    );
+  }
+
   let unsubscribe: (() => void) | null = null;
   let cleanup: (() => void) | null = null;
 
@@ -51,9 +66,21 @@ export async function GET(request: Request) {
         send(": keepalive\n\n");
       }, 15000);
 
-      unsubscribe = subscribeOrbitStream((snapshot: unknown) => {
-        send(`data: ${JSON.stringify(snapshot)}\n\n`);
-      });
+      if (typeof subscribeOrbitStream === "function") {
+        try {
+          unsubscribe = subscribeOrbitStream((snapshot: unknown) => {
+            send(`data: ${JSON.stringify(snapshot)}\n\n`);
+          });
+        } catch (error) {
+          console.warn(
+            "[Xeivora] Orbit subscription failed. Streaming built-in demo data instead.",
+            error instanceof Error ? error.message : error
+          );
+          send(`data: ${JSON.stringify(fallbackSnapshot)}\n\n`);
+        }
+      } else {
+        send(`data: ${JSON.stringify(fallbackSnapshot)}\n\n`);
+      }
 
       request.signal.addEventListener("abort", close, { once: true });
     },

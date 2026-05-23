@@ -24,7 +24,7 @@ export function useOrbitOverview() {
       });
 
       if (!response.ok) {
-        throw new Error("Unable to fetch OrbitAI overview.");
+        throw new Error("Unable to fetch Xeivora overview.");
       }
 
       const snapshot = (await response.json()) as OrbitOverview;

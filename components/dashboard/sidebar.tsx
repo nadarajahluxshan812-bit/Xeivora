@@ -27,7 +27,7 @@ export function DashboardSidebar({ connectionState }: DashboardSidebarProps) {
       </div>
 
       <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-4">
-        <div className="text-sm font-medium text-white">OrbitAI Core</div>
+        <div className="text-sm font-medium text-white">Xeivora Core</div>
         <p className="mt-2 text-sm leading-6 text-white/55">
           A live orchestration layer coordinating agents, tools, and memory from one control plane.
         </p>

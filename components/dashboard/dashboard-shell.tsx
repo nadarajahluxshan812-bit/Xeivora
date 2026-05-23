@@ -25,11 +25,11 @@ export function DashboardShell() {
               <div>
                 <div className="section-kicker">Realtime dashboard</div>
                 <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
-                  OrbitAI workspace command center
+                  Xeivora workspace command center
                 </h1>
                 <p className="mt-4 max-w-3xl text-base leading-8 text-white/56">
                   Monitor workflow orchestration, memory retention, agent health, and provider
-                  routing across the OrbitAI operating system.
+                  routing across the Xeivora operating system.
                 </p>
               </div>
 
@@ -41,7 +41,7 @@ export function DashboardShell() {
                   className="rounded-full bg-cyan-300 px-4 py-3 text-sm font-medium text-slate-950 transition hover:-translate-y-0.5"
                   href="/chat"
                 >
-                  Open OrbitAI Copilot
+                  Open Xeivora Copilot
                 </Link>
               </div>
             </div>

@@ -18,7 +18,7 @@ export const heroMetrics: HeroMetric[] = [
   {
     label: "Model routing accuracy",
     value: "98.6%",
-    detail: "OrbitAI sends work to the best-fit model, tool, or agent in real time."
+    detail: "Xeivora sends work to the best-fit model, tool, or agent in real time."
   },
   {
     label: "Context preserved",
@@ -37,7 +37,7 @@ export const featureCards: FeatureCard[] = [
     eyebrow: "Context Fabric",
     title: "Preserve memory across every AI step",
     description:
-      "OrbitAI keeps user intent, artifacts, handoffs, and decisions alive as work moves between models, tools, and human approvals.",
+      "Xeivora keeps user intent, artifacts, handoffs, and decisions alive as work moves between models, tools, and human approvals.",
     accent: "cyan"
   },
   {
@@ -80,7 +80,7 @@ export const featureCards: FeatureCard[] = [
 export const workflowSteps: WorkflowStep[] = [
   {
     title: "Signal intake",
-    description: "OrbitAI captures events from Slack, GitHub, forms, CRMs, and API triggers.",
+    description: "Xeivora captures events from Slack, GitHub, forms, CRMs, and API triggers.",
     detail: "Every trigger is normalized into one shared execution context."
   },
   {
@@ -95,7 +95,7 @@ export const workflowSteps: WorkflowStep[] = [
   },
   {
     title: "Action orchestration",
-    description: "OrbitAI writes updates, opens tickets, sends approvals, and launches downstream workflows.",
+    description: "Xeivora writes updates, opens tickets, sends approvals, and launches downstream workflows.",
     detail: "The result is a continuous intelligent system instead of isolated prompts."
   }
 ];
@@ -117,7 +117,7 @@ export const pricingPlans: PricingPlan[] = [
     name: "Growth",
     price: "$249",
     description: "For scaling companies replacing fragmented AI tooling with one control layer.",
-    cta: "Launch OrbitAI",
+    cta: "Launch Xeivora",
     highlight: true,
     features: [
       "Unlimited workflows and agents",

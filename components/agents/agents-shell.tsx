@@ -24,7 +24,7 @@ export function AgentsShell() {
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-white/56">
               Monitor specialist AI workers, model load, memory alignment, and execution focus
-              across the OrbitAI operating layer.
+              across the Xeivora operating layer.
             </p>
           </section>
 

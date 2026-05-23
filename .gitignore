@@ -10,4 +10,5 @@
 *.log
 node_modules
 data/*.json
+!data/orbit-data.json
 !.gitkeep
