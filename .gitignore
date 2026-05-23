@@ -8,6 +8,7 @@
 .next-stale-*
 .DS_Store
 *.log
+*.tsbuildinfo
 node_modules
 data/*.json
 !data/orbit-data.json

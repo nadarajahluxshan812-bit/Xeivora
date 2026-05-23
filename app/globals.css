@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
-  --bg: #f7f7f5;
-  --surface: #ffffff;
-  --surface-soft: #f1f1ef;
-  --border: #e4e4df;
-  --text: #171717;
-  --muted: #6b6b63;
-  --subtle: #8a8a82;
-  --accent: #111111;
-  --accent-soft: #ececea;
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-soft: #151515;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #ffffff;
+  --muted: #9ca3af;
+  --subtle: rgba(255, 255, 255, 0.42);
+  --accent: #ffffff;
+  --accent-soft: #1a1a1a;
 }
 
 * {
@@ -27,6 +27,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family:
+    "SF Pro Display",
     "Avenir Next",
     "Segoe UI",
     "Helvetica Neue",
@@ -49,6 +50,22 @@ button {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  background-clip: padding-box;
 }
 
 .dark {
