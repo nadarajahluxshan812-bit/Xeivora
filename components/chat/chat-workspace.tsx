@@ -6,6 +6,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
+import { OrbitLogo } from "@/components/orbit-logo";
 import type {
   ChatBootstrap,
   ChatMessage,
@@ -20,8 +21,7 @@ import type {
 import { formatClock } from "@/lib/format";
 import { modelOptions } from "@/lib/workspace";
 
-const profileFirstName = "Luxshan";
-const profileFullName = "Nadarajah Luxshan";
+const workspaceName = "Xeivora";
 
 const suggestionChips = [
   {
@@ -615,7 +615,11 @@ export function ChatWorkspace() {
           ) : (
             <div className="xei-chat-home-shell">
               <section className="xei-chat-home">
-                <h1>Good to see you, {profileFirstName}.</h1>
+                <div className="xei-chat-home-brand">
+                  <OrbitLogo compact className="xei-chat-home-logo" />
+                  <span>{workspaceName}</span>
+                </div>
+                <h1>{workspaceName}</h1>
                 {error ? <div className="xei-chat-error is-home">{error}</div> : null}
                 <ChatComposerShell
                   composerRef={composerRef}
@@ -690,8 +694,8 @@ function ChatSidebar({
     <aside className={`xei-chat-sidebar ${collapsed ? "is-collapsed" : ""}`} aria-label="Xeivora chat sidebar">
       <div className="xei-chat-sidebar-top">
         <button className="xei-chat-brand" onClick={onNewChat} type="button">
-          <span className="xei-chat-brand-mark">X</span>
-          {!collapsed ? <span>Xeivora</span> : null}
+          <OrbitLogo compact className="xei-chat-brand-logo" />
+          {!collapsed ? <span>{workspaceName}</span> : null}
         </button>
 
         <button
@@ -786,10 +790,10 @@ function ChatSidebar({
           </section>
 
           <button className="xei-chat-account" type="button">
-            <span className="xei-chat-account-avatar">EC</span>
+            <OrbitLogo compact className="xei-chat-account-logo" />
             <span className="xei-chat-account-copy">
-              <strong>{profileFullName}</strong>
-              <small>{liveWorkspace ? "Plus · Live" : "Plus"}</small>
+              <strong>{workspaceName}</strong>
+              <small>{liveWorkspace ? "Live workspace" : "AI workspace"}</small>
             </span>
             <ShellIcon kind="apps" />
           </button>
