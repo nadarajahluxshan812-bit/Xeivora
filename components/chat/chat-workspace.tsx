@@ -47,8 +47,10 @@ export function ChatWorkspace() {
   const [workflowMode, setWorkflowMode] = useState<"simple_chat" | "continuity" | "coding_continuity">("simple_chat");
   const [continuityStatus, setContinuityStatus] = useState({
     currentProvider: "simulation",
-    fallbackProvider: "simulation",
-    providerChain: ["openai", "anthropic", "google", "simulation"],
+    currentModel: null,
+    fallbackProvider: null,
+    fallbackModel: null,
+    providerChain: ["gemini", "openai", "anthropic", "ollama", "simulation"],
     tokenRateStatus: "ready",
     checkpointSaved: false,
     contextCompressed: false,
@@ -285,6 +287,7 @@ export function ChatWorkspace() {
         }
 
         if (typedEvent.type === "continuity") {
+          setActiveProvider(typedEvent.payload.currentProvider);
           setContinuityStatus(typedEvent.payload);
         }
 
@@ -485,22 +488,34 @@ export function ChatWorkspace() {
               <div className="xei-trace-panel">
                 <div>
                   <p>Current model</p>
-                  <strong>{formatProviderLabel(continuityStatus.currentProvider)}</strong>
+                  <strong>
+                    {continuityStatus.currentModel
+                      ? `${formatProviderLabel(continuityStatus.currentProvider)} · ${continuityStatus.currentModel}`
+                      : formatProviderLabel(continuityStatus.currentProvider)}
+                  </strong>
                 </div>
                 <div>
-                  <p>Continuity</p>
-                  <strong>{continuityStatus.continuityActive ? "Active" : "Ready"}</strong>
+                  <p>Next fallback</p>
+                  <strong>
+                    {continuityStatus.fallbackModel
+                      ? `${formatProviderLabel(continuityStatus.fallbackProvider)} · ${continuityStatus.fallbackModel}`
+                      : formatProviderLabel(continuityStatus.fallbackProvider)}
+                  </strong>
+                </div>
+                <div>
+                  <p>Memory</p>
+                  <strong>{continuityStatus.memoryPreserved ? "Active" : "Syncing"}</strong>
                 </div>
                 <div>
                   <p>Checkpoint</p>
                   <strong>{continuityStatus.checkpointSaved ? "Saved" : "Ready"}</strong>
                 </div>
                 <div>
-                  <p>Fallback ready</p>
-                  <strong>{formatProviderLabel(continuityStatus.fallbackProvider)}</strong>
+                  <p>Context</p>
+                  <strong>{continuityStatus.contextCompressed ? "Compressed + preserved" : "Preserved"}</strong>
                 </div>
                 <div>
-                  <p>Provider chain</p>
+                  <p>Route chain</p>
                   <strong>{continuityStatus.providerChain.map(formatProviderLabel).join(" -> ")}</strong>
                 </div>
               </div>
@@ -517,7 +532,7 @@ export function ChatWorkspace() {
               {statusOpen ? (
                 <div className="xei-orchestration-panel">
                   <span>Selected model: {selectedModelLabel}</span>
-                  <span>Routed tools/models: {activeProvider}</span>
+                  <span>Routed tools/models: {formatProviderLabel(activeProvider)}</span>
                   <span>Memory active</span>
                   <span>Context preserved</span>
                   <span>Workflow continuity enabled</span>
@@ -588,11 +603,17 @@ function getLastUserPrompt(session: ChatSession | null) {
   return session?.messages.filter((message) => message.role === "user").slice(-1)[0]?.content ?? "";
 }
 
-function formatProviderLabel(provider: string) {
+function formatProviderLabel(provider: string | null) {
+  if (!provider) {
+    return "Standby";
+  }
+
   const labels: Record<string, string> = {
     openai: "OpenAI",
     anthropic: "Claude",
     google: "Gemini",
+    gemini: "Gemini",
+    ollama: "Ollama",
     simulation: "Local"
   };
 

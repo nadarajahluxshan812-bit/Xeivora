@@ -40,8 +40,12 @@ const handle = nextApp.getRequestHandler();
 
 function logProviderStartupStatus() {
   const providerStatus = getProviderStatus();
+  const ollamaAvailable = Boolean(process.env.OLLAMA_ENABLED === "true" || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_MODEL);
   const simulationMode =
-    !providerStatus.openai.available && !providerStatus.anthropic.available && !providerStatus.google.available;
+    !providerStatus.openai.available &&
+    !providerStatus.anthropic.available &&
+    !providerStatus.google.available &&
+    !ollamaAvailable;
 
   console.log("[Xeivora] Provider availability", {
     openai: providerStatus.openai.available,
@@ -50,6 +54,8 @@ function logProviderStartupStatus() {
     anthropicModel: providerStatus.anthropic.defaultModel,
     gemini: providerStatus.google.available,
     geminiModel: providerStatus.google.defaultModel,
+    ollama: ollamaAvailable,
+    ollamaModel: ollamaAvailable ? process.env.OLLAMA_MODEL || "llama3.1:8b" : null,
     simulationMode
   });
 }

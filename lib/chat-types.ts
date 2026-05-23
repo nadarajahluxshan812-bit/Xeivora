@@ -1,6 +1,6 @@
 import type { Accent } from "@/lib/types";
 
-export type ProviderKey = "openai" | "anthropic" | "google" | "simulation";
+export type ProviderKey = "openai" | "anthropic" | "google" | "gemini" | "ollama" | "simulation";
 export type ModelKey = "orbit-auto" | "gpt-4o" | "claude" | "gemini";
 export type ChatRole = "user" | "assistant" | "system";
 
@@ -12,7 +12,7 @@ export type ProviderStatusItem = {
   note: string;
 };
 
-export type ProviderStatus = Record<Exclude<ProviderKey, "simulation">, ProviderStatusItem> & {
+export type ProviderStatus = Record<"openai" | "anthropic" | "google", ProviderStatusItem> & {
   persistence?: ProviderStatusItem;
 };
 
@@ -76,8 +76,9 @@ export type StreamMetaPayload = {
   assistantMessageId: string;
   modelKey: ModelKey;
   provider: ProviderKey;
-  resolvedModel: string;
+  resolvedModel: string | null;
   routeLabel: string;
+  fallbackProvider?: ProviderKey | null;
   intent?: string;
   complexity?: "simple" | "moderate" | "complex";
   workflowMode?: "simple_chat" | "continuity" | "coding_continuity";
@@ -92,7 +93,9 @@ export type StreamOrchestrationPayload = {
 
 export type StreamContinuityPayload = {
   currentProvider: ProviderKey;
-  fallbackProvider: ProviderKey;
+  currentModel?: string | null;
+  fallbackProvider: ProviderKey | null;
+  fallbackModel?: string | null;
   providerChain: ProviderKey[];
   tokenRateStatus: string;
   checkpointSaved: boolean;
