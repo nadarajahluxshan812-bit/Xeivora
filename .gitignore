@@ -1,0 +1,13 @@
+.env
+.env.local
+.env.*.local
+.next
+.next-build-*
+.next-dev
+.next-prod
+.next-stale-*
+.DS_Store
+*.log
+node_modules
+data/*.json
+!.gitkeep
