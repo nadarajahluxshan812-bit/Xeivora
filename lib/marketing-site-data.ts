@@ -79,14 +79,14 @@ export type MarketingPricingPlan = {
   badge?: string;
 };
 
-export const marketingNavItems = [
+export const marketingNavItems: MarketingNavItem[] = [
   { label: "Home", href: "/" },
   { label: "Products", href: "/products" },
   { label: "Capabilities", href: "/capabilities" },
   { label: "Solutions", href: "/solutions", chevron: true },
   { label: "Resources", href: "/resources", chevron: true },
   { label: "Pricing", href: "/pricing" }
-] as const satisfies readonly MarketingNavItem[];
+];
 
 export const homeFeatureColumns = {
   left: [
