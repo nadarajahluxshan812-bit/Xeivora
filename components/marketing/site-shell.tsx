@@ -16,8 +16,7 @@ export function MarketingSiteShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-[#030303] text-white [font-family:var(--font-marketing-body)]">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(180deg,#030303_0%,#050509_55%,#030303_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(76,29,149,0.24),transparent_34%),radial-gradient(circle_at_20%_15%,rgba(124,58,237,0.08),transparent_20%),radial-gradient(circle_at_80%_12%,rgba(59,130,246,0.08),transparent_20%)]" />
-        <div className="absolute inset-0 opacity-[0.14] [background-image:radial-gradient(rgba(139,92,246,0.28)_1px,transparent_1px)] [background-position:0_0] [background-size:24px_24px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(76,29,149,0.18),transparent_34%),radial-gradient(circle_at_18%_14%,rgba(124,58,237,0.06),transparent_18%),radial-gradient(circle_at_82%_12%,rgba(59,130,246,0.05),transparent_18%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/14 to-transparent" />
       </div>
 
@@ -36,7 +35,7 @@ export function MarketingNavbar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#050505]/86 backdrop-blur-xl">
-        <div className="mx-auto grid h-[72px] max-w-[1180px] grid-cols-[auto,1fr,auto] items-center gap-6 px-4 sm:px-6">
+        <div className="mx-auto grid h-[72px] max-w-[1440px] grid-cols-[auto,1fr,auto] items-center gap-6 px-6 sm:px-10 lg:px-12">
           <Link className="justify-self-start" href="/">
             <MarketingBrand />
           </Link>

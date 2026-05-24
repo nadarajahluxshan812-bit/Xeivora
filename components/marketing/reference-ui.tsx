@@ -194,15 +194,15 @@ export function FeatureCard({
   return (
     <div
       className={cn(
-        "rounded-[20px] border border-white/[0.1] bg-[rgba(255,255,255,0.035)] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl",
+        "w-[260px] min-h-[92px] rounded-[20px] border border-white/[0.1] bg-[rgba(255,255,255,0.045)] px-5 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-xl",
         className
       )}
     >
       <div className="flex items-start gap-4">
-        <IconBubble>{renderMarketingIcon(icon, "h-5 w-5")}</IconBubble>
+        <IconBubble className="h-11 w-11">{renderMarketingIcon(icon, "h-4.5 w-4.5")}</IconBubble>
         <div className="text-left">
-          <h3 className="text-[1.08rem] font-semibold tracking-[-0.02em] text-white">{title}</h3>
-          <p className="mt-2 text-sm leading-6 text-white/56">{description}</p>
+          <h3 className="text-[1rem] font-semibold tracking-[-0.02em] text-white">{title}</h3>
+          <p className="mt-1.5 text-sm leading-[1.35rem] text-white/58">{description}</p>
         </div>
       </div>
     </div>
@@ -370,9 +370,9 @@ export function PricingCard({
 
 export function TrustedLogos({ logos }: { logos: readonly string[] }) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 text-[1.85rem] font-semibold tracking-[-0.04em] text-white/84">
+    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-[1.05rem] font-semibold tracking-[-0.03em] text-white/80 sm:gap-x-10 sm:text-[1.55rem]">
       {logos.map((logo) => (
-        <span className="text-lg sm:text-[2rem]" key={logo}>
+        <span className="text-base sm:text-[1.85rem]" key={logo}>
           {logo}
         </span>
       ))}
@@ -380,10 +380,15 @@ export function TrustedLogos({ logos }: { logos: readonly string[] }) {
   );
 }
 
-export function PromptBar() {
+export function PromptBar({ className = "" }: { className?: string }) {
   return (
-    <div className="relative z-10 mx-auto max-w-[790px] rounded-[28px] border border-white/[0.1] bg-[#24242b] px-4 py-3 shadow-[0_18px_70px_rgba(0,0,0,0.52)] backdrop-blur-xl">
-      <div className="flex items-center gap-3">
+    <div
+      className={cn(
+        "relative z-10 mx-auto flex h-[72px] w-full max-w-[720px] items-center rounded-full border border-white/[0.16] bg-[#242428] px-[18px] shadow-[0_16px_48px_rgba(0,0,0,0.5)] backdrop-blur-xl",
+        className
+      )}
+    >
+      <div className="flex w-full items-center gap-3">
         <button
           aria-label="Add prompt context"
           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.08] bg-black/18 text-white/88"
