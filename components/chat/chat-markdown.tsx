@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+import type { Pluggable } from "unified";
 
 function stringifyChildren(children: ReactNode): string {
   if (typeof children === "string") {
@@ -22,6 +23,7 @@ function stringifyChildren(children: ReactNode): string {
 export function ChatMarkdown({ content }: { content: string }) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [collapsedCode, setCollapsedCode] = useState<Record<string, boolean>>({});
+  const remarkPlugins: Pluggable[] = [remarkGfm as unknown as Pluggable];
 
   return (
     <div className="markdown-body">
@@ -84,7 +86,7 @@ export function ChatMarkdown({ content }: { content: string }) {
           }
         }}
         rehypePlugins={[rehypeSanitize]}
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={remarkPlugins}
       >
         {content}
       </ReactMarkdown>

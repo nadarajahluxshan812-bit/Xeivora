@@ -434,10 +434,12 @@ export function ChatWorkspace() {
         throw new Error(payload.error || "Unable to rename this chat.");
       }
 
+      const nextSession = payload.session;
+      const nextSessions = payload.sessions;
       startTransition(() => {
-        setSessions(payload.sessions);
-        if (activeSession?.id === payload.session?.id) {
-          setActiveSession(payload.session);
+        setSessions(nextSessions);
+        if (activeSession?.id === nextSession.id) {
+          setActiveSession(nextSession);
         }
       });
       setSessionMenuOpenId(null);
@@ -468,8 +470,9 @@ export function ChatWorkspace() {
         throw new Error(payload.error || "Unable to delete this chat.");
       }
 
+      const nextSessions = payload.sessions;
       startTransition(() => {
-        setSessions(payload.sessions);
+        setSessions(nextSessions);
         if (activeSession?.id === sessionId) {
           setActiveSession(null);
           setPrompt("");
@@ -505,12 +508,14 @@ export function ChatWorkspace() {
       throw new Error(payload.error || "Unable to update this chat.");
     }
 
+    const nextSession = payload.session;
+    const nextSessions = payload.sessions;
     startTransition(() => {
-      setSessions(payload.sessions);
-      if (activeSession?.id === payload.session.id) {
-        setActiveSession(payload.session);
-        setSessionFiles(payload.session.attachedFiles ?? []);
-        setSelectedProjectId(payload.session.projectId ?? null);
+      setSessions(nextSessions);
+      if (activeSession?.id === nextSession.id) {
+        setActiveSession(nextSession);
+        setSessionFiles(nextSession.attachedFiles ?? []);
+        setSelectedProjectId(nextSession.projectId ?? null);
       }
     });
   }
