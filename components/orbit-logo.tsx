@@ -14,7 +14,7 @@ export function OrbitLogo({ compact = false, className = "" }: OrbitLogoProps) {
     <div className={cn("inline-flex items-center gap-3", className)}>
       <div
         aria-hidden="true"
-        className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#111111] shadow-[0_18px_48px_rgba(0,0,0,0.4)] ring-1 ring-white/10"
+        className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#111111] shadow-[0_12px_32px_rgba(0,0,0,0.28)] ring-1 ring-white/8"
       >
         <svg viewBox="0 0 40 40" role="img">
           <defs>

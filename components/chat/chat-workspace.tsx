@@ -11,31 +11,29 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Code2,
   Copy,
-  FileStack,
+  Ellipsis,
   FolderKanban,
+  Globe,
   ImagePlus,
   LayoutGrid,
   Mic,
   PanelLeft,
   Paperclip,
-  PlugZap,
   Plus,
   RefreshCcw,
   Search,
   SendHorizontal,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
-  Workflow,
-  Wrench
+  Workflow
 } from "lucide-react";
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { OrbitLogo } from "@/components/orbit-logo";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,7 +50,6 @@ import type {
   StreamContinuityPayload,
   StreamEvent
 } from "@/lib/chat-types";
-import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { modelOptions } from "@/lib/workspace";
 
@@ -63,77 +60,60 @@ const quickActions: QuickAction[] = [
   {
     label: "Create an image",
     icon: ImagePlus,
-    prompt: "Create a cinematic image concept for Xeivora's next product launch."
+    prompt: "Create an image concept for Xeivora's next launch."
   },
   {
     label: "Write or edit",
     icon: Sparkles,
-    prompt: "Help me write and refine a polished update for Xeivora customers."
+    prompt: "Help me write or edit this clearly and professionally."
   },
   {
-    label: "Research",
-    icon: Search,
-    prompt: "Research this topic and give me a crisp executive summary with sources."
-  },
-  {
-    label: "Code",
-    icon: Code2,
-    prompt: "Build a production-ready Next.js feature for Xeivora."
-  },
-  {
-    label: "Analyze files",
-    icon: FileStack,
-    prompt: "Analyze the files in this workspace and tell me what matters most."
-  },
-  {
-    label: "Build workflow",
-    icon: Workflow,
-    prompt: "Design a multi-step AI workflow with memory, routing, and fallback handling."
+    label: "Look something up",
+    icon: Globe,
+    prompt: "Look something up for me and summarize it clearly."
   }
 ];
 
-const sidebarItems: SidebarItem[] = [
+const primaryNav: SidebarItem[] = [
   {
     label: "Projects",
-    detail: "Planning and launches",
     icon: FolderKanban,
     href: "/dashboard"
   },
   {
     label: "Memory",
-    detail: "Persistent context",
     icon: BrainCircuit,
     href: "/memory"
   },
   {
+    label: "Apps",
+    icon: LayoutGrid,
+    prompt: "Show me the current Xeivora integrations and suggest the next connection."
+  },
+  {
     label: "Workflows",
-    detail: "Execution layer",
     icon: Workflow,
     href: "/workflows"
   },
   {
-    label: "Agents",
-    detail: "Specialist systems",
-    icon: Bot,
-    href: "/agents"
-  },
-  {
-    label: "Files",
-    detail: "Document analysis",
-    icon: FileStack,
-    prompt: "Show me how Xeivora can analyze and reason over my files."
-  },
-  {
-    label: "Integrations",
-    detail: "Connected tools",
-    icon: PlugZap,
-    prompt: "Show me the current integrations and suggest what to connect next."
-  },
-  {
-    label: "Settings",
-    detail: "Workspace controls",
-    icon: Settings2,
+    label: "More",
+    icon: Ellipsis,
     href: "/settings"
+  }
+];
+
+const agentShelf: AgentItem[] = [
+  {
+    label: "Xeivora Strategist",
+    prompt: "Act like a strategy copilot and help me plan Xeivora's next move."
+  },
+  {
+    label: "Math Solver",
+    prompt: "Solve this step by step:"
+  },
+  {
+    label: "Explore Agents",
+    prompt: "Show me the best Xeivora agents for this task."
   }
 ];
 
@@ -144,11 +124,15 @@ type QuickAction = {
 };
 
 type SidebarItem = {
-  detail: string;
   href?: string;
   icon: LucideIcon;
   label: string;
   prompt?: string;
+};
+
+type AgentItem = {
+  label: string;
+  prompt: string;
 };
 
 type ContinuityState = StreamContinuityPayload;
@@ -170,7 +154,7 @@ export function ChatWorkspace() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [continuityCollapsed, setContinuityCollapsed] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [showContinuityPanel, setShowContinuityPanel] = useState(false);
   const [workflowMode, setWorkflowMode] = useState<"simple_chat" | "continuity" | "coding_continuity">(
     "simple_chat"
@@ -209,9 +193,8 @@ export function ChatWorkspace() {
     () => messages.filter((message) => message.role === "assistant").slice(-1)[0] || null,
     [messages]
   );
-  const selectedModelLabel = modelOptions.find((option) => option.key === selectedModel)?.label ?? "Xeivora Auto";
+  const selectedModelLabel = modelOptions.find((option) => option.key === selectedModel)?.label ?? "Instant";
   const composerModelLabel = getComposerModelLabel(selectedModel);
-  const availableProviderCount = countAvailableProviders(providerStatus);
   const continuityChain =
     continuityStatus.finalProviderChain.length > 0
       ? continuityStatus.finalProviderChain
@@ -226,8 +209,7 @@ export function ChatWorkspace() {
     continuityStatus.fallbackModel,
     continuityChain
   );
-  const runtimeTone = getRuntimeTone(workflowMode, routeLabel);
-  const systemPanelActive =
+  const systemIndicatorLive =
     showContinuityPanel || workflowMode !== "simple_chat" || continuityStatus.checkpointSaved || isStreaming;
 
   useEffect(() => {
@@ -237,9 +219,8 @@ export function ChatWorkspace() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 1280) {
+    if (typeof window !== "undefined" && window.innerWidth < 1100) {
       setSidebarCollapsed(true);
-      setContinuityCollapsed(true);
     }
   }, []);
 
@@ -256,7 +237,7 @@ export function ChatWorkspace() {
     }
 
     composerRef.current.style.height = "0px";
-    composerRef.current.style.height = `${Math.min(composerRef.current.scrollHeight, 220)}px`;
+    composerRef.current.style.height = `${Math.min(composerRef.current.scrollHeight, 180)}px`;
   }, [prompt]);
 
   async function bootstrapWorkspace() {
@@ -405,7 +386,7 @@ export function ChatWorkspace() {
       });
 
       setPrompt("");
-      setRouteLabel("Routing request...");
+      setRouteLabel("Routing prompt...");
 
       const response = await fetch(`/api/chat/sessions/${session.id}/stream`, {
         method: "POST",
@@ -527,12 +508,12 @@ export function ChatWorkspace() {
   }
 
   return (
-    <div className="dark min-h-screen bg-[#0a0a0a] text-white">
-      <div className="flex min-h-screen">
+    <div className="dark min-h-screen bg-black text-white">
+      <div className="flex min-h-screen bg-black">
         <motion.aside
-          animate={{ width: sidebarCollapsed ? 92 : 292 }}
-          className="hidden min-h-screen shrink-0 border-r border-white/[0.08] bg-[#111111] md:flex"
-          transition={{ duration: 0.22, ease: "easeOut" }}
+          animate={{ width: sidebarCollapsed ? 72 : 260 }}
+          className="hidden min-h-screen shrink-0 border-r border-white/[0.08] bg-[#050505] md:flex"
+          transition={{ duration: 0.18, ease: "easeOut" }}
         >
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
@@ -546,15 +527,13 @@ export function ChatWorkspace() {
             onSelectSession={(sessionId) => void loadSession(sessionId)}
             onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
             pathname={pathname}
-            providerStatus={providerStatus}
             searchQuery={searchQuery}
             sessionGroups={groupedSessions}
-            workspaceName={workspaceName}
           />
         </motion.aside>
 
         <Sheet onOpenChange={setMobileSidebarOpen} open={mobileSidebarOpen}>
-          <SheetContent className="p-0" side="left">
+          <SheetContent className="bg-[#050505] p-0" side="left">
             <SidebarContent
               activeSessionId={activeSession?.id ?? null}
               collapsed={false}
@@ -569,358 +548,111 @@ export function ChatWorkspace() {
               onSelectSession={(sessionId) => void loadSession(sessionId)}
               onToggleCollapse={() => setMobileSidebarOpen(false)}
               pathname={pathname}
-              providerStatus={providerStatus}
               searchQuery={searchQuery}
               sessionGroups={groupedSessions}
-              workspaceName={workspaceName}
             />
           </SheetContent>
         </Sheet>
 
-        <main className="flex min-w-0 flex-1">
-          <section className="flex min-w-0 flex-1 justify-center">
-            <div className="flex min-h-screen w-full max-w-[980px] flex-1 flex-col px-4 pb-5 pt-4 sm:px-6 lg:px-10">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <Button
-                  className="md:hidden"
-                  onClick={() => setMobileSidebarOpen(true)}
-                  size="icon"
-                  type="button"
-                  variant="secondary"
-                >
-                  <PanelLeft className="h-4 w-4" />
-                </Button>
+        <main className="relative flex min-w-0 flex-1 bg-black">
+          <button
+            aria-label="Open sidebar"
+            className="absolute left-4 top-4 z-30 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#111111] text-white/72 transition hover:bg-[#1f1f1f] md:hidden"
+            onClick={() => setMobileSidebarOpen(true)}
+            type="button"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </button>
 
+          <div className="absolute right-4 top-4 z-30">
+            <button
+              aria-label={statusOpen ? "Close continuity status" : "Open continuity status"}
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#111111] text-white/70 transition hover:bg-[#1f1f1f] hover:text-white"
+              onClick={() => setStatusOpen((value) => !value)}
+              type="button"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {systemIndicatorLive ? (
+                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.42)]" />
+              ) : null}
+            </button>
+
+            <AnimatePresence>
+              {statusOpen ? (
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
-                  className="mx-auto flex items-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm text-white/80 shadow-[0_18px_54px_rgba(0,0,0,0.28)]"
+                  className="mt-2 w-[280px] rounded-[20px] border border-white/[0.08] bg-[#111111] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
                   initial={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                 >
-                  <OrbitLogo compact />
-                  <span className="font-medium tracking-tight">{workspaceName}</span>
-                  <span
-                    className={cn(
-                      "h-2 w-2 rounded-full",
-                      systemPanelActive ? "bg-white shadow-[0_0_16px_rgba(255,255,255,0.45)]" : "bg-white/35"
-                    )}
-                  />
-                </motion.div>
-
-                <div className="flex min-w-[40px] justify-end xl:hidden">
-                  <Badge className="tracking-[0.14em]">
-                    {formatProviderLabel(activeProvider)}
-                  </Badge>
-                </div>
-              </div>
-
-              {hasMessages ? (
-                <>
-                  <div className="flex items-center justify-between gap-3 px-1 pb-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-white/36">Conversation</p>
-                      <h1 className="mt-1 text-xl font-medium tracking-tight text-white">
-                        {activeSession?.title ?? "Xeivora conversation"}
-                      </h1>
-                    </div>
-                    <Badge>{runtimeTone}</Badge>
+                  <div className="mb-3">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-white/34">Continuity</p>
+                    <p className="mt-1 text-sm text-white/86">{routeLabel}</p>
                   </div>
 
-                  <div
-                    className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                    ref={messagesRef}
-                  >
-                    <div className="mx-auto flex w-full max-w-[820px] flex-col gap-8 pb-10 pt-3">
-                      <AnimatePresence initial={false}>
-                        {messages.map((message) => {
-                          const isAssistant = message.role === "assistant";
-                          const isLatestAssistant = lastAssistantMessage?.id === message.id;
-
-                          return (
-                            <motion.article
-                              animate={{ opacity: 1, y: 0 }}
-                              className={cn("flex w-full", isAssistant ? "justify-start" : "justify-end")}
-                              initial={{ opacity: 0, y: 18 }}
-                              key={message.id}
-                              transition={{ duration: 0.18, ease: "easeOut" }}
-                            >
-                              <div className={cn("w-full max-w-[82%] space-y-3", !isAssistant && "items-end")}>
-                                <div
-                                  className={cn(
-                                    "flex items-center gap-2 text-xs text-white/36",
-                                    !isAssistant && "justify-end"
-                                  )}
-                                >
-                                  <span>{isAssistant ? workspaceName : "You"}</span>
-                                  <span className="h-1 w-1 rounded-full bg-white/18" />
-                                  <time>{formatClock(message.createdAt)}</time>
-                                </div>
-
-                                <div
-                                  className={cn(
-                                    "rounded-[2rem] border px-5 py-4 shadow-[0_30px_80px_rgba(0,0,0,0.28)]",
-                                    isAssistant
-                                      ? "border-white/[0.08] bg-[#111111]"
-                                      : "border-white/[0.1] bg-[#171717]"
-                                  )}
-                                >
-                                  {isAssistant ? (
-                                    message.content ? (
-                                      <ChatMarkdown content={toXeivoraLabel(message.content)} />
-                                    ) : (
-                                      <ThinkingBlock active={thinking || isStreaming} />
-                                    )
-                                  ) : (
-                                    <div className="whitespace-pre-wrap text-[15px] leading-7 text-white/90">
-                                      {message.content}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div
-                                  className={cn(
-                                    "flex items-center gap-2 text-white/46",
-                                    !isAssistant && "justify-end"
-                                  )}
-                                >
-                                  {isAssistant && message.content ? (
-                                    <>
-                                      <Button
-                                        onClick={async () => {
-                                          await navigator.clipboard.writeText(message.content);
-                                          setCopiedResponseId(message.id);
-                                          setTimeout(() => setCopiedResponseId(null), 1200);
-                                        }}
-                                        size="sm"
-                                        type="button"
-                                        variant="ghost"
-                                      >
-                                        <Copy className="h-3.5 w-3.5" />
-                                        {copiedResponseId === message.id ? "Copied" : "Copy"}
-                                      </Button>
-                                      {isLatestAssistant ? (
-                                        <Button onClick={() => void handleSend(true)} size="sm" type="button" variant="ghost">
-                                          <RefreshCcw className="h-3.5 w-3.5" />
-                                          Regenerate
-                                        </Button>
-                                      ) : null}
-                                    </>
-                                  ) : null}
-
-                                  {!isAssistant ? (
-                                    <Button onClick={() => setPrompt(message.content)} size="sm" type="button" variant="ghost">
-                                      <Sparkles className="h-3.5 w-3.5" />
-                                      Reuse prompt
-                                    </Button>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </motion.article>
-                          );
-                        })}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 border-t border-white/[0.06] pt-4">
-                    {error ? <ErrorBanner message={error} /> : null}
-                    <ChatComposer
-                      composerRef={composerRef}
-                      isStreaming={isStreaming}
-                      modelLabel={composerModelLabel}
-                      onModelChange={setSelectedModel}
-                      onPromptChange={setPrompt}
-                      onSend={() => void handleSend(false)}
-                      onStop={stopGenerating}
-                      prompt={prompt}
-                      selectedModel={selectedModel}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-1 items-center justify-center">
-                  <motion.section
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-[860px] pb-14 text-center"
-                    initial={{ opacity: 0, y: 18 }}
-                    transition={{ duration: 0.24, ease: "easeOut" }}
-                  >
-                    <div className="mb-7 flex justify-center">
-                      <div className="inline-flex items-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm text-white/78">
-                        <OrbitLogo compact />
-                        <span className="font-medium">{workspaceName}</span>
-                        <span className="h-2 w-2 rounded-full bg-white/75 shadow-[0_0_18px_rgba(255,255,255,0.34)]" />
-                      </div>
-                    </div>
-
-                    <h1 className="text-[clamp(2.6rem,5vw,4.35rem)] font-medium tracking-[-0.04em] text-white">
-                      Good to see you, {workspaceUserName}.
-                    </h1>
-                    <p className="mx-auto mt-4 max-w-[640px] text-[15px] leading-7 text-white/46 sm:text-base">
-                      Xeivora feels like one continuous intelligence layer, preserving memory, context, routing, and
-                      execution without breaking the conversation.
-                    </p>
-
-                    {error ? <ErrorBanner className="mx-auto mt-6 max-w-[760px]" message={error} /> : null}
-
-                    <div className="mt-10">
-                      <ChatComposer
-                        composerRef={composerRef}
-                        isHome
-                        isStreaming={isStreaming}
-                        modelLabel={composerModelLabel}
-                        onModelChange={setSelectedModel}
-                        onPromptChange={setPrompt}
-                        onSend={() => void handleSend(false)}
-                        onStop={stopGenerating}
-                        prompt={prompt}
-                        selectedModel={selectedModel}
-                      />
-                    </div>
-
-                    <div className="mt-7 flex flex-wrap justify-center gap-3">
-                      {quickActions.map((action) => (
-                        <motion.button
-                          className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-sm text-white/76 transition hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-white"
-                          key={action.label}
-                          onClick={() => {
-                            setPrompt(action.prompt);
-                            composerRef.current?.focus();
-                          }}
-                          type="button"
-                          whileHover={{ y: -1, scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                        >
-                          <action.icon className="h-4 w-4" />
-                          <span>{action.label}</span>
-                        </motion.button>
-                      ))}
-                    </div>
-                  </motion.section>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <motion.aside
-            animate={{ width: continuityCollapsed ? 92 : 318 }}
-            className="hidden min-h-screen shrink-0 border-l border-white/[0.08] bg-[#0d0d0d] xl:flex"
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          >
-            <div className="flex h-full w-full flex-col px-4 py-5">
-              <div className="mb-5 flex items-center justify-between gap-3">
-                {continuityCollapsed ? (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-                    <Wrench className="h-4 w-4 text-white/74" />
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-white/36">Continuity</p>
-                    <h2 className="mt-1 text-lg font-medium tracking-tight text-white">Xeivora runtime</h2>
-                  </div>
-                )}
-
-                <Button
-                  onClick={() => setContinuityCollapsed((value) => !value)}
-                  size="icon"
-                  type="button"
-                  variant="secondary"
-                >
-                  {continuityCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </Button>
-              </div>
-
-              {continuityCollapsed ? (
-                <div className="flex flex-1 flex-col items-center gap-4 pt-3">
-                  <RuntimePill label="Model" value={getCompactModelLabel(currentModelSummary)} />
-                  <RuntimePill label="Fallback" value={getCompactModelLabel(fallbackSummary)} />
-                  <RuntimePill label="Memory" value={continuityStatus.memoryPreserved ? "On" : "Wait"} />
-                  <RuntimePill label="Context" value={continuityStatus.contextCompressed ? "Smart" : "Hold"} />
-                </div>
-              ) : (
-                <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="rounded-[1.75rem] border border-white/[0.08] bg-white/[0.03] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-white/38">Status</p>
-                        <p className="mt-1 text-sm text-white/82">{runtimeTone}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          "h-2.5 w-2.5 rounded-full",
-                          systemPanelActive ? "bg-white shadow-[0_0_18px_rgba(255,255,255,0.32)]" : "bg-white/30"
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-1">
-                    <RuntimeRow label="Current Model" value={currentModelSummary} />
-                    <RuntimeRow label="Next Fallback" value={fallbackSummary} />
-                    <RuntimeRow label="Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
-                    <RuntimeRow
+                  <div className="space-y-2.5 text-sm text-white/72">
+                    <StatusRow label="Current model" value={currentModelSummary} />
+                    <StatusRow label="Next fallback" value={fallbackSummary} />
+                    <StatusRow label="Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
+                    <StatusRow
                       label="Context"
-                      value={continuityStatus.contextCompressed ? "Compressed + preserved" : "Preserved"}
+                      value={continuityStatus.contextCompressed ? "Compressed" : "Preserved"}
                     />
-                    <RuntimeRow label="Checkpoint" value={continuityStatus.checkpointSaved ? "Saved" : "Ready"} />
-                    <RuntimeRow
-                      label="Provider Chain"
-                      value={continuityChain.map(formatProviderLabel).join(" → ")}
-                    />
-                    <RuntimeRow label="Workflow State" value={workflowModeLabel(workflowMode)} />
+                    <StatusRow label="Provider chain" value={continuityChain.map(formatProviderLabel).join(" → ")} />
+                    <StatusRow label="Workflow" value={workflowModeLabel(workflowMode)} />
+                    {orchestrationSteps.length ? (
+                      <StatusRow
+                        label="Latest step"
+                        value={orchestrationSteps[orchestrationSteps.length - 1]?.label ?? "Working"}
+                      />
+                    ) : null}
                   </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
 
-                  <div className="mt-6 rounded-[1.5rem] border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-white/38">Workspace</p>
-                    <div className="mt-3 grid gap-3 text-sm text-white/74">
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Current provider</span>
-                        <span className="text-white">{formatProviderLabel(activeProvider)}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Connected providers</span>
-                        <span className="text-white">{availableProviderCount}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Route</span>
-                        <span className="max-w-[140px] text-right text-white/82">{routeLabel}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 min-h-0 flex-1 overflow-hidden rounded-[1.5rem] border border-white/[0.08] bg-white/[0.02]">
-                    <div className="border-b border-white/[0.06] px-4 py-3">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-white/38">Live workflow</p>
-                    </div>
-                    <ScrollArea className="h-full max-h-[260px]">
-                      <div className="space-y-3 p-4">
-                        {orchestrationSteps.length ? (
-                          orchestrationSteps.map((step) => (
-                            <div
-                              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-3"
-                              key={step.id}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <strong className="text-sm font-medium text-white">{step.label}</strong>
-                                <Badge className="border-white/[0.06] bg-white/[0.03] text-white/58">
-                                  {step.state}
-                                </Badge>
-                              </div>
-                              <p className="mt-2 text-sm leading-6 text-white/52">{step.detail}</p>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-2xl border border-dashed border-white/[0.08] px-4 py-5 text-sm leading-6 text-white/42">
-                            Xeivora is keeping continuity warm in the background. As soon as a request requires
-                            orchestration, the execution chain will appear here.
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.aside>
+          {hasMessages ? (
+            <ChatThreadView
+              composerRef={composerRef}
+              copiedResponseId={copiedResponseId}
+              error={error}
+              isStreaming={isStreaming}
+              lastAssistantMessage={lastAssistantMessage}
+              messages={messages}
+              messagesRef={messagesRef}
+              onCopyResponse={async (message) => {
+                await navigator.clipboard.writeText(message.content);
+                setCopiedResponseId(message.id);
+                setTimeout(() => setCopiedResponseId(null), 1200);
+              }}
+              onEditPrompt={setPrompt}
+              onModelChange={setSelectedModel}
+              onPromptChange={setPrompt}
+              onRegenerate={() => void handleSend(true)}
+              onSend={() => void handleSend(false)}
+              onStop={stopGenerating}
+              prompt={prompt}
+              selectedModel={selectedModel}
+              thinking={thinking}
+            />
+          ) : (
+            <ChatHomeView
+              composerRef={composerRef}
+              error={error}
+              isStreaming={isStreaming}
+              onModelChange={setSelectedModel}
+              onPromptChange={setPrompt}
+              onQuickAction={(value) => {
+                setPrompt(value);
+                composerRef.current?.focus();
+              }}
+              onSend={() => void handleSend(false)}
+              onStop={stopGenerating}
+              prompt={prompt}
+              selectedModel={selectedModel}
+            />
+          )}
         </main>
       </div>
     </div>
@@ -938,10 +670,8 @@ type SidebarContentProps = {
   onSelectSession: (sessionId: string) => void;
   onToggleCollapse: () => void;
   pathname: string;
-  providerStatus: ProviderStatus | null;
   searchQuery: string;
   sessionGroups: Array<[string, ChatSessionSummary[]]>;
-  workspaceName: string;
 };
 
 function SidebarContent({
@@ -955,53 +685,45 @@ function SidebarContent({
   onSelectSession,
   onToggleCollapse,
   pathname,
-  providerStatus,
   searchQuery,
-  sessionGroups,
-  workspaceName
+  sessionGroups
 }: SidebarContentProps) {
-  const liveWorkspace =
-    providerStatus?.openai.available || providerStatus?.anthropic.available || providerStatus?.google.available;
-
   return (
-    <div className="flex h-screen w-full flex-col gap-4 overflow-hidden p-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex h-screen w-full flex-col overflow-hidden px-3 py-4">
+      <div className="mb-3 flex items-center justify-between gap-2 px-1">
         <button
           className={cn(
-            "flex items-center gap-3 rounded-2xl px-2 py-1.5 text-left transition hover:bg-white/[0.04]",
+            "flex min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-left transition hover:bg-[#1f1f1f]",
             collapsed && !mobile && "justify-center px-0"
           )}
           onClick={onNewChat}
           type="button"
         >
-          <OrbitLogo compact />
-          {!collapsed || mobile ? <span className="text-[17px] font-medium tracking-tight text-white">{workspaceName}</span> : null}
+          <OrbitLogo compact className="scale-[0.82]" />
+          {!collapsed || mobile ? <span className="text-[15px] font-medium text-white">Xeivora</span> : null}
         </button>
 
-        <Button onClick={onToggleCollapse} size="icon" type="button" variant="secondary">
+        <Button onClick={onToggleCollapse} size="icon" type="button" variant="ghost">
           {mobile ? <ChevronLeft className="h-4 w-4" /> : collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
 
-      <Button className={cn("w-full justify-start", collapsed && !mobile && "justify-center px-0")} onClick={onNewChat} type="button" variant="subtle">
-        <Plus className="h-4 w-4" />
-        {!collapsed || mobile ? <span>New Chat</span> : null}
-      </Button>
+      <SidebarButton collapsed={collapsed} icon={Plus} label="New chat" onClick={onNewChat} primary />
 
       {!collapsed || mobile ? (
         <>
-          <label className="relative block">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" />
+          <label className="mt-1 flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm text-white/68 transition hover:bg-[#1f1f1f]">
+            <Search className="h-4 w-4 shrink-0 text-white/42" />
             <Input
-              className="pl-10"
+              className="h-auto border-0 bg-transparent px-0 py-0 text-sm text-white shadow-none placeholder:text-white/34 focus-visible:ring-0"
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search Chats"
+              placeholder="Search chats"
               value={searchQuery}
             />
           </label>
 
-          <nav className="grid gap-1.5" aria-label="Workspace">
-            {sidebarItems.map((item) => (
+          <nav className="mt-2 grid gap-1" aria-label="Workspace">
+            {primaryNav.map((item) => (
               <SidebarNavItem
                 item={item}
                 key={item.label}
@@ -1012,23 +734,43 @@ function SidebarContent({
             ))}
           </nav>
 
-          <div className="min-h-0 flex-1 overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-white/[0.02]">
-            <div className="border-b border-white/[0.06] px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-white/36">Recent chats</p>
+          <div className="mt-4">
+            <p className="px-3 pb-2 text-xs font-medium text-white/36">Agents</p>
+            <div className="grid gap-1">
+              {agentShelf.map((item) => (
+                <button
+                  className="flex h-10 items-center gap-3 rounded-[10px] px-3 text-left text-sm text-white/72 transition hover:bg-[#1f1f1f] hover:text-white"
+                  key={item.label}
+                  onClick={() => {
+                    onPromptPick(item.prompt);
+                    onDismiss?.();
+                  }}
+                  type="button"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#161616]">
+                    <Bot className="h-3 w-3" />
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                </button>
+              ))}
             </div>
-            <ScrollArea className="h-full max-h-full">
-              <div className="space-y-5 px-3 py-3">
+          </div>
+
+          <div className="mt-4 min-h-0 flex-1 overflow-hidden">
+            <p className="px-3 pb-2 text-xs font-medium text-white/36">Recents</p>
+            <ScrollArea className="h-full">
+              <div className="space-y-3 pb-4">
                 {sessionGroups.length ? (
                   sessionGroups.map(([group, items]) => (
-                    <div className="space-y-2" key={group}>
-                      <h3 className="px-2 text-[11px] uppercase tracking-[0.22em] text-white/32">{group}</h3>
+                    <div className="space-y-1" key={group}>
+                      <h3 className="px-3 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/22">{group}</h3>
                       {items.map((session) => (
                         <button
                           className={cn(
-                            "flex w-full flex-col items-start gap-1 rounded-2xl px-3 py-3 text-left transition",
+                            "flex h-10 w-full items-center rounded-[10px] px-3 text-left text-sm transition",
                             activeSessionId === session.id
-                              ? "border border-white/[0.12] bg-white/[0.06]"
-                              : "border border-transparent hover:border-white/[0.08] hover:bg-white/[0.04]"
+                              ? "bg-[#2b2b2b] text-white"
+                              : "text-white/68 hover:bg-[#1f1f1f] hover:text-white"
                           )}
                           key={session.id}
                           onClick={() => {
@@ -1037,54 +779,93 @@ function SidebarContent({
                           }}
                           type="button"
                         >
-                          <span className="line-clamp-1 text-sm font-medium text-white">{session.title}</span>
-                          <span className="line-clamp-1 text-sm text-white/40">{session.preview}</span>
+                          <span className="truncate">{session.title}</span>
                         </button>
                       ))}
                     </div>
                   ))
                 ) : (
-                  <div className="px-3 py-4 text-sm text-white/38">No recent chats yet.</div>
+                  <div className="px-3 text-sm text-white/32">No recent chats yet.</div>
                 )}
               </div>
             </ScrollArea>
           </div>
 
-          <div className="rounded-[1.6rem] border border-white/[0.08] bg-white/[0.03] p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1a1a1a] text-sm font-medium text-white">
+          <div className="mt-auto border-t border-white/[0.06] px-2 pt-3">
+            <div className="flex items-center gap-3 rounded-[12px] px-2 py-2 transition hover:bg-[#1f1f1f]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1a1a] text-xs font-medium text-white">
                 XL
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{workspaceUserName}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <Badge className="tracking-[0.14em]">Plus</Badge>
-                  <span className="text-xs text-white/36">{liveWorkspace ? "Live workspace" : "Workspace"}</span>
-                </div>
+                <p className="truncate text-sm text-white">{workspaceUserName}</p>
+                <p className="text-xs text-white/34">Plus</p>
               </div>
-              <Button asChild size="icon" variant="ghost">
-                <Link href="/settings" onClick={() => onDismiss?.()}>
-                  <Settings2 className="h-4 w-4" />
-                  <span className="sr-only">Settings</span>
-                </Link>
-              </Button>
+              <Link className="text-white/46 transition hover:text-white" href="/settings" onClick={() => onDismiss?.()}>
+                <Settings2 className="h-4 w-4" />
+                <span className="sr-only">Settings</span>
+              </Link>
             </div>
           </div>
         </>
       ) : (
         <>
-          <div className="grid gap-2">
-            {sidebarItems.map((item) => (
+          <div className="mt-2 grid gap-1">
+            {primaryNav.map((item) => (
               <CollapsedSidebarButton item={item} key={item.label} onPromptPick={onPromptPick} pathname={pathname} />
             ))}
           </div>
+          <div className="mt-3 grid gap-1">
+            {agentShelf.map((item) => (
+              <button
+                className="flex h-10 items-center justify-center rounded-[10px] text-white/56 transition hover:bg-[#1f1f1f] hover:text-white"
+                key={item.label}
+                onClick={() => onPromptPick(item.prompt)}
+                title={item.label}
+                type="button"
+              >
+                <Bot className="h-4 w-4" />
+              </button>
+            ))}
+          </div>
           <div className="flex-1" />
-          <Button className="self-center" size="icon" type="button" variant="subtle">
-            <span className="text-xs font-semibold">XL</span>
-          </Button>
+          <button
+            className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1a1a1a] text-xs font-medium text-white"
+            type="button"
+          >
+            XL
+          </button>
         </>
       )}
     </div>
+  );
+}
+
+function SidebarButton({
+  collapsed,
+  icon: Icon,
+  label,
+  onClick,
+  primary = false
+}: {
+  collapsed: boolean;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      className={cn(
+        "mt-1 flex h-10 items-center rounded-[10px] px-3 text-sm transition",
+        primary ? "bg-[#1f1f1f] text-white hover:bg-[#2b2b2b]" : "text-white/68 hover:bg-[#1f1f1f] hover:text-white",
+        collapsed ? "justify-center px-0" : "gap-3"
+      )}
+      onClick={onClick}
+      type="button"
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {!collapsed ? <span>{label}</span> : null}
+    </button>
   );
 }
 
@@ -1099,32 +880,29 @@ function SidebarNavItem({
   onPromptPick: (value: string) => void;
   pathname: string;
 }) {
+  const baseClassName =
+    "flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm transition";
   const isActive = item.href ? pathname === item.href : false;
 
   if (item.href) {
     return (
       <Link
         className={cn(
-          "flex items-center gap-3 rounded-2xl px-3 py-3 transition",
-          isActive
-            ? "border border-white/[0.12] bg-white/[0.06] text-white"
-            : "border border-transparent text-white/68 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-white"
+          baseClassName,
+          isActive ? "bg-[#2b2b2b] text-white" : "text-white/68 hover:bg-[#1f1f1f] hover:text-white"
         )}
         href={item.href}
         onClick={() => onDismiss?.()}
       >
         <item.icon className="h-4 w-4 shrink-0" />
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{item.label}</div>
-          <div className="truncate text-xs text-white/36">{item.detail}</div>
-        </div>
+        <span>{item.label}</span>
       </Link>
     );
   }
 
   return (
     <button
-      className="flex items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left text-white/68 transition hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-white"
+      className={cn(baseClassName, "text-white/68 hover:bg-[#1f1f1f] hover:text-white")}
       onClick={() => {
         if (item.prompt) {
           onPromptPick(item.prompt);
@@ -1134,10 +912,7 @@ function SidebarNavItem({
       type="button"
     >
       <item.icon className="h-4 w-4 shrink-0" />
-      <div className="min-w-0">
-        <div className="text-sm font-medium">{item.label}</div>
-        <div className="truncate text-xs text-white/36">{item.detail}</div>
-      </div>
+      <span>{item.label}</span>
     </button>
   );
 }
@@ -1152,7 +927,7 @@ function CollapsedSidebarButton({
   pathname: string;
 }) {
   const sharedClassName =
-    "flex h-11 w-11 items-center justify-center rounded-2xl border transition";
+    "flex h-10 w-10 items-center justify-center rounded-[10px] transition";
   const isActive = item.href ? pathname === item.href : false;
 
   if (item.href) {
@@ -1160,9 +935,7 @@ function CollapsedSidebarButton({
       <Link
         className={cn(
           sharedClassName,
-          isActive
-            ? "border-white/[0.12] bg-white/[0.06] text-white"
-            : "border-white/[0.06] bg-transparent text-white/56 hover:border-white/[0.1] hover:bg-white/[0.04] hover:text-white"
+          isActive ? "bg-[#2b2b2b] text-white" : "text-white/56 hover:bg-[#1f1f1f] hover:text-white"
         )}
         href={item.href}
         title={item.label}
@@ -1174,10 +947,7 @@ function CollapsedSidebarButton({
 
   return (
     <button
-      className={cn(
-        sharedClassName,
-        "border-white/[0.06] bg-transparent text-white/56 hover:border-white/[0.1] hover:bg-white/[0.04] hover:text-white"
-      )}
+      className={cn(sharedClassName, "text-white/56 hover:bg-[#1f1f1f] hover:text-white")}
       onClick={() => item.prompt && onPromptPick(item.prompt)}
       title={item.label}
       type="button"
@@ -1187,11 +957,221 @@ function CollapsedSidebarButton({
   );
 }
 
+function ChatHomeView({
+  composerRef,
+  error,
+  isStreaming,
+  onModelChange,
+  onPromptChange,
+  onQuickAction,
+  onSend,
+  onStop,
+  prompt,
+  selectedModel
+}: {
+  composerRef: RefObject<HTMLTextAreaElement | null>;
+  error: string | null;
+  isStreaming: boolean;
+  onModelChange: (model: ModelKey) => void;
+  onPromptChange: (value: string) => void;
+  onQuickAction: (value: string) => void;
+  onSend: () => void;
+  onStop: () => void;
+  prompt: string;
+  selectedModel: ModelKey;
+}) {
+  return (
+    <div className="flex min-h-screen w-full justify-center px-4 sm:px-6">
+      <div className="flex w-full max-w-[980px] flex-col">
+        <div className="flex flex-1 flex-col items-center pt-[22vh]">
+          <motion.h1
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[28px] font-normal tracking-tight text-white sm:text-[30px]"
+            initial={{ opacity: 0, y: 14 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            Good to see you, {workspaceUserName}.
+          </motion.h1>
+
+          {error ? <ErrorBanner className="mt-6 w-full max-w-[800px]" message={error} /> : null}
+
+          <div className="mt-8 w-full">
+            <ChatComposer
+              composerRef={composerRef}
+              isStreaming={isStreaming}
+              onModelChange={onModelChange}
+              onPromptChange={onPromptChange}
+              onSend={onSend}
+              onStop={onStop}
+              prompt={prompt}
+              selectedModel={selectedModel}
+            />
+          </div>
+
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            {quickActions.map((action) => (
+              <motion.button
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-white/[0.08] bg-transparent px-4 text-sm text-white/72 transition hover:bg-[#1f1f1f] hover:text-white"
+                key={action.label}
+                onClick={() => onQuickAction(action.prompt)}
+                type="button"
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <action.icon className="h-4 w-4" />
+                <span>{action.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChatThreadView({
+  composerRef,
+  copiedResponseId,
+  error,
+  isStreaming,
+  lastAssistantMessage,
+  messages,
+  messagesRef,
+  onCopyResponse,
+  onEditPrompt,
+  onModelChange,
+  onPromptChange,
+  onRegenerate,
+  onSend,
+  onStop,
+  prompt,
+  selectedModel,
+  thinking
+}: {
+  composerRef: RefObject<HTMLTextAreaElement | null>;
+  copiedResponseId: string | null;
+  error: string | null;
+  isStreaming: boolean;
+  lastAssistantMessage: ChatMessage | null;
+  messages: ChatMessage[];
+  messagesRef: RefObject<HTMLDivElement | null>;
+  onCopyResponse: (message: ChatMessage) => Promise<void>;
+  onEditPrompt: (value: string) => void;
+  onModelChange: (model: ModelKey) => void;
+  onPromptChange: (value: string) => void;
+  onRegenerate: () => void;
+  onSend: () => void;
+  onStop: () => void;
+  prompt: string;
+  selectedModel: ModelKey;
+  thinking: boolean;
+}) {
+  return (
+    <div className="flex min-h-screen w-full justify-center px-4 sm:px-6">
+      <div className="flex w-full max-w-[980px] flex-col">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto pt-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          ref={messagesRef}
+        >
+          <div className="mx-auto flex w-full max-w-[768px] flex-col gap-10 pb-36">
+            <AnimatePresence initial={false}>
+              {messages.map((message) => {
+                const isAssistant = message.role === "assistant";
+                const isLatestAssistant = lastAssistantMessage?.id === message.id;
+
+                if (!isAssistant) {
+                  return (
+                    <motion.article
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group flex justify-end"
+                      initial={{ opacity: 0, y: 12 }}
+                      key={message.id}
+                      transition={{ duration: 0.14, ease: "easeOut" }}
+                    >
+                      <div className="max-w-[75%]">
+                        <div className="rounded-[1.6rem] bg-[#2b2b2b] px-4 py-3 text-[15px] leading-6 text-white">
+                          {message.content}
+                        </div>
+                        <div className="mt-2 flex justify-end opacity-0 transition group-hover:opacity-100">
+                          <button
+                            className="text-xs text-white/40 transition hover:text-white/72"
+                            onClick={() => onEditPrompt(message.content)}
+                            type="button"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    </motion.article>
+                  );
+                }
+
+                return (
+                  <motion.article
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group"
+                    initial={{ opacity: 0, y: 12 }}
+                    key={message.id}
+                    transition={{ duration: 0.14, ease: "easeOut" }}
+                  >
+                    {message.content ? (
+                      <div className="text-[15px] leading-7 text-white/92">
+                        <ChatMarkdown content={toXeivoraLabel(message.content)} />
+                      </div>
+                    ) : (
+                      <ThinkingBlock active={thinking || isStreaming} />
+                    )}
+
+                    {message.content ? (
+                      <div className="mt-3 flex items-center gap-3 opacity-0 transition group-hover:opacity-100">
+                        <button
+                          className="text-xs text-white/40 transition hover:text-white/72"
+                          onClick={() => void onCopyResponse(message)}
+                          type="button"
+                        >
+                          {copiedResponseId === message.id ? "Copied" : "Copy"}
+                        </button>
+                        {isLatestAssistant ? (
+                          <button
+                            className="text-xs text-white/40 transition hover:text-white/72"
+                            onClick={onRegenerate}
+                            type="button"
+                          >
+                            Regenerate
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-gradient-to-t from-black via-black pt-4">
+          {error ? <ErrorBanner className="mx-auto max-w-[800px]" message={error} /> : null}
+          <div className="pb-6">
+            <ChatComposer
+              composerRef={composerRef}
+              isStreaming={isStreaming}
+              onModelChange={onModelChange}
+              onPromptChange={onPromptChange}
+              onSend={onSend}
+              onStop={onStop}
+              prompt={prompt}
+              selectedModel={selectedModel}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type ChatComposerProps = {
   composerRef: RefObject<HTMLTextAreaElement | null>;
-  isHome?: boolean;
   isStreaming: boolean;
-  modelLabel: string;
   onModelChange: (model: ModelKey) => void;
   onPromptChange: (value: string) => void;
   onSend: () => void;
@@ -1202,9 +1182,7 @@ type ChatComposerProps = {
 
 function ChatComposer({
   composerRef,
-  isHome = false,
   isStreaming,
-  modelLabel,
   onModelChange,
   onPromptChange,
   onSend,
@@ -1212,80 +1190,85 @@ function ChatComposer({
   prompt,
   selectedModel
 }: ChatComposerProps) {
+  const modelLabel = getComposerModelLabel(selectedModel);
+
   return (
     <form
-      className={cn(
-        "mx-auto w-full rounded-[2rem] border border-white/[0.08] bg-[#111111]/96 p-3 shadow-[0_38px_90px_rgba(0,0,0,0.42)] backdrop-blur-xl",
-        isHome ? "max-w-[860px]" : "max-w-[860px]"
-      )}
+      className="mx-auto w-full max-w-[800px] rounded-[28px] border border-white/[0.08] bg-[#2b2b2b] px-3 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.36)]"
       onSubmit={(event) => {
         event.preventDefault();
         onSend();
       }}
     >
-      <div className="flex gap-3">
-        <Button className="shrink-0 self-start" size="icon" type="button" variant="secondary">
+      <div className="flex items-center gap-2">
+        <button
+          aria-label="Attach file"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/55 transition hover:bg-[#303030] hover:text-white"
+          type="button"
+        >
           <Paperclip className="h-4 w-4" />
-          <span className="sr-only">Attach file</span>
-        </Button>
+        </button>
 
-        <div className="min-w-0 flex-1">
-          <textarea
-            className="min-h-[40px] w-full resize-none bg-transparent px-1 py-1 text-[16px] leading-7 text-white outline-none placeholder:text-white/34"
-            onChange={(event) => onPromptChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                onSend();
-              }
-            }}
-            placeholder="Ask Xeivora anything"
-            ref={composerRef}
-            rows={1}
-            value={prompt}
-          />
+        <textarea
+          className="min-h-[24px] flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 text-white outline-none placeholder:text-white/40"
+          onChange={(event) => onPromptChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              onSend();
+            }
+          }}
+          placeholder="Ask anything"
+          ref={composerRef}
+          rows={1}
+          value={prompt}
+        />
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="relative inline-flex items-center overflow-hidden rounded-full border border-white/[0.08] bg-white/[0.03] pl-4 pr-10 text-sm text-white/76">
-                <span className="pointer-events-none py-2.5">{modelLabel}</span>
-                <select
-                  aria-label="Choose model"
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  onChange={(event) => onModelChange(event.target.value as ModelKey)}
-                  value={selectedModel}
-                >
-                  {modelOptions.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {getComposerModelLabel(option.key)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4 text-white/42" />
-              </label>
+        <div className="flex shrink-0 items-center gap-1">
+          <label className="relative hidden items-center gap-1 rounded-full px-3 py-2 text-sm text-white/72 transition hover:bg-[#303030] sm:inline-flex">
+            <span>{modelLabel}</span>
+            <select
+              aria-label="Choose model"
+              className="absolute inset-0 cursor-pointer opacity-0"
+              onChange={(event) => onModelChange(event.target.value as ModelKey)}
+              value={selectedModel}
+            >
+              {modelOptions.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {getComposerModelLabel(option.key)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="h-4 w-4 text-white/40" />
+          </label>
 
-              <Badge>{selectedModel === "orbit-auto" ? "Orchestration" : modelLabel}</Badge>
-            </div>
+          <button
+            aria-label="Voice input"
+            className="hidden h-9 w-9 items-center justify-center rounded-full text-white/55 transition hover:bg-[#303030] hover:text-white sm:inline-flex"
+            type="button"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
 
-            <div className="flex items-center gap-2">
-              <Button size="icon" type="button" variant="secondary">
-                <Mic className="h-4 w-4" />
-                <span className="sr-only">Voice input</span>
-              </Button>
-
-              {isStreaming ? (
-                <Button onClick={onStop} size="icon" type="button" variant="default">
-                  <AudioLines className="h-4 w-4" />
-                  <span className="sr-only">Stop generating</span>
-                </Button>
-              ) : (
-                <Button disabled={!prompt.trim()} size="icon" type="submit" variant="default">
-                  <SendHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Send message</span>
-                </Button>
-              )}
-            </div>
-          </div>
+          {isStreaming ? (
+            <button
+              aria-label="Stop generating"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90"
+              onClick={onStop}
+              type="button"
+            >
+              <AudioLines className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              aria-label="Send message"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/30"
+              disabled={!prompt.trim()}
+              type="submit"
+            >
+              <SendHorizontal className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </form>
@@ -1294,13 +1277,13 @@ function ChatComposer({
 
 function ThinkingBlock({ active }: { active: boolean }) {
   return (
-    <div className="flex items-center gap-2 px-1 py-1">
+    <div className="flex items-center gap-2 py-1">
       {[0, 1, 2].map((index) => (
         <motion.span
-          animate={active ? { opacity: [0.24, 1, 0.24], y: [0, -3, 0] } : { opacity: 0.35 }}
-          className="h-2.5 w-2.5 rounded-full bg-white/72"
+          animate={active ? { opacity: [0.24, 1, 0.24] } : { opacity: 0.35 }}
+          className="h-2 w-2 rounded-full bg-white/72"
           key={index}
-          transition={{ duration: 1, delay: index * 0.12, repeat: Infinity }}
+          transition={{ duration: 1, delay: index * 0.14, repeat: Infinity }}
         />
       ))}
     </div>
@@ -1311,7 +1294,7 @@ function ErrorBanner({ className, message }: { className?: string; message: stri
   return (
     <div
       className={cn(
-        "mb-4 rounded-2xl border border-white/[0.08] bg-[#151515] px-4 py-3 text-sm leading-6 text-white/64",
+        "mb-4 rounded-2xl border border-white/[0.08] bg-[#111111] px-4 py-3 text-sm leading-6 text-white/64",
         className
       )}
     >
@@ -1320,20 +1303,11 @@ function ErrorBanner({ className, message }: { className?: string; message: stri
   );
 }
 
-function RuntimeRow({ label, value }: { label: string; value: string }) {
+function StatusRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] py-4 last:border-b-0">
-      <span className="text-xs uppercase tracking-[0.22em] text-white/34">{label}</span>
-      <span className="max-w-[170px] text-right text-sm leading-6 text-white/86">{value}</span>
-    </div>
-  );
-}
-
-function RuntimePill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex w-full flex-col items-center gap-1 rounded-[1.4rem] border border-white/[0.08] bg-white/[0.03] px-2 py-3 text-center">
-      <span className="text-[10px] uppercase tracking-[0.22em] text-white/34">{label}</span>
-      <span className="text-xs font-medium text-white/84">{value}</span>
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-white/42">{label}</span>
+      <span className="max-w-[150px] text-right text-white/86">{value}</span>
     </div>
   );
 }
@@ -1385,23 +1359,13 @@ function formatProviderLabel(provider: ProviderKey | string | null) {
 
 function getComposerModelLabel(modelKey: ModelKey) {
   const labels: Record<ModelKey, string> = {
-    "orbit-auto": "Xeivora Auto",
+    "orbit-auto": "Instant",
     "gpt-4o": "GPT-4o",
     claude: "Claude",
     gemini: "Gemini"
   };
 
   return labels[modelKey];
-}
-
-function countAvailableProviders(providerStatus: ProviderStatus | null) {
-  if (!providerStatus) {
-    return 0;
-  }
-
-  return [providerStatus.openai, providerStatus.anthropic, providerStatus.google].filter(
-    (provider) => provider?.available
-  ).length;
 }
 
 function formatModelSummary(provider: ProviderKey | null, model: string | null | undefined, fallbackLabel: string) {
@@ -1433,18 +1397,6 @@ function formatFallbackSummary(
   return nextProvider ? formatProviderLabel(nextProvider) : "Standby";
 }
 
-function getRuntimeTone(workflowMode: "simple_chat" | "continuity" | "coding_continuity", routeLabel: string) {
-  if (workflowMode === "coding_continuity") {
-    return "Engineering continuity";
-  }
-
-  if (workflowMode === "continuity") {
-    return "Orchestration engaged";
-  }
-
-  return routeLabel === "Xeivora is ready" ? "Conversational mode" : routeLabel;
-}
-
 function workflowModeLabel(mode: "simple_chat" | "continuity" | "coding_continuity") {
   const labels: Record<typeof mode, string> = {
     simple_chat: "Conversation",
@@ -1453,10 +1405,6 @@ function workflowModeLabel(mode: "simple_chat" | "continuity" | "coding_continui
   };
 
   return labels[mode];
-}
-
-function getCompactModelLabel(value: string) {
-  return value.split(" ")[0] || value;
 }
 
 async function consumeEventStream(

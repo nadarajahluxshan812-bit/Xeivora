@@ -30,16 +30,16 @@ export function ChatMarkdown({ content }: { content: string }) {
 
             if (inline) {
               return (
-                <code className="rounded-md bg-slate-950/80 px-1.5 py-0.5 text-cyan-100" {...props}>
+                <code className="rounded-md bg-[#1c1c1c] px-1.5 py-0.5 text-white/92" {...props}>
                   {children}
                 </code>
               );
             }
 
             return (
-              <div className="relative my-4 overflow-hidden rounded-[1.3rem] border border-white/8 bg-slate-950/92">
+              <div className="relative my-4 overflow-hidden rounded-[1.1rem] border border-white/10 bg-[#171717]">
                 <button
-                  className="absolute right-3 top-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-white/70 transition hover:border-cyan-300/30 hover:text-white"
+                  className="absolute right-3 top-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-white/64 transition hover:bg-white/[0.08] hover:text-white"
                   onClick={async () => {
                     await navigator.clipboard.writeText(code);
                     setCopiedCode(code);
@@ -49,7 +49,7 @@ export function ChatMarkdown({ content }: { content: string }) {
                 >
                   {copiedCode === code ? "Copied" : "Copy code"}
                 </button>
-                <pre className="overflow-x-auto px-4 py-5 text-sm leading-7 text-cyan-50">
+                <pre className="overflow-x-auto px-4 py-5 text-sm leading-7 text-white/88">
                   <code {...props}>{code}</code>
                 </pre>
               </div>

@@ -70,13 +70,13 @@ a {
 
 .dark {
   color-scheme: dark;
-  --bg: #171717;
-  --surface: #212121;
-  --surface-soft: #2b2b2b;
-  --border: #3a3a3a;
-  --text: #f4f4f4;
-  --muted: #c4c4bd;
-  --subtle: #90908a;
+  --bg: #000000;
+  --surface: #111111;
+  --surface-soft: #1a1a1a;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #ffffff;
+  --muted: #9ca3af;
+  --subtle: rgba(255, 255, 255, 0.42);
   --accent: #ffffff;
   --accent-soft: #303030;
 }
