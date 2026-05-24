@@ -1,0 +1,1127 @@
+{
+  "memory": [
+    {
+      "id": "mem-continuity-promise",
+      "type": "user_preferences",
+      "title": "Product promise",
+      "content": "One prompt. Multiple AI systems. Same memory. Same workflow. No context loss.",
+      "enabled": true,
+      "createdAt": "2026-05-20T08:00:00.000Z",
+      "updatedAt": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": "mem-coding-state",
+      "type": "coding_state_checkpoints",
+      "title": "Coding continuation behavior",
+      "content": "When a provider fails, save a checkpoint, compress context, preserve file/task state, and continue with the next provider.",
+      "enabled": true,
+      "createdAt": "2026-05-20T08:05:00.000Z",
+      "updatedAt": "2026-05-20T08:05:00.000Z"
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf-research-report",
+      "name": "Research -> Summary -> Final Report",
+      "description": "Collect findings, compress into evidence-backed notes, then produce a polished report.",
+      "steps": [
+        "Research",
+        "Summarize",
+        "Write final report"
+      ],
+      "status": "active",
+      "createdAt": "2026-05-20T08:10:00.000Z",
+      "updatedAt": "2026-05-20T08:10:00.000Z"
+    },
+    {
+      "id": "wf-code-continuation",
+      "name": "Multi-model Coding Continuation",
+      "description": "Start with OpenAI/Codex, checkpoint progress, then fail over to Claude or Gemini if needed.",
+      "steps": [
+        "Understand code task",
+        "Generate patch",
+        "Validate",
+        "Fail over if provider fails"
+      ],
+      "status": "active",
+      "createdAt": "2026-05-20T08:11:00.000Z",
+      "updatedAt": "2026-05-20T08:11:00.000Z"
+    },
+    {
+      "id": "wf-provider-failover",
+      "name": "AI Provider Failover Workflow",
+      "description": "Detect provider failure, compress context, preserve output format, and continue with the fallback model.",
+      "steps": [
+        "Detect issue",
+        "Save checkpoint",
+        "Compress context",
+        "Continue with fallback"
+      ],
+      "status": "active",
+      "createdAt": "2026-05-20T08:12:00.000Z",
+      "updatedAt": "2026-05-20T08:12:00.000Z"
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent-research",
+      "name": "Research Agent",
+      "role": "Finds, structures, and summarizes evidence.",
+      "modelPreference": "gemini",
+      "description": "Best for discovery, source mapping, and synthesis.",
+      "status": "ready",
+      "sampleTask": "Research competitors and summarize positioning.",
+      "assignedWorkflowType": "Research -> Summary -> Final Report"
+    },
+    {
+      "id": "agent-coding",
+      "name": "Coding Agent",
+      "role": "Plans, edits, validates, and explains code changes.",
+      "modelPreference": "gpt-4o",
+      "description": "Best for implementation work with checkpoints.",
+      "status": "ready",
+      "sampleTask": "Fix a failing API route and update tests.",
+      "assignedWorkflowType": "Code Request -> Debug -> Explanation"
+    },
+    {
+      "id": "agent-writing",
+      "name": "Writing Agent",
+      "role": "Creates clear copy, reports, emails, and structured documents.",
+      "modelPreference": "claude",
+      "description": "Best for long-form communication and polished narrative.",
+      "status": "ready",
+      "sampleTask": "Turn notes into an investor-ready memo.",
+      "assignedWorkflowType": "Content -> Caption -> Post"
+    },
+    {
+      "id": "agent-strategy",
+      "name": "Business Strategy Agent",
+      "role": "Turns raw ideas into market analysis and pitch structure.",
+      "modelPreference": "claude",
+      "description": "Best for business planning and strategic tradeoffs.",
+      "status": "ready",
+      "sampleTask": "Evaluate a SaaS idea and draft a go-to-market plan.",
+      "assignedWorkflowType": "Business Idea -> Market Analysis -> Pitch"
+    },
+    {
+      "id": "agent-planner",
+      "name": "Workflow Planner Agent",
+      "role": "Breaks prompts into reliable multi-step workflows.",
+      "modelPreference": "orbit-auto",
+      "description": "Best for task decomposition and tool routing.",
+      "status": "ready",
+      "sampleTask": "Create a workflow from brief to delivery.",
+      "assignedWorkflowType": "Idea -> Plan -> Execution Steps"
+    },
+    {
+      "id": "agent-continuity",
+      "name": "Continuity Recovery Agent",
+      "role": "Restores context after provider, rate, token, or timeout failures.",
+      "modelPreference": "orbit-auto",
+      "description": "Best for checkpoint recovery and provider failover.",
+      "status": "ready",
+      "sampleTask": "Continue a task after OpenAI reaches a token limit.",
+      "assignedWorkflowType": "AI Provider Failover Workflow"
+    }
+  ],
+  "providerEvents": [
+    {
+      "type": "fallback",
+      "sessionId": "13084ab6-204a-45f1-84d2-0674f94916b3",
+      "fromProvider": "google",
+      "toProvider": "openai",
+      "reason": "PROVIDER_DOWN",
+      "checkpointId": "74901b3a-1352-4af4-a006-b9d818d8a714",
+      "id": "8c90d1c9-0032-4c3f-9810-630720f1fef5",
+      "createdAt": "2026-05-23T09:13:14.156Z",
+      "updatedAt": "2026-05-23T09:13:14.156Z"
+    },
+    {
+      "type": "retry",
+      "sessionId": "13084ab6-204a-45f1-84d2-0674f94916b3",
+      "fromProvider": "google",
+      "toProvider": "google",
+      "reason": "PROVIDER_DOWN",
+      "checkpointId": "ab31b49f-c6bc-499d-a529-fea18b82dae4",
+      "id": "513ee3ec-a293-40b2-a671-dd6e79235769",
+      "createdAt": "2026-05-23T09:13:14.156Z",
+      "updatedAt": "2026-05-23T09:13:14.156Z"
+    },
+    {
+      "type": "fallback",
+      "sessionId": "ec692693-944e-4a5d-8ebe-fc8c761352d0",
+      "fromProvider": "google",
+      "toProvider": "openai",
+      "reason": "PROVIDER_DOWN",
+      "checkpointId": "223b20ee-10c5-4a02-9506-fd066b9eb4ea",
+      "id": "4d50bd62-88c5-47d5-aada-84cdc5c85dd5",
+      "createdAt": "2026-05-23T09:12:49.361Z",
+      "updatedAt": "2026-05-23T09:12:49.361Z"
+    },
+    {
+      "type": "retry",
+      "sessionId": "ec692693-944e-4a5d-8ebe-fc8c761352d0",
+      "fromProvider": "google",
+      "toProvider": "google",
+      "reason": "PROVIDER_DOWN",
+      "checkpointId": "c98bd2f1-980e-4cdf-9c3c-320253cc74e9",
+      "id": "d54cbc42-537c-4f22-92ee-4cdc35b84c38",
+      "createdAt": "2026-05-23T09:12:49.359Z",
+      "updatedAt": "2026-05-23T09:12:49.359Z"
+    },
+    {
+      "type": "fallback",
+      "sessionId": "13645010-8e17-4c4f-ae10-1f8893b6816d",
+      "fromProvider": "google",
+      "toProvider": "openai",
+      "reason": "PROVIDER_DOWN",
+      "checkpointId": "aa982b32-c1f9-429a-b72d-4176ef06b332",
+      "id": "a2e8a1d5-767d-4091-8234-d69ac5f1e524",
+      "createdAt": "2026-05-23T09:12:21.255Z",
+      "updatedAt": "2026-05-23T09:12:21.255Z"
+    },
+    {
+      "type": "retry",
+      "sessionId": "13645010-8e17-4c4f-ae10-1f8893b6816d",
+      "fromProvider": "google",
+      "toProvider": "google",
+      "reason": "PROVIDER_DOWN",
+      "checkpointId": "d4741ac6-95d6-4b0f-b32e-e6fb0500f103",
+      "id": "b5002381-46ca-4f12-863e-01bb98c9fce0",
+      "createdAt": "2026-05-23T09:12:21.253Z",
+      "updatedAt": "2026-05-23T09:12:21.253Z"
+    },
+    {
+      "id": "aacffc7a-d09f-4240-bee4-6b1ef6d09743",
+      "type": "fallback",
+      "sessionId": "4c074a5a-e904-49b3-92f4-7015e5299f04",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"param\": null,\n        \"code\": \"insufficient_quota\"\n    }\n}\n",
+      "createdAt": "2026-05-22T20:57:32.165Z",
+      "updatedAt": "2026-05-22T20:57:32.165Z"
+    },
+    {
+      "id": "be4204b0-7059-48c7-ab33-4b981a0cbee1",
+      "type": "fallback",
+      "sessionId": "f888d60a-925b-4f20-8c34-47698db91b4a",
+      "fromProvider": "openai",
+      "toProvider": "anthropic",
+      "reason": "Continuation packet created: Do not restart. Continue from this exact point.",
+      "checkpointId": "ed0b9c48-6ecb-42a5-a115-76558b9fbd48",
+      "createdAt": "2026-05-22T16:37:41.688Z",
+      "updatedAt": "2026-05-22T16:37:41.688Z"
+    },
+    {
+      "id": "b9bb1039-eeba-41c6-b443-7e628e9139c7",
+      "type": "fallback",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "fromProvider": "google",
+      "toProvider": "simulation",
+      "reason": "{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n",
+      "checkpointId": "1a513d6c-6c31-4ed0-9d8a-3cb83f5fa93f",
+      "createdAt": "2026-05-22T16:15:36.100Z",
+      "updatedAt": "2026-05-22T16:15:36.100Z"
+    },
+    {
+      "id": "f821a0b3-9c35-4a4a-ae8e-d8a995ad565b",
+      "type": "fallback",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "1a513d6c-6c31-4ed0-9d8a-3cb83f5fa93f",
+      "createdAt": "2026-05-22T16:15:31.209Z",
+      "updatedAt": "2026-05-22T16:15:31.209Z"
+    },
+    {
+      "id": "9f69b223-b2c4-4591-b821-782b86df4ad5",
+      "type": "fallback",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "d44166bf-6f55-4a48-935c-cd03f6b9f82d",
+      "createdAt": "2026-05-22T16:15:11.133Z",
+      "updatedAt": "2026-05-22T16:15:11.133Z"
+    },
+    {
+      "id": "f1555f12-512b-43d8-8a56-7ba6aee78bf4",
+      "type": "fallback",
+      "sessionId": "4eda132e-af2b-4eb4-b322-12e232e2d7eb",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "7cc5c6ed-6182-4056-81d0-a2fb6198afc0",
+      "createdAt": "2026-05-22T16:08:40.557Z",
+      "updatedAt": "2026-05-22T16:08:40.557Z"
+    },
+    {
+      "id": "c5b01e17-81f1-41aa-b4e9-b8adbe2cabe9",
+      "type": "fallback",
+      "sessionId": "c9e9ab9d-da66-483d-bfd1-58667eb5a1fd",
+      "fromProvider": "google",
+      "toProvider": "simulation",
+      "reason": "{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n",
+      "checkpointId": "b9d90ecf-8f72-40d2-a817-c6b567e0a2ac",
+      "createdAt": "2026-05-22T16:07:02.492Z",
+      "updatedAt": "2026-05-22T16:07:02.492Z"
+    },
+    {
+      "id": "0f0b9f7a-26d1-4caf-9e47-e67dc7f2240a",
+      "type": "fallback",
+      "sessionId": "c9e9ab9d-da66-483d-bfd1-58667eb5a1fd",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "b9d90ecf-8f72-40d2-a817-c6b567e0a2ac",
+      "createdAt": "2026-05-22T16:06:59.062Z",
+      "updatedAt": "2026-05-22T16:06:59.062Z"
+    },
+    {
+      "id": "32be9d47-0329-412f-92d7-1c6905ec6cb2",
+      "type": "fallback",
+      "sessionId": "2aa70f6c-ea66-48be-8747-07a1c2f54a22",
+      "fromProvider": "google",
+      "toProvider": "simulation",
+      "reason": "{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n",
+      "checkpointId": "0ffe1014-d381-4dc8-a5b0-f5d8808ec951",
+      "createdAt": "2026-05-22T16:06:40.406Z",
+      "updatedAt": "2026-05-22T16:06:40.406Z"
+    },
+    {
+      "id": "4bd101b6-cd19-43d7-b388-09c7ce53a284",
+      "type": "fallback",
+      "sessionId": "2aa70f6c-ea66-48be-8747-07a1c2f54a22",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "0ffe1014-d381-4dc8-a5b0-f5d8808ec951",
+      "createdAt": "2026-05-22T16:06:35.107Z",
+      "updatedAt": "2026-05-22T16:06:35.107Z"
+    },
+    {
+      "id": "e3b597b6-0947-425c-a693-54de2bf72844",
+      "type": "fallback",
+      "sessionId": "7b263ccf-2643-4a54-b8ca-b8ebc9c54934",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "7d0354e7-d9e5-4506-872d-18349cb0266a",
+      "createdAt": "2026-05-22T16:04:47.908Z",
+      "updatedAt": "2026-05-22T16:04:47.908Z"
+    },
+    {
+      "id": "1dd88625-321a-4f7b-a9bb-791d95522531",
+      "type": "fallback",
+      "sessionId": "7550df72-1d3c-4efb-8422-e3a5e65f4ee2",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "5186a196-dd0e-4be0-b09c-62efa06f7407",
+      "createdAt": "2026-05-22T16:04:24.413Z",
+      "updatedAt": "2026-05-22T16:04:24.413Z"
+    },
+    {
+      "id": "a58975a5-6030-4299-ad1e-642e8dc59c62",
+      "type": "fallback",
+      "sessionId": "9dc6af7b-185e-48d7-900c-d540ee179780",
+      "fromProvider": "google",
+      "toProvider": "simulation",
+      "reason": "{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n",
+      "checkpointId": "7a55afbd-28d0-4de2-b735-8ca5e5ce5f43",
+      "createdAt": "2026-05-22T16:03:30.911Z",
+      "updatedAt": "2026-05-22T16:03:30.911Z"
+    },
+    {
+      "id": "eddd0a73-496e-4237-80f9-f0d323112e2c",
+      "type": "fallback",
+      "sessionId": "9dc6af7b-185e-48d7-900c-d540ee179780",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "7a55afbd-28d0-4de2-b735-8ca5e5ce5f43",
+      "createdAt": "2026-05-22T16:03:22.022Z",
+      "updatedAt": "2026-05-22T16:03:22.022Z"
+    },
+    {
+      "id": "392ba740-554b-4ecd-bbc4-d60d78f3b029",
+      "type": "fallback",
+      "sessionId": "0f95a237-92d3-4d45-b39e-a22651fd6849",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "17aca7dc-21a5-49f6-b802-cd10bdf6a6b5",
+      "createdAt": "2026-05-22T15:31:36.951Z",
+      "updatedAt": "2026-05-22T15:31:36.951Z"
+    },
+    {
+      "id": "4200ddcb-22d7-49d2-8413-b9a4eac725eb",
+      "type": "fallback",
+      "sessionId": "97e1a7e6-bc6c-4860-89e3-7302e8d9c66e",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "96e3307c-7ebc-483d-99f2-27d9fe252ebd",
+      "createdAt": "2026-05-22T15:29:07.130Z",
+      "updatedAt": "2026-05-22T15:29:07.130Z"
+    },
+    {
+      "id": "fc37d417-0f02-48ac-bbb0-473d476d789a",
+      "type": "fallback",
+      "sessionId": "a4ef5277-683e-44f0-82af-035b9962eb19",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "46f94caf-e777-421f-8693-97f00c3f5ff0",
+      "createdAt": "2026-05-22T15:08:20.861Z",
+      "updatedAt": "2026-05-22T15:08:20.861Z"
+    },
+    {
+      "id": "a4c2c172-6f8a-46ee-80a0-08ed9d87af2b",
+      "type": "fallback",
+      "sessionId": "fdebf817-411d-4a49-9f63-52a338ca943f",
+      "fromProvider": "openai",
+      "toProvider": "google",
+      "reason": "{\n    \"error\": {\n        \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.\",\n        \"type\": \"insufficient_quota\",\n        \"pa",
+      "checkpointId": "ac702036-f050-41a2-ab1a-36c4422d1ad3",
+      "createdAt": "2026-05-22T14:58:18.051Z",
+      "updatedAt": "2026-05-22T14:58:18.051Z"
+    }
+  ],
+  "checkpoints": [
+    {
+      "sessionId": "13084ab6-204a-45f1-84d2-0674f94916b3",
+      "label": "Gemini checkpoint",
+      "workflowKey": "provider-failover",
+      "provider": "google",
+      "nextProvider": "openai",
+      "errorType": "PROVIDER_DOWN",
+      "attemptNumber": 2,
+      "partialOutput": "Photosynthesis is Photosynthesis is ",
+      "summary": "Gemini stopped mid-response. Xeivora saved progress and continued with OpenAI.",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "id": "74901b3a-1352-4af4-a006-b9d818d8a714",
+      "createdAt": "2026-05-23T09:13:14.156Z",
+      "updatedAt": "2026-05-23T09:13:14.156Z"
+    },
+    {
+      "sessionId": "13084ab6-204a-45f1-84d2-0674f94916b3",
+      "label": "Gemini checkpoint",
+      "workflowKey": "provider-failover",
+      "provider": "google",
+      "nextProvider": "google",
+      "errorType": "PROVIDER_DOWN",
+      "attemptNumber": 1,
+      "partialOutput": "Photosynthesis is ",
+      "summary": "Gemini stopped mid-response. Xeivora saved progress and continued with Gemini.",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "id": "ab31b49f-c6bc-499d-a529-fea18b82dae4",
+      "createdAt": "2026-05-23T09:13:14.154Z",
+      "updatedAt": "2026-05-23T09:13:14.154Z"
+    },
+    {
+      "sessionId": "ec692693-944e-4a5d-8ebe-fc8c761352d0",
+      "label": "Gemini checkpoint",
+      "workflowKey": "provider-failover",
+      "provider": "google",
+      "nextProvider": "openai",
+      "errorType": "PROVIDER_DOWN",
+      "attemptNumber": 2,
+      "partialOutput": "",
+      "summary": "Gemini became unavailable before completion. Xeivora saved the task state for OpenAI.",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "id": "223b20ee-10c5-4a02-9506-fd066b9eb4ea",
+      "createdAt": "2026-05-23T09:12:49.360Z",
+      "updatedAt": "2026-05-23T09:12:49.360Z"
+    },
+    {
+      "sessionId": "ec692693-944e-4a5d-8ebe-fc8c761352d0",
+      "label": "Gemini checkpoint",
+      "workflowKey": "provider-failover",
+      "provider": "google",
+      "nextProvider": "google",
+      "errorType": "PROVIDER_DOWN",
+      "attemptNumber": 1,
+      "partialOutput": "",
+      "summary": "Gemini became unavailable before completion. Xeivora saved the task state for Gemini.",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "id": "c98bd2f1-980e-4cdf-9c3c-320253cc74e9",
+      "createdAt": "2026-05-23T09:12:49.358Z",
+      "updatedAt": "2026-05-23T09:12:49.358Z"
+    },
+    {
+      "sessionId": "13645010-8e17-4c4f-ae10-1f8893b6816d",
+      "label": "Gemini checkpoint",
+      "workflowKey": "provider-failover",
+      "provider": "google",
+      "nextProvider": "openai",
+      "errorType": "PROVIDER_DOWN",
+      "attemptNumber": 2,
+      "partialOutput": "",
+      "summary": "Gemini became unavailable before completion. Xeivora saved the task state for OpenAI.",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "id": "aa982b32-c1f9-429a-b72d-4176ef06b332",
+      "createdAt": "2026-05-23T09:12:21.254Z",
+      "updatedAt": "2026-05-23T09:12:21.254Z"
+    },
+    {
+      "sessionId": "13645010-8e17-4c4f-ae10-1f8893b6816d",
+      "label": "Gemini checkpoint",
+      "workflowKey": "provider-failover",
+      "provider": "google",
+      "nextProvider": "google",
+      "errorType": "PROVIDER_DOWN",
+      "attemptNumber": 1,
+      "partialOutput": "",
+      "summary": "Gemini became unavailable before completion. Xeivora saved the task state for Gemini.",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "id": "d4741ac6-95d6-4b0f-b32e-e6fb0500f103",
+      "createdAt": "2026-05-23T09:12:21.230Z",
+      "updatedAt": "2026-05-23T09:12:21.230Z"
+    },
+    {
+      "id": "ed0b9c48-6ecb-42a5-a115-76558b9fbd48",
+      "title": "Coding continuity checkpoint",
+      "sessionId": "f888d60a-925b-4f20-8c34-47698db91b4a",
+      "prompt": "Build me a Next.js SaaS authentication system",
+      "providerChain": [
+        "openai",
+        "anthropic"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:37:40.501Z",
+      "updatedAt": "2026-05-22T16:37:40.501Z"
+    },
+    {
+      "id": "1a513d6c-6c31-4ed0-9d8a-3cb83f5fa93f",
+      "title": "general workflow checkpoint",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "prompt": "what is the wether in uk",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:15:30.668Z",
+      "updatedAt": "2026-05-22T16:15:30.668Z"
+    },
+    {
+      "id": "d44166bf-6f55-4a48-935c-cd03f6b9f82d",
+      "title": "general workflow checkpoint",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "prompt": "Route this prompt across models",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:15:10.480Z",
+      "updatedAt": "2026-05-22T16:15:10.480Z"
+    },
+    {
+      "id": "7cc5c6ed-6182-4056-81d0-a2fb6198afc0",
+      "title": "planning workflow checkpoint",
+      "sessionId": "4eda132e-af2b-4eb4-b322-12e232e2d7eb",
+      "prompt": "Create a short Xeivora launch checklist.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:08:39.667Z",
+      "updatedAt": "2026-05-22T16:08:39.667Z"
+    },
+    {
+      "id": "b9d90ecf-8f72-40d2-a817-c6b567e0a2ac",
+      "title": "general workflow checkpoint",
+      "sessionId": "c9e9ab9d-da66-483d-bfd1-58667eb5a1fd",
+      "prompt": "Create a short Xeivora launch checklist.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:06:58.009Z",
+      "updatedAt": "2026-05-22T16:06:58.009Z"
+    },
+    {
+      "id": "0ffe1014-d381-4dc8-a5b0-f5d8808ec951",
+      "title": "planning workflow checkpoint",
+      "sessionId": "2aa70f6c-ea66-48be-8747-07a1c2f54a22",
+      "prompt": "I need a launch plan for Xeivora.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:06:33.339Z",
+      "updatedAt": "2026-05-22T16:06:33.339Z"
+    },
+    {
+      "id": "7d0354e7-d9e5-4506-872d-18349cb0266a",
+      "title": "general workflow checkpoint",
+      "sessionId": "7b263ccf-2643-4a54-b8ca-b8ebc9c54934",
+      "prompt": "Test from browser UI. Reply briefly.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:04:47.062Z",
+      "updatedAt": "2026-05-22T16:04:47.062Z"
+    },
+    {
+      "id": "5186a196-dd0e-4be0-b09c-62efa06f7407",
+      "title": "general workflow checkpoint",
+      "sessionId": "7550df72-1d3c-4efb-8422-e3a5e65f4ee2",
+      "prompt": "Reply with one short sentence.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:04:23.671Z",
+      "updatedAt": "2026-05-22T16:04:23.671Z"
+    },
+    {
+      "id": "7a55afbd-28d0-4de2-b735-8ca5e5ce5f43",
+      "title": "general workflow checkpoint",
+      "sessionId": "9dc6af7b-185e-48d7-900c-d540ee179780",
+      "prompt": "Summarize this document",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T16:03:20.495Z",
+      "updatedAt": "2026-05-22T16:03:20.495Z"
+    },
+    {
+      "id": "17aca7dc-21a5-49f6-b802-cd10bdf6a6b5",
+      "title": "general workflow checkpoint",
+      "sessionId": "0f95a237-92d3-4d45-b39e-a22651fd6849",
+      "prompt": "Say hello in one sentence and mention Xeivora now.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T15:31:36.123Z",
+      "updatedAt": "2026-05-22T15:31:36.123Z"
+    },
+    {
+      "id": "96e3307c-7ebc-483d-99f2-27d9fe252ebd",
+      "title": "general workflow checkpoint",
+      "sessionId": "97e1a7e6-bc6c-4860-89e3-7302e8d9c66e",
+      "prompt": "Say hello in one sentence and mention Xeivora.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T15:29:05.345Z",
+      "updatedAt": "2026-05-22T15:29:05.345Z"
+    },
+    {
+      "id": "46f94caf-e777-421f-8693-97f00c3f5ff0",
+      "title": "general workflow checkpoint",
+      "sessionId": "a4ef5277-683e-44f0-82af-035b9962eb19",
+      "prompt": "Say hello in one sentence.",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T15:08:19.006Z",
+      "updatedAt": "2026-05-22T15:08:19.006Z"
+    },
+    {
+      "id": "ac702036-f050-41a2-ab1a-36c4422d1ad3",
+      "title": "planning workflow checkpoint",
+      "sessionId": "fdebf817-411d-4a49-9f63-52a338ca943f",
+      "prompt": "Build a workflow plan",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T14:58:16.420Z",
+      "updatedAt": "2026-05-22T14:58:16.420Z"
+    },
+    {
+      "id": "57bc1588-cd1b-4948-a592-975314568184",
+      "title": "planning workflow checkpoint",
+      "sessionId": "1000cadb-1e17-4500-b79e-f24fb1ae9b82",
+      "prompt": "Build a workflow plan",
+      "providerChain": [
+        "openai",
+        "anthropic",
+        "google",
+        "simulation"
+      ],
+      "state": "saved",
+      "contextCompressed": true,
+      "memoryPreserved": true,
+      "contextLossPercentage": 0,
+      "createdAt": "2026-05-22T14:52:08.912Z",
+      "updatedAt": "2026-05-22T14:52:08.912Z"
+    }
+  ],
+  "orchestrationTraces": [
+    {
+      "sessionId": "426829be-e666-41e5-af5d-c1e52fc40dc2",
+      "prompt": "Build me a Next.js SaaS auth system",
+      "intent": "coding",
+      "plan": [
+        "Preserved workspace memory",
+        "Selected OpenAI as the primary provider",
+        "Prepared a direct provider-first response path",
+        "Kept continuity active for this complex request"
+      ],
+      "selectedProvider": "openai",
+      "fallbackProvider": "google",
+      "status": "running",
+      "id": "23a24b77-2613-4dbf-b5fd-556ed0efa3ab",
+      "createdAt": "2026-05-23T09:11:49.280Z",
+      "updatedAt": "2026-05-23T09:11:49.280Z"
+    },
+    {
+      "sessionId": "7bb026a6-dba2-4ca3-9a80-a91fc74d7d7d",
+      "prompt": "Build me a Next.js SaaS auth system",
+      "intent": "coding",
+      "plan": [
+        "Preserved workspace memory",
+        "Selected OpenAI as the primary provider",
+        "Prepared a direct provider-first response path",
+        "Kept continuity active for this complex request"
+      ],
+      "selectedProvider": "openai",
+      "fallbackProvider": "google",
+      "status": "running",
+      "id": "ba91bcff-a749-47af-ab39-c0094ac5cc86",
+      "createdAt": "2026-05-23T09:11:22.756Z",
+      "updatedAt": "2026-05-23T09:11:22.756Z"
+    },
+    {
+      "id": "5d0579fc-158e-4c14-8b7d-c54054f89c2e",
+      "prompt": "build me a Next.js SaaS auth system",
+      "intent": "coding",
+      "plan": [
+        "Preserved workspace memory",
+        "Selected Gemini as the primary provider",
+        "Prepared a direct provider-first response path",
+        "Kept continuity active for this complex request"
+      ],
+      "selectedProvider": "google",
+      "fallbackProvider": null,
+      "status": "running",
+      "createdAt": "2026-05-22T20:44:07.190Z",
+      "updatedAt": "2026-05-22T20:44:07.191Z"
+    },
+    {
+      "id": "6c8bbb12-fbbf-4ae2-9a37-264826315417",
+      "prompt": "build me a Next.js SaaS auth system",
+      "intent": "coding",
+      "plan": [
+        "Preserved workspace memory",
+        "Selected OpenAI as the primary provider",
+        "Prepared a direct provider-first response path",
+        "Kept continuity active for this complex request"
+      ],
+      "selectedProvider": "openai",
+      "fallbackProvider": "google",
+      "status": "running",
+      "createdAt": "2026-05-22T20:41:37.984Z",
+      "updatedAt": "2026-05-22T20:41:37.986Z"
+    },
+    {
+      "id": "fd436cab-02cc-4164-ad91-79b689faea96",
+      "prompt": "build me a Next.js SaaS auth system",
+      "intent": "coding",
+      "plan": [
+        "Preserved workspace memory",
+        "Selected Gemini as the primary provider",
+        "Prepared a direct provider-first response path",
+        "Kept continuity active for this complex request"
+      ],
+      "selectedProvider": "google",
+      "fallbackProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T20:40:54.857Z",
+      "updatedAt": "2026-05-22T20:40:54.862Z"
+    },
+    {
+      "id": "e23b67f5-b7b2-4b24-8bc9-59ad5f2fa548",
+      "sessionId": "f888d60a-925b-4f20-8c34-47698db91b4a",
+      "prompt": "Build me a Next.js SaaS authentication system",
+      "intent": "coding",
+      "plan": [
+        "Detected complex coding workflow",
+        "Selected OpenAI as primary",
+        "Saved architecture/auth/schema checkpoints",
+        "Compressed context into continuation packet",
+        "Transferred to Claude fallback",
+        "Stitched final output"
+      ],
+      "selectedProvider": "openai",
+      "status": "completed",
+      "createdAt": "2026-05-22T16:37:40.504Z",
+      "updatedAt": "2026-05-22T16:37:40.504Z"
+    },
+    {
+      "id": "c73ad701-dcec-4899-b054-1bfd6de8ddf8",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "prompt": "what is the wether in uk",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:15:30.669Z",
+      "updatedAt": "2026-05-22T16:15:30.669Z"
+    },
+    {
+      "id": "b413f1c9-b00e-41a8-af8e-d53b5a7b78b8",
+      "sessionId": "dd5f93f4-7ed8-4c52-b703-2e0f5bac78f2",
+      "prompt": "Route this prompt across models",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:15:10.481Z",
+      "updatedAt": "2026-05-22T16:15:10.481Z"
+    },
+    {
+      "id": "5b17151a-896a-4d54-9fb0-ae3bad64f36b",
+      "sessionId": "4eda132e-af2b-4eb4-b322-12e232e2d7eb",
+      "prompt": "Create a short Xeivora launch checklist.",
+      "intent": "planning",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: planning",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:08:39.668Z",
+      "updatedAt": "2026-05-22T16:08:39.669Z"
+    },
+    {
+      "id": "17ea227b-3307-4b38-8d5a-fc0099dcfe22",
+      "sessionId": "c9e9ab9d-da66-483d-bfd1-58667eb5a1fd",
+      "prompt": "Create a short Xeivora launch checklist.",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:06:58.009Z",
+      "updatedAt": "2026-05-22T16:06:58.010Z"
+    },
+    {
+      "id": "f2dc7a15-2a72-44ec-bd70-b59b903cacf3",
+      "sessionId": "2aa70f6c-ea66-48be-8747-07a1c2f54a22",
+      "prompt": "I need a launch plan for Xeivora.",
+      "intent": "planning",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: planning",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:06:33.346Z",
+      "updatedAt": "2026-05-22T16:06:33.346Z"
+    },
+    {
+      "id": "6556558d-3e8a-4ceb-a465-7e5b4a0b9b45",
+      "sessionId": "7b263ccf-2643-4a54-b8ca-b8ebc9c54934",
+      "prompt": "Test from browser UI. Reply briefly.",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:04:47.063Z",
+      "updatedAt": "2026-05-22T16:04:47.063Z"
+    },
+    {
+      "id": "d66266a6-41c0-468b-a358-eb89927e4dce",
+      "sessionId": "7550df72-1d3c-4efb-8422-e3a5e65f4ee2",
+      "prompt": "Reply with one short sentence.",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:04:23.671Z",
+      "updatedAt": "2026-05-22T16:04:23.671Z"
+    },
+    {
+      "id": "94974da8-ce2e-4963-8b9c-7825b5ae248d",
+      "sessionId": "9dc6af7b-185e-48d7-900c-d540ee179780",
+      "prompt": "Summarize this document",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T16:03:20.497Z",
+      "updatedAt": "2026-05-22T16:03:20.497Z"
+    },
+    {
+      "id": "08b6a67a-5a0b-46e8-9945-2ffd8eda186a",
+      "sessionId": "0f95a237-92d3-4d45-b39e-a22651fd6849",
+      "prompt": "Say hello in one sentence and mention Xeivora now.",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T15:31:36.123Z",
+      "updatedAt": "2026-05-22T15:31:36.123Z"
+    },
+    {
+      "id": "02ad1337-d2b0-41d5-a578-5a76f76d2681",
+      "sessionId": "97e1a7e6-bc6c-4860-89e3-7302e8d9c66e",
+      "prompt": "Say hello in one sentence and mention Xeivora.",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T15:29:05.345Z",
+      "updatedAt": "2026-05-22T15:29:05.345Z"
+    },
+    {
+      "id": "2911a031-dc53-44ef-aeea-1f37c0d373a9",
+      "sessionId": "a4ef5277-683e-44f0-82af-035b9962eb19",
+      "prompt": "Say hello in one sentence.",
+      "intent": "general",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: general",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T15:08:19.007Z",
+      "updatedAt": "2026-05-22T15:08:19.007Z"
+    },
+    {
+      "id": "85d53bf2-d018-4052-8eed-41187f5c48ee",
+      "sessionId": "fdebf817-411d-4a49-9f63-52a338ca943f",
+      "prompt": "Build a workflow plan",
+      "intent": "planning",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: planning",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "openai",
+      "status": "running",
+      "createdAt": "2026-05-22T14:58:16.421Z",
+      "updatedAt": "2026-05-22T14:58:16.421Z"
+    },
+    {
+      "id": "2a3e0963-d40f-478e-8ee3-07d9b4fcd9d7",
+      "sessionId": "1000cadb-1e17-4500-b79e-f24fb1ae9b82",
+      "prompt": "Build a workflow plan",
+      "intent": "planning",
+      "plan": [
+        "Prompt received",
+        "Conversation memory loaded",
+        "Intent detected: planning",
+        "Workflow plan created",
+        "Provider/model selected",
+        "Checkpoint saved",
+        "Unified response generated"
+      ],
+      "selectedProvider": "simulation",
+      "status": "running",
+      "createdAt": "2026-05-22T14:52:08.912Z",
+      "updatedAt": "2026-05-22T14:52:08.912Z"
+    },
+    {
+      "id": "221e92b0-b3f9-425b-8158-be8c200c0eb7",
+      "prompt": "Fix a TypeScript bug and continue if OpenAI fails",
+      "intent": "coding",
+      "plan": [
+        "Receive prompt",
+        "Load memory",
+        "Detect intent: coding",
+        "Create workflow plan",
+        "Select provider chain",
+        "Execute with checkpointing",
+        "Fail over if needed",
+        "Return unified response"
+      ],
+      "selectedProvider": "openai",
+      "fallbackProvider": "anthropic",
+      "status": "simulated",
+      "createdAt": "2026-05-22T10:49:48.064Z",
+      "updatedAt": "2026-05-22T10:49:48.064Z"
+    }
+  ],
+  "settings": {
+    "memoryEnabled": true,
+    "orchestrationEnabled": true,
+    "continuityEnabled": true,
+    "theme": "dark",
+    "modelPreferenceOrder": [
+      "openai",
+      "anthropic",
+      "google",
+      "simulation"
+    ]
+  }
+}

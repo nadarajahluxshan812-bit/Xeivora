@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const { getSession } = require("@/lib/server/chat-store");
-const { createChatCompletion, getProviderDebugState } = require("@/lib/server/ai-runtime");
+const { createChatCompletion, getProviderDebugState, getProviderStatusReport } = require("@/lib/server/ai-runtime");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,12 +41,16 @@ export async function POST(request: Request) {
       providerStatus: getProviderDebugState({
         modelKey,
         prompt: input
+      }),
+      providerReport: getProviderStatusReport({
+        modelKey,
+        prompt: input
       })
     });
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Xeivora could not complete the response."
+        error: "Xeivora switched into local fallback mode after a provider interruption."
       },
       { status: (error as { statusCode?: number })?.statusCode || 500 }
     );

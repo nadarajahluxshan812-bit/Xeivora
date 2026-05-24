@@ -1,0 +1,28 @@
+{
+  "projects": [
+    {
+      "id": "project-xeivora-core",
+      "name": "Xeivora Core",
+      "description": "Primary workspace for building and operating Xeivora.",
+      "color": "#8b5cf6",
+      "status": "active",
+      "createdAt": "2026-05-20T08:00:00.000Z",
+      "updatedAt": "2026-05-20T08:00:00.000Z"
+    }
+  ],
+  "files": [],
+  "toolLogs": [
+    {
+      "id": "292057da-eab3-460f-940d-0b472a576471",
+      "tool": "calculator",
+      "sessionId": null,
+      "projectId": null,
+      "status": "ok",
+      "summary": "Calculated result: 168",
+      "payload": {
+        "value": 168
+      },
+      "createdAt": "2026-05-24T20:51:32.639Z"
+    }
+  ]
+}

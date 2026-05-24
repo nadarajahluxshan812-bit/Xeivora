@@ -1,0 +1,91 @@
+{
+  "sessions": [
+    {
+      "id": "4c074a5a-e904-49b3-92f4-7015e5299f04",
+      "title": "what do you doi",
+      "preview": "I couldn’t reach the configured AI providers just now. The keys are loaded, but the live pro",
+      "createdAt": "2026-05-22T20:57:31.769Z",
+      "updatedAt": "2026-05-22T20:58:26.787Z",
+      "modelPreference": "orbit-auto",
+      "lastProvider": "simulation",
+      "routeLabel": "Provider unavailable",
+      "messages": [
+        {
+          "id": "a5c4987e-dbd0-4851-86fb-fe5f05887998",
+          "role": "user",
+          "content": "what do you doi",
+          "createdAt": "2026-05-22T20:57:31.777Z",
+          "modelKey": "orbit-auto"
+        },
+        {
+          "id": "d078cdce-e051-40c5-8c31-d3d6ea422841",
+          "role": "assistant",
+          "content": "Hi Luxshan! I'm Xeivora, your conversational workspace assistant. I'm here to help you get things done by understanding your requests and orchestrating tasks across your tools and services.",
+          "createdAt": "2026-05-22T20:57:33.470Z",
+          "modelKey": "orbit-auto",
+          "provider": "google"
+        },
+        {
+          "id": "6e659eea-c6e1-48e2-b708-916a3dd6b7f6",
+          "role": "user",
+          "content": "how do you work",
+          "createdAt": "2026-05-22T20:57:46.099Z",
+          "modelKey": "orbit-auto"
+        },
+        {
+          "id": "4362f3a7-bb44-4d00-805f-3bee8db8ecde",
+          "role": "assistant",
+          "content": "I couldn’t reach the configured AI providers just now (Gemini). { \"error\": { \"code\": 429, \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.de",
+          "createdAt": "2026-05-22T20:57:46.543Z",
+          "modelKey": "orbit-auto",
+          "provider": "provider-error"
+        },
+        {
+          "id": "c93ee5b0-3c56-420c-b8ba-35ac6af3ea96",
+          "role": "user",
+          "content": "use other one",
+          "createdAt": "2026-05-22T20:57:58.960Z",
+          "modelKey": "orbit-auto"
+        },
+        {
+          "id": "e9abcd9d-c2bd-4d3b-9663-293790534170",
+          "role": "assistant",
+          "content": "I couldn’t reach the configured AI providers just now. The keys are loaded, but the live provider runtime is currently unavailable or out of quota.",
+          "createdAt": "2026-05-22T20:57:59.142Z",
+          "modelKey": "orbit-auto",
+          "provider": "simulation"
+        },
+        {
+          "id": "88089dfc-781a-446f-89a3-61b7e18066a8",
+          "role": "user",
+          "content": "what is my name",
+          "createdAt": "2026-05-22T20:58:12.862Z",
+          "modelKey": "orbit-auto"
+        },
+        {
+          "id": "ec9a7245-1066-42aa-8ec7-e5abacda3f10",
+          "role": "assistant",
+          "content": "Your name is Luxshan.",
+          "createdAt": "2026-05-22T20:58:12.889Z",
+          "modelKey": "orbit-auto",
+          "provider": "workspace"
+        },
+        {
+          "id": "30144707-01b9-4814-9c86-a82d630512a6",
+          "role": "user",
+          "content": "can you write me a small welcome mesage",
+          "createdAt": "2026-05-22T20:58:26.605Z",
+          "modelKey": "orbit-auto"
+        },
+        {
+          "id": "74337a30-28a6-439b-b62e-77296b7889ec",
+          "role": "assistant",
+          "content": "I couldn’t reach the configured AI providers just now. The keys are loaded, but the live provider runtime is currently unavailable or out of quota.",
+          "createdAt": "2026-05-22T20:58:26.787Z",
+          "modelKey": "orbit-auto",
+          "provider": "simulation"
+        }
+      ]
+    }
+  ]
+}

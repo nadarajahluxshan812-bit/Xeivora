@@ -1,0 +1,55 @@
+{
+  "workspaces": {
+    "localhost-workspace": {
+      "userName": "Luxshan",
+      "preferences": {
+        "responseStyle": null,
+        "markdown": null
+      },
+      "workspaceInfo": {
+        "currentFocus": null
+      },
+      "sessions": {}
+    },
+    "primary-workspace": {
+      "userName": null,
+      "preferences": {
+        "responseStyle": null,
+        "markdown": null
+      },
+      "workspaceInfo": {
+        "currentFocus": null
+      },
+      "sessions": {
+        "test-session": {
+          "lastTopic": "Build me a Next.js SaaS auth system",
+          "updatedAt": "2026-05-23T09:08:09.352Z"
+        },
+        "7bb026a6-dba2-4ca3-9a80-a91fc74d7d7d": {
+          "lastTopic": "Build me a Next.js SaaS auth system",
+          "updatedAt": "2026-05-23T09:11:22.755Z"
+        },
+        "426829be-e666-41e5-af5d-c1e52fc40dc2": {
+          "lastTopic": "Build me a Next.js SaaS auth system",
+          "updatedAt": "2026-05-23T09:11:49.279Z"
+        },
+        "759168d0-0e99-4dbd-ba8a-6d21c44f1557": {
+          "lastTopic": "hi",
+          "updatedAt": "2026-05-23T09:12:02.237Z"
+        },
+        "13645010-8e17-4c4f-ae10-1f8893b6816d": {
+          "lastTopic": "What is photosynthesis?",
+          "updatedAt": "2026-05-23T09:12:21.009Z"
+        },
+        "ec692693-944e-4a5d-8ebe-fc8c761352d0": {
+          "lastTopic": "What is photosynthesis?",
+          "updatedAt": "2026-05-23T09:12:49.313Z"
+        },
+        "13084ab6-204a-45f1-84d2-0674f94916b3": {
+          "lastTopic": "What is photosynthesis?",
+          "updatedAt": "2026-05-23T09:13:14.153Z"
+        }
+      }
+    }
+  }
+}

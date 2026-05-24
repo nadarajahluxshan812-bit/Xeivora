@@ -20,7 +20,9 @@ export function DashboardSidebar({ connectionState }: DashboardSidebarProps) {
   return (
     <aside className="glass-panel sticky top-6 flex h-fit flex-col gap-6 p-5">
       <div className="flex items-start justify-between gap-4">
-        <OrbitLogo compact />
+        <Link href="/">
+          <OrbitLogo compact />
+        </Link>
         <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.26em] text-cyan-100/80">
           {connectionState}
         </div>

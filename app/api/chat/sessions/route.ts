@@ -10,7 +10,8 @@ export async function POST(request: Request) {
 
   try {
     const session = await createSession({
-      modelPreference: body?.modelPreference || "orbit-auto"
+      modelPreference: body?.modelPreference || "orbit-auto",
+      projectId: body?.projectId || null
     });
 
     return NextResponse.json(

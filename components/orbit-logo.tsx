@@ -5,9 +5,16 @@ import { cn } from "@/lib/utils";
 type OrbitLogoProps = {
   compact?: boolean;
   className?: string;
+  showTagline?: boolean;
+  nameClassName?: string;
 };
 
-export function OrbitLogo({ compact = false, className = "" }: OrbitLogoProps) {
+export function OrbitLogo({
+  compact = false,
+  className = "",
+  showTagline = !compact,
+  nameClassName = ""
+}: OrbitLogoProps) {
   const gradientId = useId();
 
   return (
@@ -43,8 +50,8 @@ export function OrbitLogo({ compact = false, className = "" }: OrbitLogoProps) {
       </div>
       {!compact ? (
         <div>
-          <div className="text-[15px] font-semibold tracking-tight text-white">Xeivora</div>
-          <div className="text-xs text-white/58">Unified AI Intelligence</div>
+          <div className={cn("text-[15px] font-semibold tracking-tight text-white", nameClassName)}>Xeivora</div>
+          {showTagline ? <div className="text-xs text-white/58">Unified AI Intelligence</div> : null}
         </div>
       ) : null}
     </div>

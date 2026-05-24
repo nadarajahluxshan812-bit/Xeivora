@@ -3,11 +3,27 @@ import { NextResponse } from "next/server";
 const { addUserMessage, removeLastAssistantMessage } = require("@/lib/server/chat-store");
 const { streamChatCompletion } = require("@/lib/server/ai-runtime");
 const { createSseResponse } = require("@/lib/server/sse");
+const { enforceRateLimit } = require("@/lib/server/rate-limit");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request, { params }: { params: Promise<{ sessionId: string }> }) {
+  const rateLimit = enforceRateLimit(request, {
+    scope: "chat-stream",
+    max: 18,
+    windowMs: 60_000
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: "Too many chat requests. Please wait a moment and try again."
+      },
+      { status: 429 }
+    );
+  }
+
   const { sessionId } = await params;
   const body = await request.json().catch(() => ({}));
   const input = body?.input?.trim();

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 const { getProviderStatus, listSessions } = require("@/lib/server/chat-store");
+const { listProjects } = require("@/lib/server/workspace-store");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,7 +12,8 @@ export async function GET() {
       {
         defaultModel: "orbit-auto",
         providerStatus: getProviderStatus(),
-        sessions: await listSessions()
+        sessions: await listSessions(),
+        projects: await listProjects()
       },
       {
         headers: {

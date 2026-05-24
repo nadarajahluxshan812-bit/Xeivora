@@ -43,6 +43,9 @@ export type ChatSessionSummary = {
   modelPreference: ModelKey;
   lastProvider: ProviderKey;
   routeLabel: string;
+  pinned: boolean;
+  archived: boolean;
+  projectId?: string | null;
 };
 
 export type ChatMemoryCard = {
@@ -64,12 +67,77 @@ export type ChatSession = ChatSessionSummary & {
   messages: ChatMessage[];
   routeLabel: string;
   memoryCards: ChatMemoryCard[];
+  attachedFiles?: UploadedFileSummary[];
 };
 
 export type ChatBootstrap = {
   defaultModel: ModelKey;
   providerStatus: ProviderStatus;
   sessions: ChatSessionSummary[];
+  projects: WorkspaceProject[];
+};
+
+export type WorkspaceProject = {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  status: "active" | "paused" | "archived";
+  createdAt: string;
+  updatedAt: string;
+  chatCount: number;
+  fileCount: number;
+  memoryCount: number;
+};
+
+export type UploadedFileSummary = {
+  id: string;
+  sessionId?: string | null;
+  projectId?: string | null;
+  name: string;
+  mimeType: string;
+  kind:
+    | "pdf"
+    | "docx"
+    | "txt"
+    | "csv"
+    | "xlsx"
+    | "json"
+    | "image"
+    | "markdown"
+    | "unknown";
+  size: number;
+  storagePath: string;
+  previewText?: string | null;
+  summary?: string | null;
+  extractedText?: string | null;
+  analysisStatus: "queued" | "processing" | "ready" | "failed";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkspaceSearchResult = {
+  id: string;
+  category: "chat" | "project" | "file" | "memory";
+  title: string;
+  excerpt: string;
+  href: string;
+  updatedAt: string;
+};
+
+export type ToolExecutionResult = {
+  tool:
+    | "web_search"
+    | "calculator"
+    | "weather"
+    | "file_analysis"
+    | "image_analysis"
+    | "image_generation"
+    | "document_writer"
+    | "code_assistant";
+  connected: boolean;
+  summary: string;
+  payload?: Record<string, unknown>;
 };
 
 export type StreamMetaPayload = {

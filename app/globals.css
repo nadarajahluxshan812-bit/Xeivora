@@ -1,7 +1,21 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   color-scheme: dark;
+  --font-marketing-body:
+    "Manrope",
+    "Avenir Next",
+    "Segoe UI",
+    "Helvetica Neue",
+    sans-serif;
+  --font-marketing-display:
+    "Space Grotesk",
+    "Avenir Next",
+    "Segoe UI",
+    "Helvetica Neue",
+    sans-serif;
   --bg: #0a0a0a;
   --surface: #111111;
   --surface-soft: #151515;

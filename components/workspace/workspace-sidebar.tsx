@@ -68,7 +68,9 @@ export function WorkspaceSidebar({
       aria-label="Xeivora workspace navigation"
     >
       <div className="xei-sidebar-top">
-        <OrbitLogo compact={collapsed} />
+        <Link href="/">
+          <OrbitLogo compact={collapsed} />
+        </Link>
         <button
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="xei-icon-button"
