@@ -41,6 +41,10 @@ const pageReveal = {
   transition: { duration: 0.34, ease: "easeOut" }
 } as const;
 
+function tabsInclude(tabs: readonly string[], activeTab: string) {
+  return tabs.includes(activeTab);
+}
+
 export function HomeMarketingPage() {
   return (
     <MarketingSiteShell>
@@ -184,7 +188,7 @@ export function HomeMarketingPage() {
 export function ProductsMarketingPage() {
   const [activeTab, setActiveTab] = useState<(typeof productTabs)[number]>("All Products");
   const filteredProducts = useMemo(
-    () => productCards.filter((item) => item.tabs.includes(activeTab)),
+    () => productCards.filter((item) => tabsInclude(item.tabs, activeTab)),
     [activeTab]
   );
 
@@ -280,7 +284,7 @@ export function SolutionsMarketingPage() {
 export function ResourcesMarketingPage() {
   const [activeTab, setActiveTab] = useState<(typeof resourceTabs)[number]>("All Resources");
   const filteredResources = useMemo(
-    () => resourceCards.filter((item) => item.tabs.includes(activeTab)),
+    () => resourceCards.filter((item) => tabsInclude(item.tabs, activeTab)),
     [activeTab]
   );
 
