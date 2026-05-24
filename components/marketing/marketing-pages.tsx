@@ -94,17 +94,17 @@ export function HomeMarketingPage() {
               </Link>
             </motion.div>
 
-            <div className="relative mt-[42px] h-auto w-full max-w-[1360px] lg:h-[510px]">
-              <div className="hidden h-full w-full grid-cols-[280px_minmax(0,1fr)_280px] items-start gap-x-9 lg:grid">
+            <div className="relative mt-10 h-auto w-full max-w-[1360px] xl:-mt-[92px] xl:h-[580px]">
+              <div className="hidden h-full w-full xl:block">
                 <HomeStageConnectors />
 
-                <div className="relative z-10 flex h-full flex-col items-start gap-6 pt-[54px]">
+                <div className="absolute left-0 top-[-132px] z-10 flex flex-col items-start gap-6">
                   {homeFeatureColumns.left.map((item) => (
                     <FeatureCard description={item.description} icon={item.icon} key={item.title} title={item.title} />
                   ))}
                 </div>
 
-                <div className="relative z-10 flex h-full flex-col items-center pt-[208px]">
+                <div className="relative z-10 flex h-full flex-col items-center pt-[188px]">
                   <HomeOrbitBackground />
                   <div className="relative z-10 flex flex-col items-center">
                     <PromptBar />
@@ -128,14 +128,14 @@ export function HomeMarketingPage() {
                   </div>
                 </div>
 
-                <div className="relative z-10 flex h-full flex-col items-end gap-6 pt-[54px]">
+                <div className="absolute right-0 top-[-132px] z-10 flex flex-col items-end gap-6">
                   {homeFeatureColumns.right.map((item) => (
                     <FeatureCard description={item.description} icon={item.icon} key={item.title} title={item.title} />
                   ))}
                 </div>
               </div>
 
-              <div className="relative z-10 lg:hidden">
+              <div className="relative z-10 xl:hidden">
                 <div className="relative mx-auto flex max-w-[720px] flex-col items-center">
                   <HomeOrbitBackground mobile />
                   <PromptBar className="max-w-full" />
@@ -174,7 +174,7 @@ export function HomeMarketingPage() {
             <motion.div
               {...pageReveal}
               transition={{ ...pageReveal.transition, delay: 0.16 }}
-              className="mt-1 w-full max-w-[1040px] rounded-[24px] border border-[#8b5cf6]/35 bg-[rgba(255,255,255,0.045)] px-5 py-5 shadow-[0_24px_110px_rgba(76,29,149,0.24)] sm:px-7 lg:px-9"
+              className="mt-4 w-full max-w-[1040px] rounded-[24px] border border-[#8b5cf6]/35 bg-[rgba(255,255,255,0.045)] px-5 py-5 shadow-[0_24px_110px_rgba(76,29,149,0.24)] sm:px-7 lg:px-9 xl:-mt-[110px]"
             >
               <div className="grid gap-6 lg:grid-cols-5 lg:gap-0">
                 {homeStats.map((stat, index) => (
@@ -489,7 +489,7 @@ function HomeStageConnectors() {
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-[2] hidden xl:block"
       preserveAspectRatio="none"
-      viewBox="0 0 1360 510"
+      viewBox="0 0 1360 580"
     >
       <defs>
         <filter id="xeivora-stage-glow" x="-40%" y="-40%" width="180%" height="180%">
@@ -498,19 +498,19 @@ function HomeStageConnectors() {
       </defs>
 
       <g fill="none" stroke="rgba(167,139,250,0.72)" strokeWidth="1.4">
-        <path d="M260 160C342 188 374 230 374 300" />
-        <path d="M260 268H352" />
-        <path d="M260 396H388" />
-        <path d="M1100 160C1018 188 986 230 986 300" />
-        <path d="M1008 268H1100" />
-        <path d="M972 396H1100" />
+        <path d="M260 164C342 192 374 234 374 304" />
+        <path d="M260 272H352" />
+        <path d="M260 400H388" />
+        <path d="M1100 164C1018 192 986 234 986 304" />
+        <path d="M1008 272H1100" />
+        <path d="M972 400H1100" />
       </g>
 
       {[
-        [352, 268],
-        [388, 396],
-        [1008, 268],
-        [972, 396]
+        [352, 272],
+        [388, 400],
+        [1008, 272],
+        [972, 400]
       ].map(([x, y]) => (
         <g key={`${x}-${y}`}>
           <circle cx={x} cy={y} fill="rgba(255,255,255,0.94)" filter="url(#xeivora-stage-glow)" r="7" />
