@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
   AudioLines,
-  Bot,
   BrainCircuit,
   ChevronDown,
   ChevronLeft,
@@ -102,21 +101,6 @@ const primaryNav: SidebarItem[] = [
   }
 ];
 
-const agentShelf: AgentItem[] = [
-  {
-    label: "Xeivora Strategist",
-    prompt: "Act like a strategy copilot and help me plan Xeivora's next move."
-  },
-  {
-    label: "Math Solver",
-    prompt: "Solve this step by step:"
-  },
-  {
-    label: "Explore Agents",
-    prompt: "Show me the best Xeivora agents for this task."
-  }
-];
-
 type QuickAction = {
   icon: LucideIcon;
   label: string;
@@ -128,11 +112,6 @@ type SidebarItem = {
   icon: LucideIcon;
   label: string;
   prompt?: string;
-};
-
-type AgentItem = {
-  label: string;
-  prompt: string;
 };
 
 type ContinuityState = StreamContinuityPayload;
@@ -734,28 +713,6 @@ function SidebarContent({
             ))}
           </nav>
 
-          <div className="mt-4">
-            <p className="px-3 pb-2 text-xs font-medium text-white/36">Agents</p>
-            <div className="grid gap-1">
-              {agentShelf.map((item) => (
-                <button
-                  className="flex h-10 items-center gap-3 rounded-[10px] px-3 text-left text-sm text-white/72 transition hover:bg-[#1f1f1f] hover:text-white"
-                  key={item.label}
-                  onClick={() => {
-                    onPromptPick(item.prompt);
-                    onDismiss?.();
-                  }}
-                  type="button"
-                >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#161616]">
-                    <Bot className="h-3 w-3" />
-                  </span>
-                  <span className="truncate">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="mt-4 min-h-0 flex-1 overflow-hidden">
             <p className="px-3 pb-2 text-xs font-medium text-white/36">Recents</p>
             <ScrollArea className="h-full">
@@ -812,19 +769,6 @@ function SidebarContent({
           <div className="mt-2 grid gap-1">
             {primaryNav.map((item) => (
               <CollapsedSidebarButton item={item} key={item.label} onPromptPick={onPromptPick} pathname={pathname} />
-            ))}
-          </div>
-          <div className="mt-3 grid gap-1">
-            {agentShelf.map((item) => (
-              <button
-                className="flex h-10 items-center justify-center rounded-[10px] text-white/56 transition hover:bg-[#1f1f1f] hover:text-white"
-                key={item.label}
-                onClick={() => onPromptPick(item.prompt)}
-                title={item.label}
-                type="button"
-              >
-                <Bot className="h-4 w-4" />
-              </button>
             ))}
           </div>
           <div className="flex-1" />
