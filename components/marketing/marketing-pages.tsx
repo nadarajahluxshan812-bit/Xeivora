@@ -49,7 +49,7 @@ export function HomeMarketingPage() {
   return (
     <MarketingSiteShell>
       <section className="relative min-h-screen overflow-x-hidden bg-[#030305]">
-        <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col items-center px-6 pb-16 pt-[110px] sm:px-10 lg:px-12">
+        <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col items-center px-6 pb-10 pt-[34px] sm:px-10 lg:px-12">
           <div className="relative flex w-full flex-col items-center text-center">
             <motion.div {...pageReveal}>
               <HeroBadge>Unified AI Intelligence Platform</HeroBadge>
@@ -94,15 +94,17 @@ export function HomeMarketingPage() {
               </Link>
             </motion.div>
 
-            <div className="relative mt-[42px] h-auto w-full max-w-[1336px] lg:h-[430px]">
-              <div className="hidden h-full w-full grid-cols-[280px_minmax(0,1fr)_280px] items-center gap-x-9 lg:grid">
-                <div className="flex h-full flex-col items-start justify-center gap-6">
+            <div className="relative mt-[42px] h-auto w-full max-w-[1360px] lg:h-[510px]">
+              <div className="hidden h-full w-full grid-cols-[280px_minmax(0,1fr)_280px] items-start gap-x-9 lg:grid">
+                <HomeStageConnectors />
+
+                <div className="relative z-10 flex h-full flex-col items-start gap-6 pt-[54px]">
                   {homeFeatureColumns.left.map((item) => (
                     <FeatureCard description={item.description} icon={item.icon} key={item.title} title={item.title} />
                   ))}
                 </div>
 
-                <div className="relative z-10 flex h-full flex-col items-center justify-center">
+                <div className="relative z-10 flex h-full flex-col items-center pt-[208px]">
                   <HomeOrbitBackground />
                   <div className="relative z-10 flex flex-col items-center">
                     <PromptBar />
@@ -126,7 +128,7 @@ export function HomeMarketingPage() {
                   </div>
                 </div>
 
-                <div className="flex h-full flex-col items-end justify-center gap-6">
+                <div className="relative z-10 flex h-full flex-col items-end gap-6 pt-[54px]">
                   {homeFeatureColumns.right.map((item) => (
                     <FeatureCard description={item.description} icon={item.icon} key={item.title} title={item.title} />
                   ))}
@@ -172,7 +174,7 @@ export function HomeMarketingPage() {
             <motion.div
               {...pageReveal}
               transition={{ ...pageReveal.transition, delay: 0.16 }}
-              className="mt-4 w-full max-w-[920px] rounded-[24px] border border-[#8b5cf6]/35 bg-[rgba(255,255,255,0.045)] px-5 py-5 shadow-[0_24px_110px_rgba(76,29,149,0.24)] sm:px-7 lg:px-9"
+              className="mt-1 w-full max-w-[1040px] rounded-[24px] border border-[#8b5cf6]/35 bg-[rgba(255,255,255,0.045)] px-5 py-5 shadow-[0_24px_110px_rgba(76,29,149,0.24)] sm:px-7 lg:px-9"
             >
               <div className="grid gap-6 lg:grid-cols-5 lg:gap-0">
                 {homeStats.map((stat, index) => (
@@ -445,7 +447,7 @@ function CenteredOutlineButton({
 function HomeOrbitBackground({ mobile = false }: { mobile?: boolean }) {
   return (
     <div
-      className={`pointer-events-none absolute left-1/2 z-[1] -translate-x-1/2 ${mobile ? "bottom-2 h-[300px] w-[680px] max-w-[115%]" : "bottom-0 h-[360px] w-[860px]"}`}
+      className={`pointer-events-none absolute left-1/2 z-[1] -translate-x-1/2 ${mobile ? "bottom-2 h-[300px] w-[680px] max-w-[115%]" : "bottom-[8px] h-[360px] w-[920px]"}`}
     >
       <div className="absolute inset-x-[8%] bottom-0 h-[250px] rounded-[100%] bg-[radial-gradient(circle_at_center,rgba(124,58,237,0.34),rgba(124,58,237,0.14)_36%,transparent_72%)] blur-[18px]" />
       <div className="absolute inset-x-[7%] bottom-0 h-[248px] rounded-[100%] border border-[#8b5cf6]/20 bg-[radial-gradient(circle_at_top,rgba(147,51,234,0.12),transparent_54%)]" />
@@ -478,5 +480,43 @@ function HomeOrbitBackground({ mobile = false }: { mobile?: boolean }) {
         <path d="M646 236H590" fill="none" stroke="rgba(167,139,250,0.75)" strokeWidth="1.2" />
       </svg>
     </div>
+  );
+}
+
+function HomeStageConnectors() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-[2] hidden xl:block"
+      preserveAspectRatio="none"
+      viewBox="0 0 1360 510"
+    >
+      <defs>
+        <filter id="xeivora-stage-glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="4" />
+        </filter>
+      </defs>
+
+      <g fill="none" stroke="rgba(167,139,250,0.72)" strokeWidth="1.4">
+        <path d="M260 160C342 188 374 230 374 300" />
+        <path d="M260 268H352" />
+        <path d="M260 396H388" />
+        <path d="M1100 160C1018 188 986 230 986 300" />
+        <path d="M1008 268H1100" />
+        <path d="M972 396H1100" />
+      </g>
+
+      {[
+        [352, 268],
+        [388, 396],
+        [1008, 268],
+        [972, 396]
+      ].map(([x, y]) => (
+        <g key={`${x}-${y}`}>
+          <circle cx={x} cy={y} fill="rgba(255,255,255,0.94)" filter="url(#xeivora-stage-glow)" r="7" />
+          <circle cx={x} cy={y} fill="#c084fc" r="2.75" />
+        </g>
+      ))}
+    </svg>
   );
 }
