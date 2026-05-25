@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint app components lib scripts db.ts instrumentation.ts next.config.mjs tailwind.config.ts postcss.config.mjs server.js",
     "check:env": "node scripts/check-env.js"
   },
   "dependencies": {

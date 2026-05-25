@@ -1,10 +1,14 @@
 import { Suspense } from "react";
-import { ChatWorkspace } from "@/components/chat/chat-workspace";
 
-export default function ChatPage() {
+import { ChatWorkspace } from "@/components/chat/chat-workspace";
+import { requireViewer } from "@/lib/auth";
+
+export default async function ChatPage() {
+  const viewer = await requireViewer("/chat");
+
   return (
     <Suspense fallback={null}>
-      <ChatWorkspace />
+      <ChatWorkspace viewer={viewer} />
     </Suspense>
   );
 }

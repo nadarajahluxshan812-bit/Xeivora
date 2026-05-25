@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
+import type { AuthUser } from "@/lib/auth-types";
 import { useOrbitOverview } from "@/lib/use-orbit-overview";
 
-export function AgentsShell() {
+export function AgentsShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const { overview, connectionState } = useOrbitOverview();
 
   if (!overview) {
@@ -15,7 +16,7 @@ export function AgentsShell() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
       <div className="mx-auto grid max-w-[1680px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <WorkspaceSidebar statusLabel={connectionState} />
+        <WorkspaceSidebar statusLabel={connectionState} viewer={viewer} />
         <div className="space-y-4">
           <section className="glow-shell p-6">
             <div className="section-kicker">Agent runtime</div>

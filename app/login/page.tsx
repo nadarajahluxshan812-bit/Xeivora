@@ -1,24 +1,29 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { MarketingPageShell } from "@/components/marketing/marketing-shell";
+import { LoginForm, AuthShell } from "@/components/auth/auth-shell";
+import { getViewer, sanitizeNextPath } from "@/lib/auth";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const viewer = await getViewer();
+  const params = (await searchParams) || {};
+  const nextPath = sanitizeNextPath(typeof params.next === "string" ? params.next : null);
+  const error = typeof params.error === "string" ? params.error : null;
+
+  if (viewer) {
+    redirect(nextPath);
+  }
+
   return (
-    <MarketingPageShell>
-      <section className="mx-auto flex min-h-[70vh] max-w-md items-center px-4 py-20 md:px-6">
-        <div className="w-full rounded-[2rem] border border-white/10 bg-white p-7 text-slate-950">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Login</p>
-          <h1 className="mt-4 text-3xl font-semibold">Open your Xeivora workspace</h1>
-          <div className="mt-7 grid gap-4">
-            <input className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Email" type="email" />
-            <input className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Password" type="password" />
-            <Link className="rounded-full bg-white px-5 py-3 text-center text-sm font-semibold text-slate-950" href="/chat">
-              Continue to MVP
-            </Link>
-          </div>
-          <p className="mt-5 text-sm text-slate-500">Authentication placeholder for MVP. The workspace is local-first for now.</p>
-        </div>
-      </section>
-    </MarketingPageShell>
+    <AuthShell
+      eyebrow="Secure access"
+      subtitle="Enter your workspace to continue conversations, files, projects, orchestrations, and memory with the same momentum."
+      title="Sign in to the Xeivora operating system"
+    >
+      <LoginForm initialError={error} mode="login" nextPath={nextPath} />
+    </AuthShell>
   );
 }

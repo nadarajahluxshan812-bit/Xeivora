@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { OrbitLogo } from "@/components/orbit-logo";
+import type { AuthUser } from "@/lib/auth-types";
 import type { ChatSessionSummary, ProviderStatus } from "@/lib/chat-types";
 import { workspaceNav } from "@/lib/workspace";
 
@@ -18,6 +19,7 @@ type WorkspaceSidebarProps = {
   sessions?: ChatSessionSummary[];
   statusLabel?: string;
   onSearchChange?: (value: string) => void;
+  viewer?: AuthUser | null;
 };
 
 function groupSessions(sessions: ChatSessionSummary[]) {
@@ -54,7 +56,8 @@ export function WorkspaceSidebar({
   searchQuery = "",
   sessions = [],
   statusLabel = "Local",
-  onSearchChange
+  onSearchChange,
+  viewer = null
 }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const filteredSessions = sessions.filter((session) =>
@@ -134,11 +137,11 @@ export function WorkspaceSidebar({
 
           <div className="xei-sidebar-bottom">
             <div>
-              <strong>Luxshan</strong>
-              <span>xeivora.com</span>
+              <strong>{viewer?.name || "Xeivora User"}</strong>
+              <span>{viewer?.email || "workspace"}</span>
             </div>
             <span className="xei-status-pill">
-              {providerStatus?.openai.available ? "Live" : statusLabel}
+              {viewer?.plan || (providerStatus?.openai.available ? "Live" : statusLabel)}
             </span>
           </div>
         </>

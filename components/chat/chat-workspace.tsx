@@ -45,6 +45,7 @@ import {
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
+import type { AuthUser } from "@/lib/auth-types";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { OrbitLogo } from "@/components/orbit-logo";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,6 @@ import { cn } from "@/lib/utils";
 import { modelOptions } from "@/lib/workspace";
 
 const workspaceName = "Xeivora";
-const workspaceUserName = "Luxshan";
 
 const quickActions: QuickAction[] = [
   {
@@ -133,7 +133,7 @@ type SidebarItem = {
 type ContinuityState = StreamContinuityPayload;
 type VoiceState = "idle" | "listening" | "processing";
 
-export function ChatWorkspace() {
+export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
@@ -197,6 +197,7 @@ export function ChatWorkspace() {
 
   const messages = activeSession?.messages ?? [];
   const hasMessages = messages.length > 0;
+  const viewerName = viewer?.name || "there";
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const deferredWorkspaceQuery = useDeferredValue(workspaceQuery);
   const filteredSessions = useMemo(
@@ -932,6 +933,7 @@ export function ChatWorkspace() {
             pathname={pathname}
             searchQuery={searchQuery}
             sessionGroups={groupedSessions}
+            viewer={viewer}
             workspaceSearchResults={workspaceSearchResults}
           />
         </motion.aside>
@@ -963,6 +965,7 @@ export function ChatWorkspace() {
             pathname={pathname}
             searchQuery={searchQuery}
             sessionGroups={groupedSessions}
+            viewer={viewer}
             workspaceSearchResults={workspaceSearchResults}
           />
           </SheetContent>
@@ -1088,6 +1091,7 @@ export function ChatWorkspace() {
               selectedModel={selectedModel}
               selectedProjectId={selectedProjectId}
               sessionFiles={sessionFiles}
+              viewerName={viewerName}
               voiceState={voiceState}
             />
           )}
@@ -1116,6 +1120,7 @@ type SidebarContentProps = {
   pathname: string;
   searchQuery: string;
   sessionGroups: Array<[string, ChatSessionSummary[]]>;
+  viewer?: AuthUser | null;
   workspaceSearchResults: Array<{
     id: string;
     category: "chat" | "project" | "file" | "memory";
@@ -1145,6 +1150,7 @@ function SidebarContent({
   pathname,
   searchQuery,
   sessionGroups,
+  viewer = null,
   workspaceSearchResults
 }: SidebarContentProps) {
   return (
@@ -1253,11 +1259,11 @@ function SidebarContent({
           <div className="mt-auto border-t border-white/[0.06] px-2 pt-3">
             <div className="flex items-center gap-3 rounded-[12px] px-2 py-2 transition hover:bg-[#1f1f1f]">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1a1a] text-xs font-medium text-white">
-                XL
+                {getInitials(viewer?.name || workspaceName)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-white">{workspaceUserName}</p>
-                <p className="text-xs text-white/34">Plus</p>
+                <p className="truncate text-sm text-white">{viewer?.name || workspaceName}</p>
+                <p className="text-xs text-white/34">{viewer?.plan || "Starter"}</p>
               </div>
               <Link className="text-white/46 transition hover:text-white" href="/settings" onClick={() => onDismiss?.()}>
                 <Settings2 className="h-4 w-4" />
@@ -1278,7 +1284,7 @@ function SidebarContent({
             className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1a1a1a] text-xs font-medium text-white"
             type="button"
           >
-            XL
+            {getInitials(viewer?.name || workspaceName)}
           </button>
         </>
       )}
@@ -1541,6 +1547,7 @@ function ChatHomeView({
   selectedModel,
   selectedProjectId,
   sessionFiles,
+  viewerName,
   voiceState
 }: {
   activeProject: WorkspaceProject | null;
@@ -1564,6 +1571,7 @@ function ChatHomeView({
   selectedModel: ModelKey;
   selectedProjectId: string | null;
   sessionFiles: UploadedFileSummary[];
+  viewerName: string;
   voiceState: VoiceState;
 }) {
   return (
@@ -1576,7 +1584,7 @@ function ChatHomeView({
             initial={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            Good to see you, {workspaceUserName}.
+            Good to see you, {viewerName}.
           </motion.h1>
 
           {error ? <ErrorBanner className="mt-6 w-full max-w-[800px]" message={error} /> : null}
@@ -2120,6 +2128,15 @@ function getComposerModelLabel(modelKey: ModelKey) {
   };
 
   return labels[modelKey];
+}
+
+function getInitials(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "X";
 }
 
 function formatModelSummary(provider: ProviderKey | null, model: string | null | undefined, fallbackLabel: string) {

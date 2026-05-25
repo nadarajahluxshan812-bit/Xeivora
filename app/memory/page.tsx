@@ -1,6 +1,9 @@
 import { ResourceManager } from "@/components/mvp/resource-manager";
+import { requireViewer } from "@/lib/auth";
 
-export default function MemoryPage() {
+export default async function MemoryPage() {
+  const viewer = await requireViewer("/memory");
+
   return (
     <ResourceManager
       createLabel="Create memory"
@@ -14,6 +17,7 @@ export default function MemoryPage() {
       endpoint="/api/memory"
       subtitle="View, create, delete, and search conversation memory, user preferences, project notes, workflow history, reusable context, provider history, and coding checkpoints."
       title="Memory system"
+      viewer={viewer}
     />
   );
 }

@@ -70,7 +70,7 @@ export function MarketingNavbar() {
           <div className="hidden items-center gap-3 justify-self-end lg:flex">
             <ThemeButton />
             <NavbarActionButton href="/login">Sign in</NavbarActionButton>
-            <NavbarActionButton href="/chat" primary>
+            <NavbarActionButton href="/signup" primary>
               Get Started
             </NavbarActionButton>
           </div>
@@ -118,7 +118,7 @@ export function MarketingNavbar() {
             <div className="mt-auto grid gap-3 pt-8">
               <ThemeButton />
               <NavbarActionButton href="/login">Sign in</NavbarActionButton>
-              <NavbarActionButton href="/chat" primary>
+              <NavbarActionButton href="/signup" primary>
                 Get Started
               </NavbarActionButton>
             </div>

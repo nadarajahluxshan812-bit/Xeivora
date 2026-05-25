@@ -4,6 +4,7 @@ import { FolderKanban, Plus, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
+import type { AuthUser } from "@/lib/auth-types";
 import type { UploadedFileSummary, WorkspaceProject } from "@/lib/chat-types";
 
 type ToolLog = {
@@ -14,7 +15,7 @@ type ToolLog = {
   createdAt: string;
 };
 
-export function ProjectsShell() {
+export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
   const [files, setFiles] = useState<UploadedFileSummary[]>([]);
   const [toolLogs, setToolLogs] = useState<ToolLog[]>([]);
@@ -61,7 +62,7 @@ export function ProjectsShell() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
       <div className="mx-auto grid max-w-[1680px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <WorkspaceSidebar statusLabel="Workspace" />
+        <WorkspaceSidebar statusLabel="Workspace" viewer={viewer} />
         <div className="space-y-4">
           <section className="glow-shell p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">

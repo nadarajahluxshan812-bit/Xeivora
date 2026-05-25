@@ -80,17 +80,17 @@ export function HomeMarketingPage() {
             >
               <Link
                 className="inline-flex h-14 items-center gap-2 rounded-full bg-gradient-to-r from-[#5b34f7] via-[#7c3aed] to-[#cf63ff] px-8 text-base font-semibold text-white shadow-[0_18px_48px_rgba(124,58,237,0.3)] transition hover:brightness-110"
-                href="/chat"
+                href="/signup"
               >
                 Start Chatting
-                <ArrowRight className="h-4.5 w-4.5" />
+                <ArrowRight className="h-[18px] w-[18px]" />
               </Link>
               <Link
                 className="inline-flex h-14 items-center gap-2 rounded-full border border-white/[0.1] bg-[#0f1013] px-8 text-base font-semibold text-white/86 transition hover:bg-white/[0.05]"
                 href="/products"
               >
                 Explore Platform
-                <ArrowRight className="h-4.5 w-4.5" />
+                <ArrowRight className="h-[18px] w-[18px]" />
               </Link>
             </motion.div>
 
@@ -205,6 +205,177 @@ export function HomeMarketingPage() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1180px] px-4 pb-24 pt-10 sm:px-6">
+        <div className="grid gap-5 xl:grid-cols-3">
+          {[
+            {
+              title: "Conversation OS",
+              description:
+                "Chat, code, reason, and create inside one continuous surface with memory, model routing, and provider failover built in."
+            },
+            {
+              title: "Workflow-native intelligence",
+              description:
+                "Xeivora turns isolated prompts into structured momentum: projects, files, orchestration, checkpoints, and recoverable execution."
+            },
+            {
+              title: "Operational by design",
+              description:
+                "Provider transparency, session continuity, upload analysis, and AI tool routing make the workspace feel alive instead of reactive."
+            }
+          ].map((item) => (
+            <div className="glass-panel p-6" key={item.title}>
+              <div className="section-kicker">Xeivora platform</div>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">{item.title}</h2>
+              <p className="mt-4 text-sm leading-7 text-white/58">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1180px] px-4 pb-24 sm:px-6">
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="glow-shell p-6">
+            <div className="section-kicker">Unified orchestration</div>
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white">Route intelligence like an operating system, not a prompt box.</h2>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-white/56">
+              Xeivora understands task shape, memory, tools, and provider health before it responds. The result is a
+              workspace that protects momentum across reasoning, coding, research, files, and automation.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {["OpenAI", "Claude", "Gemini", "OpenRouter", "Ollama", "Memory lanes"].map((item) => (
+                <span
+                  className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm text-white/72"
+                  key={item}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-panel p-6">
+            <div className="section-kicker">Provider chain</div>
+            <div className="mt-6 space-y-4">
+              {[
+                ["Fast conversation", "Gemini", "Low latency workspace assistance and triage."],
+                ["Deep reasoning", "Claude", "Long-form analysis, drafting, and structured thought."],
+                ["Coding execution", "OpenAI", "Implementation, debugging, architecture, and code generation."],
+                ["Fallback continuity", "Ollama / OpenRouter", "Continue safely when live providers degrade or switch."]
+              ].map(([label, model, detail]) => (
+                <div className="rounded-[1.5rem] border border-white/8 bg-slate-950/72 p-4" key={label}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-medium text-white">{label}</div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[#c4b5fd]">{model}</div>
+                  </div>
+                  <p className="mt-2 text-sm leading-7 text-white/56">{detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1180px] px-4 pb-24 sm:px-6">
+        <div className="mb-8 text-center">
+          <HeroBadge>Workspace capabilities</HeroBadge>
+          <h2 className="mt-6 text-4xl font-semibold tracking-tight text-white">Everything inside one intelligent workspace.</h2>
+          <p className="mx-auto mt-4 max-w-[760px] text-base leading-8 text-white/56">
+            Upload files, generate images, orchestrate workflows, maintain memory, and route across providers without
+            losing the thread.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {capabilityCards.slice(0, 6).map((capability) => (
+            <CapabilityCard
+              description={capability.description}
+              icon={capability.icon}
+              key={capability.title}
+              title={capability.title}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1180px] px-4 pb-24 sm:px-6">
+        <div className="grid gap-6 xl:grid-cols-[0.94fr_1.06fr]">
+          <div className="glass-panel p-6">
+            <div className="section-kicker">Enterprise-ready</div>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Protected, observable, and built for teams that move fast.</h2>
+            <p className="mt-4 text-base leading-8 text-white/56">
+              Xeivora was designed for teams that want AI orchestration with governance, secure session flows, provider
+              transparency, and a workspace surface that feels deliberate.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              ["Persistent memory", "Keep useful facts, workflow continuity, and project context available across sessions."],
+              ["Upload intelligence", "Understand PDFs, spreadsheets, markdown, screenshots, and image-based workflows."],
+              ["Operational control", "Track routing, fallback chains, orchestration status, and provider posture in one place."],
+              ["Team-ready surface", "Organize projects, workflows, files, and sessions without losing clarity or speed."]
+            ].map(([title, detail]) => (
+              <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5" key={title}>
+                <div className="text-lg font-medium text-white">{title}</div>
+                <p className="mt-3 text-sm leading-7 text-white/58">{detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1180px] px-4 pb-24 sm:px-6">
+        <div className="mb-8 text-center">
+          <HeroBadge>Plans</HeroBadge>
+          <h2 className="mt-6 text-4xl font-semibold tracking-tight text-white">Start with one workspace. Scale into a full AI operating system.</h2>
+        </div>
+        <div className="grid gap-5 xl:grid-cols-4">
+          {pricingPlans.map((plan) => (
+            <PricingCard billing="monthly" key={plan.name} plan={plan} />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[980px] px-4 pb-24 sm:px-6">
+        <div className="mb-8 text-center">
+          <HeroBadge>FAQ</HeroBadge>
+          <h2 className="mt-6 text-4xl font-semibold tracking-tight text-white">Questions teams ask before moving into Xeivora.</h2>
+        </div>
+        <div className="grid gap-4">
+          {[
+            [
+              "How is Xeivora different from a normal chatbot?",
+              "Xeivora treats AI like a workspace system. Conversations, files, memory, workflows, and provider routing stay connected instead of resetting between tools."
+            ],
+            [
+              "Can Xeivora switch models automatically?",
+              "Yes. Xeivora is designed to route tasks across providers, preserve continuity, and recover gracefully when a model becomes unavailable or a task needs a stronger reasoning path."
+            ],
+            [
+              "Does Xeivora support projects and persistent context?",
+              "Yes. Projects, memory lanes, uploaded files, and workflow state are part of the product surface so work can continue over time."
+            ],
+            [
+              "Is it ready for teams?",
+              "Xeivora is built to feel premium for individuals while also supporting enterprise-grade visibility, protected sessions, and orchestration-aware workflows."
+            ]
+          ].map(([question, answer]) => (
+            <div className="glass-panel p-5" key={question}>
+              <div className="text-lg font-medium text-white">{question}</div>
+              <p className="mt-3 text-sm leading-7 text-white/58">{answer}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 flex justify-center">
+          <Link
+            className="inline-flex h-12 items-center gap-2 rounded-full bg-gradient-to-r from-[#5b34f7] via-[#7c3aed] to-[#cf63ff] px-6 text-sm font-semibold text-white shadow-[0_18px_48px_rgba(124,58,237,0.3)] transition hover:brightness-110"
+            href="/signup"
+          >
+            Enter Xeivora
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
     </MarketingSiteShell>

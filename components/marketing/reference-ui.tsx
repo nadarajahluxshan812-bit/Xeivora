@@ -32,6 +32,7 @@ import {
   Wrench,
   Zap
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import type {
   MarketingIconKey,
@@ -109,7 +110,7 @@ export function ThemeButton() {
       className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.02] text-white/88 transition hover:bg-white/[0.05]"
       type="button"
     >
-      <MoonStar className="h-4.5 w-4.5" />
+      <MoonStar className="h-[18px] w-[18px]" />
     </button>
   );
 }
@@ -199,7 +200,7 @@ export function FeatureCard({
       )}
     >
       <div className="flex items-start gap-4">
-        <IconBubble className="h-11 w-11">{renderMarketingIcon(icon, "h-4.5 w-4.5")}</IconBubble>
+        <IconBubble className="h-11 w-11">{renderMarketingIcon(icon, "h-[18px] w-[18px]")}</IconBubble>
         <div className="text-left">
           <h3 className="text-[1rem] font-semibold tracking-[-0.02em] text-white">{title}</h3>
           <p className="mt-1.5 text-sm leading-[1.35rem] text-white/58">{description}</p>
@@ -243,7 +244,7 @@ export function CapabilityCard({
   return (
     <article className="rounded-[20px] border border-white/[0.1] bg-[rgba(255,255,255,0.035)] px-5 py-4 shadow-[0_16px_60px_rgba(0,0,0,0.2)]">
       <div className="flex items-start gap-4">
-        <IconBubble className="h-10 w-10 rounded-[14px]">{renderMarketingIcon(icon, "h-4.5 w-4.5")}</IconBubble>
+        <IconBubble className="h-10 w-10 rounded-[14px]">{renderMarketingIcon(icon, "h-[18px] w-[18px]")}</IconBubble>
         <div className="text-left">
           <h3 className="text-[1rem] font-semibold tracking-[-0.02em] text-white">{title}</h3>
           <p className="mt-1.5 text-sm leading-6 text-white/52">{description}</p>
@@ -264,7 +265,7 @@ export function SolutionCard({
 }) {
   return (
     <article className="rounded-[20px] border border-white/[0.1] bg-[rgba(255,255,255,0.035)] p-5 shadow-[0_16px_60px_rgba(0,0,0,0.2)] transition hover:border-[#8b5cf6]/30">
-      <IconBubble className="h-11 w-11">{renderMarketingIcon(icon, "h-4.5 w-4.5")}</IconBubble>
+      <IconBubble className="h-11 w-11">{renderMarketingIcon(icon, "h-[18px] w-[18px]")}</IconBubble>
       <h3 className="mt-5 text-[1.02rem] font-semibold tracking-[-0.02em] text-white">{title}</h3>
       <p className="mt-2.5 text-sm leading-6 text-white/52">{description}</p>
       <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-white/78">
@@ -406,7 +407,7 @@ export function PromptBar({ className = "" }: { className?: string }) {
           className="hidden h-10 w-10 items-center justify-center rounded-full text-white/82 transition hover:bg-white/[0.06] sm:inline-flex"
           type="button"
         >
-          <Mic className="h-4.5 w-4.5" />
+          <Mic className="h-[18px] w-[18px]" />
         </button>
         <button
           aria-label="Start voice mode"
