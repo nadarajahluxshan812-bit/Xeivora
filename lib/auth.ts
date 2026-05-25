@@ -17,6 +17,49 @@ export function sanitizeNextPath(value?: string | null) {
   return value;
 }
 
+function isLocalHost(value: string) {
+  return ["localhost", "127.0.0.1", "::1"].includes(value);
+}
+
+export function getPublicOrigin(request: Request) {
+  const requestUrl = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const hostHeader = request.headers.get("host");
+  const host = forwardedHost || hostHeader || requestUrl.host;
+  const proto =
+    forwardedProto ||
+    (requestUrl.protocol === "http:" || requestUrl.protocol === "https:"
+      ? requestUrl.protocol.replace(":", "")
+      : process.env.NODE_ENV === "production"
+        ? "https"
+        : "http");
+
+  return `${proto}://${host}`;
+}
+
+export function getGoogleRedirectUri(request: Request) {
+  const publicOrigin = getPublicOrigin(request);
+  const configured = process.env.GOOGLE_REDIRECT_URI;
+
+  if (!configured) {
+    return `${publicOrigin}/api/auth/google/callback`;
+  }
+
+  try {
+    const configuredUrl = new URL(configured);
+    const publicUrl = new URL(publicOrigin);
+
+    if (!isLocalHost(publicUrl.hostname) && isLocalHost(configuredUrl.hostname)) {
+      return `${publicOrigin}/api/auth/google/callback`;
+    }
+  } catch {
+    return `${publicOrigin}/api/auth/google/callback`;
+  }
+
+  return configured;
+}
+
 export async function getViewer(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;

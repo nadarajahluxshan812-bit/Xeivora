@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { sanitizeNextPath, setGoogleStateCookie } from "@/lib/auth";
+import { getGoogleRedirectUri, getPublicOrigin, sanitizeNextPath, setGoogleStateCookie } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,13 +11,16 @@ export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const requestUrl = new URL(request.url);
+  const publicOrigin = getPublicOrigin(request);
   const next = sanitizeNextPath(requestUrl.searchParams.get("next"));
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent("Google Sign-In is not configured yet.")}`, requestUrl.origin));
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent("Google Sign-In is not configured yet.")}`, publicOrigin)
+    );
   }
 
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${requestUrl.origin}/api/auth/google/callback`;
+  const redirectUri = getGoogleRedirectUri(request);
   const state = `${randomUUID()}::${next}`;
   const googleUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   googleUrl.searchParams.set("client_id", clientId);

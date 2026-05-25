@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import {
   applyAuthCookie,
   clearGoogleStateCookie,
+  getGoogleRedirectUri,
+  getPublicOrigin,
   getRequestMeta,
   readGoogleStateCookie,
   sanitizeNextPath
@@ -15,21 +17,24 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
+  const publicOrigin = getPublicOrigin(request);
   const state = requestUrl.searchParams.get("state");
   const code = requestUrl.searchParams.get("code");
   const storedState = await readGoogleStateCookie();
   const redirectTarget = sanitizeNextPath(state?.split("::")[1] || "/chat");
-  const clearResponse = NextResponse.redirect(new URL(redirectTarget, requestUrl.origin));
+  const clearResponse = NextResponse.redirect(new URL(redirectTarget, publicOrigin));
 
   if (!state || !code || !storedState || storedState !== state) {
     clearGoogleStateCookie(clearResponse);
-    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent("Google authentication could not be verified.")}`, requestUrl.origin));
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent("Google authentication could not be verified.")}`, publicOrigin)
+    );
   }
 
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${requestUrl.origin}/api/auth/google/callback`;
+    const redirectUri = getGoogleRedirectUri(request);
 
     if (!clientId || !clientSecret) {
       throw new Error("Google Sign-In is not configured yet.");
@@ -76,13 +81,16 @@ export async function GET(request: Request) {
     });
     const meta = await getRequestMeta();
     const session = await authStore.createSession(user.id, meta);
-    const response = NextResponse.redirect(new URL(redirectTarget, requestUrl.origin));
+    const response = NextResponse.redirect(new URL(redirectTarget, publicOrigin));
     clearGoogleStateCookie(response);
     applyAuthCookie(response, session.token, session.expiresAt);
     return response;
   } catch (error) {
     const response = NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to sign in with Google.")}`, requestUrl.origin)
+      new URL(
+        `/login?error=${encodeURIComponent(error instanceof Error ? error.message : "Unable to sign in with Google.")}`,
+        publicOrigin
+      )
     );
     clearGoogleStateCookie(response);
     return response;
