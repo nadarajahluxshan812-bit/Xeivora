@@ -21,11 +21,42 @@ function isLocalHost(value: string) {
   return ["localhost", "127.0.0.1", "::1"].includes(value);
 }
 
+function normalizePublicUrl(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(withProtocol);
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
 export function getPublicOrigin(request: Request) {
   const requestUrl = new URL(request.url);
+  const configuredOrigin =
+    normalizePublicUrl(process.env.PUBLIC_APP_URL) ||
+    normalizePublicUrl(process.env.APP_URL) ||
+    normalizePublicUrl(process.env.NEXT_PUBLIC_APP_URL) ||
+    normalizePublicUrl(process.env.RAILWAY_PUBLIC_DOMAIN);
+  const originHeader = normalizePublicUrl(request.headers.get("origin"));
+  const refererHeader = normalizePublicUrl(request.headers.get("referer"));
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto = request.headers.get("x-forwarded-proto");
   const hostHeader = request.headers.get("host");
+  const forwardedOrigin =
+    forwardedHost
+      ? normalizePublicUrl(`${forwardedProto || "https"}://${forwardedHost}`)
+      : null;
   const host = forwardedHost || hostHeader || requestUrl.host;
   const proto =
     forwardedProto ||
@@ -35,7 +66,13 @@ export function getPublicOrigin(request: Request) {
         ? "https"
         : "http");
 
-  return `${proto}://${host}`;
+  return (
+    configuredOrigin ||
+    originHeader ||
+    refererHeader ||
+    forwardedOrigin ||
+    `${proto}://${host}`
+  );
 }
 
 export function getGoogleRedirectUri(request: Request) {
