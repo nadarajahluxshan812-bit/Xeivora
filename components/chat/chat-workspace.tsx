@@ -7,51 +7,44 @@ import type { LucideIcon } from "lucide-react";
 import {
   Archive,
   ArchiveRestore,
+  ArrowRightLeft,
+  ArrowUp,
   AudioLines,
+  Bot,
   BrainCircuit,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
-  Copy,
+  Code2,
   Ellipsis,
   FileText,
   FolderKanban,
-  FolderOpen,
-  Globe,
-  ImagePlus,
-  LayoutGrid,
+  GraduationCap,
+  Heart,
   LoaderCircle,
+  MessageSquareText,
   Mic,
   PanelLeft,
   Paperclip,
   Pencil,
-  Plus,
   Pin,
-  PinOff,
-  RefreshCcw,
+  Plane,
+  Plus,
   Search,
-  SendHorizontal,
-  Share2,
   Settings2,
-  SlidersHorizontal,
-  Sparkles,
+  Share2,
   Square,
   Trash2,
-  UserRoundPlus,
   Volume2,
   Workflow,
   X
 } from "lucide-react";
-import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, RefObject } from "react";
 
-import type { AuthUser } from "@/lib/auth-types";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
-import { OrbitLogo } from "@/components/orbit-logo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import type { AuthUser } from "@/lib/auth-types";
 import type {
   ChatBootstrap,
   ChatMessage,
@@ -70,68 +63,102 @@ import { cn } from "@/lib/utils";
 import { modelOptions } from "@/lib/workspace";
 
 const workspaceName = "Xeivora";
+const coralAccent = "#c96442";
 
-const quickActions: QuickAction[] = [
-  {
-    label: "Create an image",
-    icon: ImagePlus,
-    prompt: "Create an image concept for Xeivora's next launch."
-  },
+const navItems: SidebarItem[] = [
+  { label: "Chats", icon: MessageSquareText, href: "/chat" },
+  { label: "Projects", icon: FolderKanban, href: "/dashboard" },
+  { label: "Memory", icon: BrainCircuit, href: "/memory" },
+  { label: "Workflows", icon: Workflow, href: "/workflows" },
+  { label: "Agents", icon: Bot, href: "/agents" },
+  { label: "Settings", icon: Settings2, href: "/settings" }
+];
+
+const welcomeSuggestions: SuggestionCard[] = [
   {
     label: "Write or edit",
-    icon: Sparkles,
+    detail: "Emails, essays, docs, code",
+    icon: Pencil,
     prompt: "Help me write or edit this clearly and professionally."
   },
   {
-    label: "Look something up",
-    icon: Globe,
-    prompt: "Look something up for me and summarize it clearly."
+    label: "Travel planning",
+    detail: "Visas, eSIM, itineraries",
+    icon: Plane,
+    prompt: "Plan a smart trip itinerary and help me compare the best options."
+  },
+  {
+    label: "Code & build",
+    detail: "Any language, any framework",
+    icon: Code2,
+    prompt: "Help me code and build this feature end to end."
+  },
+  {
+    label: "Research & analyse",
+    detail: "Deep dives, summaries",
+    icon: Search,
+    prompt: "Research this topic and analyze the best path forward."
+  },
+  {
+    label: "Health info",
+    detail: "Symptoms, medications",
+    icon: Heart,
+    prompt: "Help me understand this health topic clearly and carefully."
+  },
+  {
+    label: "Learn anything",
+    detail: "Tutoring, explanations",
+    icon: GraduationCap,
+    prompt: "Teach me this topic in a simple, structured way."
   }
 ];
 
-const primaryNav: SidebarItem[] = [
-  {
-    label: "Projects",
-    icon: FolderKanban,
-    href: "/dashboard"
-  },
-  {
-    label: "Memory",
-    icon: BrainCircuit,
-    href: "/memory"
-  },
-  {
-    label: "Apps",
-    icon: LayoutGrid,
-    prompt: "Show me the current Xeivora integrations and suggest the next connection."
-  },
-  {
-    label: "Workflows",
-    icon: Workflow,
-    href: "/workflows"
-  },
-  {
-    label: "More",
-    icon: Ellipsis,
-    href: "/settings"
-  }
-];
+type SidebarItem = {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+};
 
-type QuickAction = {
+type SuggestionCard = {
+  detail: string;
   icon: LucideIcon;
   label: string;
   prompt: string;
 };
 
-type SidebarItem = {
-  href?: string;
-  icon: LucideIcon;
-  label: string;
-  prompt?: string;
-};
-
 type ContinuityState = StreamContinuityPayload;
 type VoiceState = "idle" | "listening" | "processing";
+type WorkflowMode = "simple_chat" | "continuity" | "coding_continuity";
+
+type AutoSwitchNotice = {
+  from: ProviderKey;
+  fromLabel: string;
+  to: ProviderKey;
+  toLabel: string;
+};
+
+const chatTheme = {
+  "--xeivora-coral": coralAccent,
+  "--xv-chat-bg": "#faf8f4",
+  "--xv-chat-surface": "#ffffff",
+  "--xv-chat-surface-soft": "#f4f1eb",
+  "--xv-chat-sidebar": "#f4f0e8",
+  "--xv-chat-border": "rgba(17, 24, 39, 0.08)",
+  "--xv-chat-border-strong": "rgba(17, 24, 39, 0.14)",
+  "--xv-chat-text": "#171717",
+  "--xv-chat-muted": "#6b7280",
+  "--xv-chat-accent": coralAccent,
+  "--xv-chat-code-bg": "#f3efe9",
+  "--xv-chat-code-header-bg": "rgba(20, 20, 20, 0.04)",
+  "--xv-chat-code-border": "rgba(17, 24, 39, 0.08)",
+  "--xv-chat-code-text": "#1f2937",
+  "--xv-chat-inline-code-bg": "rgba(201, 100, 66, 0.12)",
+  "--xv-chat-inline-code-text": "#7f3d27",
+  "--xv-chat-ghost-bg": "rgba(20, 20, 20, 0.04)",
+  "--xv-chat-ghost-bg-hover": "rgba(20, 20, 20, 0.08)",
+  "--xv-chat-ghost-text": "rgba(20, 20, 20, 0.72)",
+  "--xv-chat-shadow": "0 16px 38px rgba(15, 23, 42, 0.04)"
+} as CSSProperties;
 
 export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const pathname = usePathname();
@@ -147,38 +174,25 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedResponseId, setCopiedResponseId] = useState<string | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const [orchestrationSteps, setOrchestrationSteps] = useState<OrchestrationStep[]>([]);
   const [routeLabel, setRouteLabel] = useState("Xeivora is ready");
   const [activeProvider, setActiveProvider] = useState<ProviderKey>("simulation");
   const [thinking, setThinking] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [workspaceQuery, setWorkspaceQuery] = useState("");
-  const [workspaceSearchResults, setWorkspaceSearchResults] = useState<
-    Array<{
-      id: string;
-      category: "chat" | "project" | "file" | "memory";
-      title: string;
-      excerpt: string;
-      href: string;
-      updatedAt: string;
-    }>
-  >([]);
   const [statusOpen, setStatusOpen] = useState(false);
   const [showContinuityPanel, setShowContinuityPanel] = useState(false);
   const [sessionMenuOpenId, setSessionMenuOpenId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
-  const [workflowMode, setWorkflowMode] = useState<"simple_chat" | "continuity" | "coding_continuity">(
-    "simple_chat"
-  );
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("simple_chat");
+  const [autoSwitchNotice, setAutoSwitchNotice] = useState<AutoSwitchNotice | null>(null);
   const [continuityStatus, setContinuityStatus] = useState<ContinuityState>({
     currentProvider: "simulation",
     currentModel: null,
     fallbackProvider: null,
     fallbackModel: null,
-    providerChain: ["gemini", "openai", "anthropic", "ollama", "simulation"],
+    providerChain: ["anthropic", "openai", "google", "ollama", "simulation"],
     tokenRateStatus: "ready",
     checkpointSaved: false,
     contextCompressed: false,
@@ -194,26 +208,19 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
+  const activeProviderRef = useRef<ProviderKey>("simulation");
 
   const messages = activeSession?.messages ?? [];
   const hasMessages = messages.length > 0;
-  const viewerName = viewer?.name || "there";
-  const deferredSearchQuery = useDeferredValue(searchQuery);
-  const deferredWorkspaceQuery = useDeferredValue(workspaceQuery);
-  const filteredSessions = useMemo(
-    () =>
-      sessions.filter((session) =>
-        `${session.title} ${session.preview}`.toLowerCase().includes(deferredSearchQuery.toLowerCase())
-      ),
-    [deferredSearchQuery, sessions]
-  );
+  const viewerName = viewer?.name || "Nadarajah Luxshan";
+  const viewerInitials = getInitials(viewerName);
+  const filteredSessions = useMemo(() => sessions, [sessions]);
   const groupedSessions = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
   const lastAssistantMessage = useMemo(
     () => messages.filter((message) => message.role === "assistant").slice(-1)[0] || null,
     [messages]
   );
   const selectedModelLabel = modelOptions.find((option) => option.key === selectedModel)?.label ?? "Instant";
-  const composerModelLabel = getComposerModelLabel(selectedModel);
   const activeProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) || null,
     [projects, selectedProjectId]
@@ -234,46 +241,27 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   );
   const systemIndicatorLive =
     showContinuityPanel || workflowMode !== "simple_chat" || continuityStatus.checkpointSaved || isStreaming;
+  const connectedProviders = useMemo(() => {
+    if (!providerStatus) {
+      return 0;
+    }
+
+    return Object.values(providerStatus).filter((provider) => provider?.available).length;
+  }, [providerStatus]);
+  const topbarModel = getTopbarModelMeta(
+    continuityStatus.currentProvider === "simulation" ? selectedModel : providerToModelKey(continuityStatus.currentProvider),
+    continuityStatus.currentModel
+  );
+  const topbarTitle =
+    activeSession?.title && activeSession.title.trim() !== "New Xeivora chat"
+      ? activeSession.title
+      : "New chat";
 
   useEffect(() => {
     void bootstrapWorkspace().catch((nextError) => {
       setError(nextError instanceof Error ? nextError.message : "Unable to load Xeivora.");
     });
   }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 1100) {
-      setSidebarCollapsed(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!deferredWorkspaceQuery.trim()) {
-      setWorkspaceSearchResults([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    void fetch(`/api/search?q=${encodeURIComponent(deferredWorkspaceQuery)}`, {
-      cache: "no-store"
-    })
-      .then((response) => response.json())
-      .then((payload) => {
-        if (!cancelled) {
-          setWorkspaceSearchResults(payload.results || []);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setWorkspaceSearchResults([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [deferredWorkspaceQuery]);
 
   useEffect(() => {
     const sessionId = searchParams.get("session");
@@ -297,21 +285,23 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     }
 
     composerRef.current.style.height = "0px";
-    composerRef.current.style.height = `${Math.min(composerRef.current.scrollHeight, 180)}px`;
+    composerRef.current.style.height = `${Math.min(composerRef.current.scrollHeight, 100)}px`;
   }, [prompt]);
 
   useEffect(() => {
-    if (!sessionMenuOpenId) {
+    if (!sessionMenuOpenId && !statusOpen) {
       return;
     }
 
     function handleClose() {
       setSessionMenuOpenId(null);
+      setStatusOpen(false);
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setSessionMenuOpenId(null);
+        setStatusOpen(false);
       }
     }
 
@@ -322,7 +312,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       window.removeEventListener("click", handleClose);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [sessionMenuOpenId]);
+  }, [sessionMenuOpenId, statusOpen]);
 
   async function bootstrapWorkspace() {
     const response = await fetch("/api/chat/bootstrap", { cache: "no-store" });
@@ -356,6 +346,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setOrchestrationSteps([]);
       setShowContinuityPanel(false);
       setWorkflowMode("simple_chat");
+      setAutoSwitchNotice(null);
       setError(null);
       setMobileSidebarOpen(false);
       setSessionMenuOpenId(null);
@@ -385,10 +376,11 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setActiveSession(payload.session);
       setSessionFiles(payload.session.attachedFiles ?? []);
       setSelectedProjectId(payload.session.projectId ?? null);
-      setRouteLabel("New conversation");
+      setRouteLabel("Xeivora is ready");
       setOrchestrationSteps([]);
       setShowContinuityPanel(false);
       setWorkflowMode("simple_chat");
+      setAutoSwitchNotice(null);
       setMobileSidebarOpen(false);
       setSessionMenuOpenId(null);
     });
@@ -398,15 +390,20 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   }
 
   async function handleNewChat() {
-    try {
-      setError(null);
-      setSessionMenuOpenId(null);
-      const session = await createSession();
-      setPrompt("");
-      setSelectedModel(session.modelPreference);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Unable to create a new chat.");
-    }
+    setError(null);
+    setPrompt("");
+    setActiveSession(null);
+    setSessionFiles([]);
+    setSelectedProjectId(null);
+    setRouteLabel("Xeivora is ready");
+    setOrchestrationSteps([]);
+    setAutoSwitchNotice(null);
+    setShowContinuityPanel(false);
+    setWorkflowMode("simple_chat");
+    setMobileSidebarOpen(false);
+    setSessionMenuOpenId(null);
+    setShareFeedback(null);
+    composerRef.current?.focus();
   }
 
   async function handleRenameSession(sessionId: string) {
@@ -434,9 +431,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       if (!response.ok || !payload.session || !payload.sessions) {
         throw new Error(payload.error || "Unable to rename this chat.");
       }
-
       const nextSession = payload.session;
       const nextSessions = payload.sessions;
+
       startTransition(() => {
         setSessions(nextSessions);
         if (activeSession?.id === nextSession.id) {
@@ -471,9 +468,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         throw new Error(payload.error || "Unable to delete this chat.");
       }
 
-      const nextSessions = payload.sessions;
       startTransition(() => {
-        setSessions(nextSessions);
+        setSessions(payload.sessions || []);
         if (activeSession?.id === sessionId) {
           setActiveSession(null);
           setPrompt("");
@@ -481,6 +477,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           setOrchestrationSteps([]);
           setShowContinuityPanel(false);
           setWorkflowMode("simple_chat");
+          setAutoSwitchNotice(null);
         }
       });
       setSessionMenuOpenId(null);
@@ -508,9 +505,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     if (!response.ok || !payload.session || !payload.sessions) {
       throw new Error(payload.error || "Unable to update this chat.");
     }
-
     const nextSession = payload.session;
     const nextSessions = payload.sessions;
+
     startTransition(() => {
       setSessions(nextSessions);
       if (activeSession?.id === nextSession.id) {
@@ -720,12 +717,27 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     setRouteLabel("Generation stopped");
   }
 
-  async function handleSend(regenerate = false) {
+  async function handleShareSession() {
+    if (!activeSession || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/chat?session=${activeSession.id}`);
+      setShareFeedback("Link copied");
+      window.setTimeout(() => setShareFeedback(null), 1600);
+    } catch {
+      setShareFeedback("Unable to copy");
+      window.setTimeout(() => setShareFeedback(null), 1600);
+    }
+  }
+
+  async function handleSend(regenerate = false, overrideInput?: string) {
     if (isStreaming) {
       return;
     }
 
-    const input = regenerate ? getLastUserPrompt(activeSession) : prompt.trim();
+    const input = regenerate ? getLastUserPrompt(activeSession) : (overrideInput ?? prompt).trim();
     if (!input) {
       return;
     }
@@ -800,6 +812,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         if (typedEvent.type === "meta") {
           setRouteLabel(toXeivoraLabel(typedEvent.payload.routeLabel));
           setActiveProvider(typedEvent.payload.provider);
+          activeProviderRef.current = typedEvent.payload.provider;
           setShowContinuityPanel(Boolean(typedEvent.payload.showContinuityPanel));
           setWorkflowMode(typedEvent.payload.workflowMode ?? "simple_chat");
           setActiveSession((current) => {
@@ -827,12 +840,29 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         if (typedEvent.type === "orchestration") {
           setRouteLabel(toXeivoraLabel(typedEvent.payload.routeLabel));
           setActiveProvider(typedEvent.payload.provider);
+          activeProviderRef.current = typedEvent.payload.provider;
           setOrchestrationSteps(typedEvent.payload.steps);
         }
 
         if (typedEvent.type === "continuity") {
+          const previousProvider = activeProviderRef.current;
           setActiveProvider(typedEvent.payload.currentProvider);
           setContinuityStatus(typedEvent.payload);
+
+          if (
+            previousProvider &&
+            previousProvider !== "simulation" &&
+            typedEvent.payload.currentProvider !== previousProvider
+          ) {
+            setAutoSwitchNotice({
+              from: previousProvider,
+              fromLabel: formatProviderLabel(previousProvider),
+              to: typedEvent.payload.currentProvider,
+              toLabel: formatProviderLabel(typedEvent.payload.currentProvider)
+            });
+          }
+
+          activeProviderRef.current = typedEvent.payload.currentProvider;
         }
 
         if (typedEvent.type === "delta") {
@@ -903,198 +933,140 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   }
 
   return (
-    <div className="dark min-h-screen bg-black text-white">
-      <div className="flex min-h-screen bg-black">
-        <motion.aside
-          animate={{ width: sidebarCollapsed ? 72 : 260 }}
-          className="hidden min-h-screen shrink-0 border-r border-white/[0.08] bg-[#050505] md:flex"
-          transition={{ duration: 0.18, ease: "easeOut" }}
-        >
+    <div
+      className="min-h-screen bg-[var(--xv-chat-bg)] text-[var(--xv-chat-text)]"
+      style={{ ...chatTheme, fontFamily: "Inter, system-ui, sans-serif" }}
+    >
+      <div className="flex min-h-screen bg-[var(--xv-chat-bg)]">
+        <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[var(--xv-chat-border)] bg-[var(--xv-chat-sidebar)] md:flex">
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
-            collapsed={sidebarCollapsed}
-            onNewChat={() => void handleNewChat()}
-            onPromptPick={(value) => {
-              setPrompt(value);
-              composerRef.current?.focus();
-            }}
+            collapsed={false}
             onArchiveSession={(sessionId, archived) => void handleArchiveSession(sessionId, archived)}
-            onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
-            onSearchChange={(value) => {
-              setSearchQuery(value);
-              setWorkspaceQuery(value);
-            }}
-            onSelectSession={(sessionId) => void loadSession(sessionId)}
             onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
+            onDismiss={() => setMobileSidebarOpen(false)}
+            onNewChat={() => void handleNewChat()}
+            onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
             onRenameSession={(sessionId) => void handleRenameSession(sessionId)}
+            onSelectSession={(sessionId) => void loadSession(sessionId)}
+            onToggleCollapse={() => setMobileSidebarOpen(false)}
             onToggleSessionMenu={setSessionMenuOpenId}
-            onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
             openSessionMenuId={sessionMenuOpenId}
             pathname={pathname}
-            searchQuery={searchQuery}
             sessionGroups={groupedSessions}
             viewer={viewer}
-            workspaceSearchResults={workspaceSearchResults}
           />
-        </motion.aside>
+        </aside>
 
         <Sheet onOpenChange={setMobileSidebarOpen} open={mobileSidebarOpen}>
-          <SheetContent className="bg-[#050505] p-0" side="left">
+          <SheetContent className="bg-[var(--xv-chat-sidebar)] p-0" side="left">
             <SidebarContent
               activeSessionId={activeSession?.id ?? null}
               collapsed={false}
               mobile
+              onArchiveSession={(sessionId, archived) => void handleArchiveSession(sessionId, archived)}
+              onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
               onDismiss={() => setMobileSidebarOpen(false)}
-            onNewChat={() => void handleNewChat()}
-            onPromptPick={(value) => {
-              setPrompt(value);
-              composerRef.current?.focus();
-            }}
-            onArchiveSession={(sessionId, archived) => void handleArchiveSession(sessionId, archived)}
-            onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
-            onSearchChange={(value) => {
-              setSearchQuery(value);
-              setWorkspaceQuery(value);
-            }}
-            onSelectSession={(sessionId) => void loadSession(sessionId)}
-            onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
-            onRenameSession={(sessionId) => void handleRenameSession(sessionId)}
-            onToggleSessionMenu={setSessionMenuOpenId}
-            onToggleCollapse={() => setMobileSidebarOpen(false)}
-            openSessionMenuId={sessionMenuOpenId}
-            pathname={pathname}
-            searchQuery={searchQuery}
-            sessionGroups={groupedSessions}
-            viewer={viewer}
-            workspaceSearchResults={workspaceSearchResults}
-          />
+              onNewChat={() => void handleNewChat()}
+              onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
+              onRenameSession={(sessionId) => void handleRenameSession(sessionId)}
+              onSelectSession={(sessionId) => void loadSession(sessionId)}
+              onToggleCollapse={() => setMobileSidebarOpen(false)}
+              onToggleSessionMenu={setSessionMenuOpenId}
+              openSessionMenuId={sessionMenuOpenId}
+              pathname={pathname}
+              sessionGroups={groupedSessions}
+              viewer={viewer}
+            />
           </SheetContent>
         </Sheet>
 
-        <main className="relative flex min-w-0 flex-1 bg-black">
+        <main className="relative flex min-w-0 flex-1 flex-col bg-[var(--xv-chat-bg)]">
           <button
             aria-label="Open sidebar"
-            className="absolute left-4 top-4 z-30 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#111111] text-white/72 transition hover:bg-[#1f1f1f] md:hidden"
+            className="absolute left-3 top-[10px] z-30 inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] md:hidden"
             onClick={() => setMobileSidebarOpen(true)}
             type="button"
           >
             <PanelLeft className="h-4 w-4" />
           </button>
 
-          <div className="absolute right-4 top-4 z-30">
-            <button
-              aria-label={statusOpen ? "Close continuity status" : "Open continuity status"}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#111111] text-white/70 transition hover:bg-[#1f1f1f] hover:text-white"
-              onClick={() => setStatusOpen((value) => !value)}
-              type="button"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {systemIndicatorLive ? (
-                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.42)]" />
-              ) : null}
-            </button>
+          <ChatTopbar
+            connectedProviders={connectedProviders}
+            currentModelSummary={currentModelSummary}
+            fallbackSummary={fallbackSummary}
+            model={topbarModel}
+            onShare={() => void handleShareSession()}
+            onToggleStatus={() => setStatusOpen((value) => !value)}
+            orchestrationSteps={orchestrationSteps}
+            routeLabel={routeLabel}
+            shareFeedback={shareFeedback}
+            shareReady={Boolean(activeSession)}
+            statusOpen={statusOpen}
+            systemIndicatorLive={systemIndicatorLive}
+            title={topbarTitle}
+            continuityStatus={continuityStatus}
+            workflowMode={workflowMode}
+          />
 
-            <AnimatePresence>
-              {statusOpen ? (
-                <motion.div
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-2 w-[280px] rounded-[20px] border border-white/[0.08] bg-[#111111] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
-                  initial={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.16, ease: "easeOut" }}
-                >
-                  <div className="mb-3">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-white/34">Continuity</p>
-                    <p className="mt-1 text-sm text-white/86">{routeLabel}</p>
-                  </div>
-
-                  <div className="space-y-2.5 text-sm text-white/72">
-                    <StatusRow label="Current model" value={currentModelSummary} />
-                    <StatusRow label="Next fallback" value={fallbackSummary} />
-                    <StatusRow label="Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
-                    <StatusRow
-                      label="Context"
-                      value={continuityStatus.contextCompressed ? "Compressed" : "Preserved"}
-                    />
-                    <StatusRow label="Provider chain" value={continuityChain.map(formatProviderLabel).join(" → ")} />
-                    <StatusRow label="Workflow" value={workflowModeLabel(workflowMode)} />
-                    {orchestrationSteps.length ? (
-                      <StatusRow
-                        label="Latest step"
-                        value={orchestrationSteps[orchestrationSteps.length - 1]?.label ?? "Working"}
-                      />
-                    ) : null}
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
+          <div className="min-h-0 flex-1 pt-[50px]">
+            {hasMessages ? (
+              <ChatThreadView
+                activeProject={activeProject}
+                autoSwitchNotice={autoSwitchNotice}
+                composerRef={composerRef}
+                copiedResponseId={copiedResponseId}
+                error={error}
+                fileInputRef={fileInputRef}
+                isStreaming={isStreaming}
+                isUploadingFiles={isUploadingFiles}
+                lastAssistantMessage={lastAssistantMessage}
+                messages={messages}
+                messagesRef={messagesRef}
+                onCopyResponse={async (message) => {
+                  await navigator.clipboard.writeText(message.content);
+                  setCopiedResponseId(message.id);
+                  setTimeout(() => setCopiedResponseId(null), 1200);
+                }}
+                onFilesSelected={(files) => void handleUploadFiles(files)}
+                onPromptChange={setPrompt}
+                onRegenerate={() => void handleSend(true)}
+                onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
+                onRetry={() => void handleSend(true)}
+                onSend={() => void handleSend(false)}
+                onStartVoiceCapture={() => void startVoiceCapture()}
+                onStop={stopGenerating}
+                onStopVoiceCapture={stopVoiceCapture}
+                prompt={prompt}
+                sessionFiles={sessionFiles}
+                thinking={thinking}
+                viewerInitials={viewerInitials}
+                voiceState={voiceState}
+              />
+            ) : (
+              <ChatHomeView
+                composerRef={composerRef}
+                error={error}
+                fileInputRef={fileInputRef}
+                isStreaming={isStreaming}
+                isUploadingFiles={isUploadingFiles}
+                onFilesSelected={(files) => void handleUploadFiles(files)}
+                onPromptChange={setPrompt}
+                onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
+                onSend={() => void handleSend(false)}
+                onStartVoiceCapture={() => void startVoiceCapture()}
+                onStop={stopGenerating}
+                onStopVoiceCapture={stopVoiceCapture}
+                onSuggestion={(value) => {
+                  setPrompt(value);
+                  void handleSend(false, value);
+                }}
+                prompt={prompt}
+                sessionFiles={sessionFiles}
+                voiceState={voiceState}
+              />
+            )}
           </div>
-
-          {hasMessages ? (
-            <ChatThreadView
-              activeProject={activeProject}
-              composerRef={composerRef}
-              copiedResponseId={copiedResponseId}
-              error={error}
-              fileInputRef={fileInputRef}
-              isUploadingFiles={isUploadingFiles}
-              isStreaming={isStreaming}
-              lastAssistantMessage={lastAssistantMessage}
-              messages={messages}
-              messagesRef={messagesRef}
-              onFilesSelected={(files) => void handleUploadFiles(files)}
-              onProjectChange={(projectId) => void handleProjectChange(projectId)}
-              onCopyResponse={async (message) => {
-                await navigator.clipboard.writeText(message.content);
-                setCopiedResponseId(message.id);
-                setTimeout(() => setCopiedResponseId(null), 1200);
-              }}
-              onEditPrompt={setPrompt}
-              onModelChange={setSelectedModel}
-              onPromptChange={setPrompt}
-              onRegenerate={() => void handleSend(true)}
-              onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
-              onSend={() => void handleSend(false)}
-              onStop={stopGenerating}
-              onStartVoiceCapture={() => void startVoiceCapture()}
-              onStopVoiceCapture={stopVoiceCapture}
-              prompt={prompt}
-              projects={projects}
-              selectedModel={selectedModel}
-              selectedProjectId={selectedProjectId}
-              sessionFiles={sessionFiles}
-              thinking={thinking}
-              voiceState={voiceState}
-            />
-          ) : (
-            <ChatHomeView
-              activeProject={activeProject}
-              composerRef={composerRef}
-              error={error}
-              fileInputRef={fileInputRef}
-              isUploadingFiles={isUploadingFiles}
-              isStreaming={isStreaming}
-              onFilesSelected={(files) => void handleUploadFiles(files)}
-              onModelChange={setSelectedModel}
-              onPromptChange={setPrompt}
-              onProjectChange={(projectId) => void handleProjectChange(projectId)}
-              onQuickAction={(value) => {
-                setPrompt(value);
-                composerRef.current?.focus();
-              }}
-              onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
-              onSend={() => void handleSend(false)}
-              onStop={stopGenerating}
-              onStartVoiceCapture={() => void startVoiceCapture()}
-              onStopVoiceCapture={stopVoiceCapture}
-              prompt={prompt}
-              projects={projects}
-              selectedModel={selectedModel}
-              selectedProjectId={selectedProjectId}
-              sessionFiles={sessionFiles}
-              viewerName={viewerName}
-              voiceState={voiceState}
-            />
-          )}
         </main>
       </div>
     </div>
@@ -1105,131 +1077,112 @@ type SidebarContentProps = {
   activeSessionId: string | null;
   collapsed: boolean;
   mobile?: boolean;
-  onDismiss?: () => void;
   onArchiveSession: (sessionId: string, archived: boolean) => void;
+  onDeleteSession: (sessionId: string) => void;
+  onDismiss?: () => void;
   onNewChat: () => void;
   onPinSession: (sessionId: string, pinned: boolean) => void;
-  onPromptPick: (value: string) => void;
-  onSearchChange: (value: string) => void;
-  onSelectSession: (sessionId: string) => void;
-  onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string) => void;
-  onToggleSessionMenu: (sessionId: string | null) => void;
+  onSelectSession: (sessionId: string) => void;
   onToggleCollapse: () => void;
+  onToggleSessionMenu: (sessionId: string | null) => void;
   openSessionMenuId: string | null;
   pathname: string;
-  searchQuery: string;
   sessionGroups: Array<[string, ChatSessionSummary[]]>;
   viewer?: AuthUser | null;
-  workspaceSearchResults: Array<{
-    id: string;
-    category: "chat" | "project" | "file" | "memory";
-    title: string;
-    excerpt: string;
-    href: string;
-    updatedAt: string;
-  }>;
 };
 
 function SidebarContent({
   activeSessionId,
   collapsed,
   mobile = false,
-  onDismiss,
   onArchiveSession,
+  onDeleteSession,
+  onDismiss,
   onNewChat,
   onPinSession,
-  onPromptPick,
-  onSearchChange,
-  onSelectSession,
-  onDeleteSession,
   onRenameSession,
-  onToggleSessionMenu,
+  onSelectSession,
   onToggleCollapse,
+  onToggleSessionMenu,
   openSessionMenuId,
   pathname,
-  searchQuery,
   sessionGroups,
-  viewer = null,
-  workspaceSearchResults
+  viewer = null
 }: SidebarContentProps) {
+  const profileName = viewer?.name || workspaceName;
+  const profilePlan = viewer?.plan || "Pro";
+
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden px-3 py-4">
-      <div className="mb-3 flex items-center justify-between gap-2 px-1">
+    <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
+      <div className="mb-2 flex items-center justify-between gap-3 px-1.5">
         <Link
-          className={cn(
-            "flex min-w-0 items-center gap-2 rounded-[10px] px-2 py-1.5 text-left transition hover:bg-[#1f1f1f]",
-            collapsed && !mobile && "justify-center px-0"
-          )}
+          className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[var(--xv-chat-surface)]/80"
           href="/"
           onClick={() => onDismiss?.()}
         >
-          <OrbitLogo compact className="scale-[0.82]" />
-          {!collapsed || mobile ? <span className="text-[15px] font-medium text-white">Xeivora</span> : null}
+          <div className="text-[15px] font-medium tracking-[-0.01em] text-[var(--xv-chat-text)]">
+            Xei<span className="text-[var(--xv-chat-accent)]">vora</span>
+          </div>
         </Link>
 
-        <Button onClick={onToggleCollapse} size="icon" type="button" variant="ghost">
-          {mobile ? <ChevronLeft className="h-4 w-4" /> : collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            aria-label="Start new chat"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+            onClick={onNewChat}
+            type="button"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          {mobile ? (
+            <button
+              aria-label="Close sidebar"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+              onClick={onToggleCollapse}
+              type="button"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <SidebarButton collapsed={collapsed} icon={Plus} label="New chat" onClick={onNewChat} primary />
+      <button
+        className={cn(
+          "mb-2 flex h-10 items-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 text-[13px] font-normal text-[var(--xv-chat-muted)] shadow-sm transition hover:border-[var(--xv-chat-border-strong)] hover:text-[var(--xv-chat-text)]",
+          collapsed ? "justify-center px-0" : "gap-2.5"
+        )}
+        onClick={onNewChat}
+        type="button"
+      >
+        <Plus className="h-4 w-4 shrink-0" />
+        {!collapsed ? <span>New chat</span> : null}
+      </button>
 
       {!collapsed || mobile ? (
         <>
-          <label className="mt-1 flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm text-white/68 transition hover:bg-[#1f1f1f]">
-            <Search className="h-4 w-4 shrink-0 text-white/42" />
-            <Input
-              className="h-auto border-0 bg-transparent px-0 py-0 text-sm text-white shadow-none placeholder:text-white/34 focus-visible:ring-0"
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search chats"
-              value={searchQuery}
-            />
-          </label>
-
-          <nav className="mt-2 grid gap-1" aria-label="Workspace">
-            {primaryNav.map((item) => (
-              <SidebarNavItem
-                item={item}
-                key={item.label}
-                onDismiss={onDismiss}
-                onPromptPick={onPromptPick}
-                pathname={pathname}
-              />
+          <nav className="grid gap-[1px] border-b border-[var(--xv-chat-border)] pb-2" aria-label="Workspace navigation">
+            {navItems.map((item) => (
+              <SidebarNavItem item={item} key={item.label} onDismiss={onDismiss} pathname={pathname} />
             ))}
           </nav>
 
           <div className="mt-2 min-h-0 flex-1 overflow-hidden">
-            <p className="px-3 pb-1 text-[11px] font-medium text-white/34">Recents</p>
-            <ScrollArea className="h-full">
-              <div className="space-y-2 pb-4">
-                {searchQuery.trim() && workspaceSearchResults.length ? (
-                  <div className="space-y-1">
-                    <h3 className="px-3 pb-0.5 text-[10px] uppercase tracking-[0.18em] text-white/20">
-                      Workspace results
-                    </h3>
-                    {workspaceSearchResults.map((result) => (
-                      <Link
-                        className="block rounded-[10px] px-3 py-2 transition hover:bg-[#1f1f1f]"
-                        href={result.href}
-                        key={`${result.category}-${result.id}`}
-                        onClick={() => onDismiss?.()}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-[12px] font-medium text-white">{result.title}</span>
-                          <span className="text-[10px] uppercase tracking-[0.18em] text-white/26">
-                            {result.category}
-                          </span>
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/38">{result.excerpt}</p>
-                      </Link>
-                    ))}
-                  </div>
-                ) : null}
+            <div className="mb-1 flex items-center justify-between px-2">
+              <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--xv-chat-muted)]">
+                Recents
+              </p>
+            </div>
+
+            <ScrollArea className="h-full pr-1">
+              <div className="space-y-3 pb-4">
                 {sessionGroups.length ? (
                   sessionGroups.map(([group, items]) => (
                     <div className="space-y-1" key={group}>
-                      <h3 className="px-3 pb-0.5 text-[10px] uppercase tracking-[0.18em] text-white/20">{group}</h3>
+                      <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
+                        {group}
+                      </h3>
                       {items.map((session) => (
                         <RecentSessionRow
                           active={activeSessionId === session.id}
@@ -1250,45 +1203,85 @@ function SidebarContent({
                     </div>
                   ))
                 ) : (
-                  <div className="px-3 text-sm text-white/32">No recent chats yet.</div>
+                  <div className="px-2 pt-2 text-[13px] text-[var(--xv-chat-muted)]">No recent chats yet.</div>
                 )}
               </div>
             </ScrollArea>
           </div>
 
-          <div className="mt-auto border-t border-white/[0.06] px-2 pt-3">
-            <div className="flex items-center gap-3 rounded-[12px] px-2 py-2 transition hover:bg-[#1f1f1f]">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1a1a] text-xs font-medium text-white">
-                {getInitials(viewer?.name || workspaceName)}
+          <div className="mt-auto border-t border-[var(--xv-chat-border)] px-1 pt-2">
+            <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[var(--xv-chat-surface)]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[10px] font-medium text-white">
+                {getInitials(profileName)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-white">{viewer?.name || workspaceName}</p>
-                <p className="text-xs text-white/34">{viewer?.plan || "Starter"}</p>
+                <p className="truncate text-[12.5px] font-medium text-[var(--xv-chat-text)]">{profileName}</p>
+                <p className="text-[10.5px] text-[var(--xv-chat-muted)]">{profilePlan}</p>
               </div>
-              <Link className="text-white/46 transition hover:text-white" href="/settings" onClick={() => onDismiss?.()}>
-                <Settings2 className="h-4 w-4" />
-                <span className="sr-only">Settings</span>
-              </Link>
+              <button
+                aria-label="Profile options"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]"
+                type="button"
+              >
+                <Ellipsis className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </>
       ) : (
         <>
-          <div className="mt-2 grid gap-1">
-            {primaryNav.map((item) => (
-              <CollapsedSidebarButton item={item} key={item.label} onPromptPick={onPromptPick} pathname={pathname} />
+          <div className="grid gap-1">
+            {navItems.map((item) => (
+              <Link
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-2xl transition",
+                  pathname === item.href
+                    ? "bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)]"
+                    : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+                )}
+                href={item.href}
+                key={item.label}
+                title={item.label}
+              >
+                <item.icon className="h-4 w-4" />
+              </Link>
             ))}
           </div>
           <div className="flex-1" />
-          <button
-            className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1a1a1a] text-xs font-medium text-white"
-            type="button"
-          >
-            {getInitials(viewer?.name || workspaceName)}
-          </button>
+          <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-sm font-semibold text-white">
+            {getInitials(profileName)}
+          </div>
         </>
       )}
     </div>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  onDismiss,
+  pathname
+}: {
+  item: SidebarItem;
+  onDismiss?: () => void;
+  pathname: string;
+}) {
+  const isActive = pathname === item.href;
+
+  return (
+    <Link
+      className={cn(
+        "flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] transition",
+        isActive
+          ? "bg-[var(--xv-chat-surface)] font-medium text-[var(--xv-chat-text)]"
+          : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+      )}
+      href={item.href}
+      onClick={() => onDismiss?.()}
+    >
+      <item.icon className="h-4 w-4 shrink-0" />
+      <span>{item.label}</span>
+    </Link>
   );
 }
 
@@ -1317,20 +1310,22 @@ function RecentSessionRow({
     <div className="group relative">
       <button
         className={cn(
-          "group flex h-10 w-full items-center gap-2 rounded-[10px] px-3 pr-10 text-left text-[13px] transition",
-          active ? "bg-[#2b2b2b] text-white" : "text-white/64 hover:bg-[#1f1f1f] hover:text-white"
+          "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
+          active
+            ? "bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)]"
+            : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
         )}
         onClick={onSelect}
         type="button"
       >
-        {session.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-white/34" /> : null}
+        {session.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--xv-chat-accent)]" /> : null}
         <span className="truncate">{session.title}</span>
       </button>
 
       <button
         aria-label={`Open options for ${session.title}`}
         className={cn(
-          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-white/38 transition hover:bg-[#242424] hover:text-white",
+          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]",
           menuOpen || active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
         onClick={(event) => {
@@ -1347,26 +1342,19 @@ function RecentSessionRow({
         {menuOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute left-0 top-[calc(100%+8px)] z-30 w-[244px] rounded-[18px] border border-white/[0.08] bg-[#2b2b2b] p-2 shadow-[0_22px_70px_rgba(0,0,0,0.52)]"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            className="absolute left-0 top-[calc(100%+8px)] z-40 w-[228px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-2 shadow-[var(--xv-chat-shadow)]"
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
           >
-            <SessionMenuButton disabled icon={Share2} label="Share" />
-            <SessionMenuButton disabled icon={UserRoundPlus} label="Start a group chat" />
-            <SessionMenuButton icon={Pencil} label="Rename" onClick={onRename} />
-            <div className="my-2 border-t border-white/[0.08]" />
-            <SessionMenuButton
-              icon={session.pinned ? PinOff : Pin}
-              label={session.pinned ? "Unpin chat" : "Pin chat"}
-              onClick={onPin}
-            />
+            <SessionMenuButton icon={Pin} label={session.pinned ? "Unpin chat" : "Pin chat"} onClick={onPin} />
+            <SessionMenuButton icon={Pencil} label="Rename chat" onClick={onRename} />
             <SessionMenuButton
               icon={session.archived ? ArchiveRestore : Archive}
-              label={session.archived ? "Restore" : "Archive"}
+              label={session.archived ? "Restore chat" : "Archive chat"}
               onClick={onArchive}
             />
-            <SessionMenuButton destructive icon={Trash2} label="Delete" onClick={onDelete} />
+            <SessionMenuButton destructive icon={Trash2} label="Delete chat" onClick={onDelete} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -1376,29 +1364,23 @@ function RecentSessionRow({
 
 function SessionMenuButton({
   destructive = false,
-  disabled = false,
   icon: Icon,
   label,
   onClick
 }: {
   destructive?: boolean;
-  disabled?: boolean;
   icon: LucideIcon;
   label: string;
-  onClick?: () => void;
+  onClick: () => void;
 }) {
   return (
     <button
       className={cn(
-        "flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left text-[15px] transition",
+        "flex h-10 w-full items-center gap-3 rounded-[14px] px-3 text-left text-[13px] transition",
         destructive
-          ? "text-[#ff5c5c] hover:bg-[#373737]"
-          : disabled
-            ? "cursor-default text-white/52"
-            : "text-white/88 hover:bg-[#373737]",
-        disabled && "hover:bg-transparent"
+          ? "text-[#d14f42] hover:bg-[#fce9e5] dark:hover:bg-white/6"
+          : "text-[var(--xv-chat-text)] hover:bg-[var(--xv-chat-surface-soft)]"
       )}
-      disabled={disabled}
       onClick={onClick}
       type="button"
     >
@@ -1408,344 +1390,341 @@ function SessionMenuButton({
   );
 }
 
-function SidebarButton({
-  collapsed,
-  icon: Icon,
-  label,
-  onClick,
-  primary = false
+function ChatTopbar({
+  connectedProviders,
+  continuityStatus,
+  currentModelSummary,
+  fallbackSummary,
+  model,
+  onShare,
+  onToggleStatus,
+  orchestrationSteps,
+  routeLabel,
+  shareFeedback,
+  shareReady,
+  statusOpen,
+  systemIndicatorLive,
+  title,
+  workflowMode
 }: {
-  collapsed: boolean;
-  icon: LucideIcon;
-  label: string;
-  onClick: () => void;
-  primary?: boolean;
+  connectedProviders: number;
+  continuityStatus: ContinuityState;
+  currentModelSummary: string;
+  fallbackSummary: string;
+  model: ModelPillData;
+  onShare: () => void;
+  onToggleStatus: () => void;
+  orchestrationSteps: OrchestrationStep[];
+  routeLabel: string;
+  shareFeedback: string | null;
+  shareReady: boolean;
+  statusOpen: boolean;
+  systemIndicatorLive: boolean;
+  title: string;
+  workflowMode: WorkflowMode;
 }) {
   return (
-    <button
-      className={cn(
-        "mt-1 flex h-10 items-center rounded-[10px] px-3 text-sm transition",
-        primary ? "bg-[#1f1f1f] text-white hover:bg-[#2b2b2b]" : "text-white/68 hover:bg-[#1f1f1f] hover:text-white",
-        collapsed ? "justify-center px-0" : "gap-3"
-      )}
-      onClick={onClick}
-      type="button"
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      {!collapsed ? <span>{label}</span> : null}
-    </button>
-  );
-}
+    <header className="absolute inset-x-0 top-0 z-20 border-b border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)]/92 backdrop-blur">
+      <div className="flex h-[50px] items-center gap-3 px-4 sm:px-4">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-medium text-[var(--xv-chat-text)]">{title}</p>
+        </div>
 
-function SidebarNavItem({
-  item,
-  onDismiss,
-  onPromptPick,
-  pathname
-}: {
-  item: SidebarItem;
-  onDismiss?: () => void;
-  onPromptPick: (value: string) => void;
-  pathname: string;
-}) {
-  const baseClassName =
-    "flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm transition";
-  const isActive = item.href ? pathname === item.href : false;
+        <div className="ml-auto flex items-center gap-2">
+          <ModelPill model={model} />
 
-  if (item.href) {
-    return (
-      <Link
-        className={cn(
-          baseClassName,
-          isActive ? "bg-[#2b2b2b] text-white" : "text-white/68 hover:bg-[#1f1f1f] hover:text-white"
-        )}
-        href={item.href}
-        onClick={() => onDismiss?.()}
-      >
-        <item.icon className="h-4 w-4 shrink-0" />
-        <span>{item.label}</span>
-      </Link>
-    );
-  }
+          <button
+            aria-label="Share chat"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)] disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={!shareReady}
+            onClick={onShare}
+            title={shareFeedback || "Share"}
+            type="button"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
 
-  return (
-    <button
-      className={cn(baseClassName, "text-white/68 hover:bg-[#1f1f1f] hover:text-white")}
-      onClick={() => {
-        if (item.prompt) {
-          onPromptPick(item.prompt);
-        }
-        onDismiss?.();
-      }}
-      type="button"
-    >
-      <item.icon className="h-4 w-4 shrink-0" />
-      <span>{item.label}</span>
-    </button>
-  );
-}
+          <div className="relative">
+            <button
+              aria-label="Open workspace status"
+              className="relative inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleStatus();
+              }}
+              type="button"
+            >
+              <Ellipsis className="h-4 w-4" />
+              {systemIndicatorLive ? (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--xv-chat-accent)]" />
+              ) : null}
+            </button>
 
-function CollapsedSidebarButton({
-  item,
-  onPromptPick,
-  pathname
-}: {
-  item: SidebarItem;
-  onPromptPick: (value: string) => void;
-  pathname: string;
-}) {
-  const sharedClassName =
-    "flex h-10 w-10 items-center justify-center rounded-[10px] transition";
-  const isActive = item.href ? pathname === item.href : false;
+            <AnimatePresence>
+              {statusOpen ? (
+                <motion.div
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute right-0 top-[calc(100%+10px)] z-30 w-[300px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-4 shadow-[var(--xv-chat-shadow)]"
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  onClick={(event) => event.stopPropagation()}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                >
+                  <div className="mb-4">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
+                      Xeivora continuity
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--xv-chat-text)]">{routeLabel}</p>
+                  </div>
 
-  if (item.href) {
-    return (
-      <Link
-        className={cn(
-          sharedClassName,
-          isActive ? "bg-[#2b2b2b] text-white" : "text-white/56 hover:bg-[#1f1f1f] hover:text-white"
-        )}
-        href={item.href}
-        title={item.label}
-      >
-        <item.icon className="h-4 w-4" />
-      </Link>
-    );
-  }
-
-  return (
-    <button
-      className={cn(sharedClassName, "text-white/56 hover:bg-[#1f1f1f] hover:text-white")}
-      onClick={() => item.prompt && onPromptPick(item.prompt)}
-      title={item.label}
-      type="button"
-    >
-      <item.icon className="h-4 w-4" />
-    </button>
+                  <div className="space-y-2.5 text-sm">
+                    <StatusRow label="Current model" value={currentModelSummary} />
+                    <StatusRow label="Next fallback" value={fallbackSummary} />
+                    <StatusRow label="Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
+                    <StatusRow
+                      label="Context"
+                      value={continuityStatus.contextCompressed ? "Compressed" : "Preserved"}
+                    />
+                    <StatusRow label="Workflow" value={workflowModeLabel(workflowMode)} />
+                    <StatusRow
+                      label="Providers online"
+                      value={`${connectedProviders}/${Math.max(connectedProviders, 3)}`}
+                    />
+                    {orchestrationSteps.length ? (
+                      <StatusRow
+                        label="Latest step"
+                        value={orchestrationSteps[orchestrationSteps.length - 1]?.label ?? "Working"}
+                      />
+                    ) : null}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }
 
 function ChatHomeView({
-  activeProject,
   composerRef,
   error,
   fileInputRef,
-  isUploadingFiles,
   isStreaming,
+  isUploadingFiles,
   onFilesSelected,
-  onModelChange,
   onPromptChange,
-  onProjectChange,
-  onQuickAction,
   onRemoveFile,
   onSend,
-  onStop,
   onStartVoiceCapture,
+  onStop,
   onStopVoiceCapture,
+  onSuggestion,
   prompt,
-  projects,
-  selectedModel,
-  selectedProjectId,
   sessionFiles,
-  viewerName,
   voiceState
 }: {
-  activeProject: WorkspaceProject | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   error: string | null;
   fileInputRef: RefObject<HTMLInputElement | null>;
-  isUploadingFiles: boolean;
   isStreaming: boolean;
+  isUploadingFiles: boolean;
   onFilesSelected: (files: FileList | File[]) => void;
-  onModelChange: (model: ModelKey) => void;
   onPromptChange: (value: string) => void;
-  onProjectChange: (projectId: string | null) => void;
-  onQuickAction: (value: string) => void;
   onRemoveFile: (fileId: string) => void;
   onSend: () => void;
-  onStop: () => void;
   onStartVoiceCapture: () => void;
+  onStop: () => void;
   onStopVoiceCapture: () => void;
+  onSuggestion: (value: string) => void;
   prompt: string;
-  projects: WorkspaceProject[];
-  selectedModel: ModelKey;
-  selectedProjectId: string | null;
   sessionFiles: UploadedFileSummary[];
-  viewerName: string;
   voiceState: VoiceState;
 }) {
   return (
-    <div className="flex min-h-screen w-full justify-center px-4 sm:px-6">
-      <div className="flex w-full max-w-[980px] flex-col">
-        <div className="flex flex-1 flex-col items-center pt-[22vh]">
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-[calc(100vh-170px)] w-full max-w-[960px] flex-col items-center justify-center px-5 pb-10 pt-8">
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[20px] font-medium text-white"
+            initial={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            X
+          </motion.div>
+
           <motion.h1
             animate={{ opacity: 1, y: 0 }}
-            className="text-[28px] font-normal tracking-tight text-white sm:text-[30px]"
-            initial={{ opacity: 0, y: 14 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="mt-4 text-center text-[22px] font-medium tracking-[-0.01em] text-[var(--xv-chat-text)]"
+            initial={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2, ease: "easeOut", delay: 0.02 }}
           >
-            Good to see you, {viewerName}.
+            What can I help with?
           </motion.h1>
 
-          {error ? <ErrorBanner className="mt-6 w-full max-w-[800px]" message={error} /> : null}
+          <motion.p
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-2 max-w-[400px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
+            initial={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
+          >
+            One workspace. Every model. Your work never stops — context preserved across Claude, GPT-4o,
+            Gemini and more.
+          </motion.p>
 
-          <div className="mt-8 w-full">
-            <ChatComposer
-              activeProject={activeProject}
-              composerRef={composerRef}
-              fileInputRef={fileInputRef}
-              files={sessionFiles}
-              isUploadingFiles={isUploadingFiles}
-              isStreaming={isStreaming}
-              onFilesSelected={onFilesSelected}
-              onModelChange={onModelChange}
-              onPromptChange={onPromptChange}
-              onProjectChange={onProjectChange}
-              onRemoveFile={onRemoveFile}
-              onSend={onSend}
-              onStop={onStop}
-              onStartVoiceCapture={onStartVoiceCapture}
-              onStopVoiceCapture={onStopVoiceCapture}
-              prompt={prompt}
-              projects={projects}
-              selectedModel={selectedModel}
-              selectedProjectId={selectedProjectId}
-              voiceState={voiceState}
-            />
-          </div>
+          {error ? <ErrorBanner className="mt-6 w-full max-w-[660px]" message={error} /> : null}
 
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            {quickActions.map((action) => (
-              <motion.button
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-white/[0.08] bg-transparent px-4 text-sm text-white/72 transition hover:bg-[#1f1f1f] hover:text-white"
-                key={action.label}
-                onClick={() => onQuickAction(action.prompt)}
+          <div className="mt-6 grid w-full max-w-[520px] grid-cols-2 gap-2">
+            {welcomeSuggestions.map((suggestion) => (
+              <button
+                className="group rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-[14px] text-left transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-surface-soft)]"
+                key={suggestion.label}
+                onClick={() => onSuggestion(suggestion.prompt)}
                 type="button"
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.99 }}
               >
-                <action.icon className="h-4 w-4" />
-                <span>{action.label}</span>
-              </motion.button>
+                <div className="text-[var(--xv-chat-muted)]">
+                  <suggestion.icon className="h-4 w-4" />
+                </div>
+                <h3 className="mt-2 text-[13px] font-medium text-[var(--xv-chat-text)]">{suggestion.label}</h3>
+                <p className="mt-1 text-[12px] font-light leading-[1.4] text-[var(--xv-chat-muted)]">
+                  {suggestion.detail}
+                </p>
+              </button>
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="sticky bottom-0 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
+        <ChatComposer
+          composerRef={composerRef}
+          fileInputRef={fileInputRef}
+          files={sessionFiles}
+          isStreaming={isStreaming}
+          isUploadingFiles={isUploadingFiles}
+          onFilesSelected={onFilesSelected}
+          onPromptChange={onPromptChange}
+          onRemoveFile={onRemoveFile}
+          onSend={onSend}
+          onStartVoiceCapture={onStartVoiceCapture}
+          onStop={onStop}
+          onStopVoiceCapture={onStopVoiceCapture}
+          prompt={prompt}
+          voiceState={voiceState}
+        />
       </div>
     </div>
   );
 }
 
 function ChatThreadView({
-  activeProject,
+  autoSwitchNotice,
   composerRef,
   copiedResponseId,
   error,
   fileInputRef,
-  isUploadingFiles,
   isStreaming,
+  isUploadingFiles,
   lastAssistantMessage,
   messages,
   messagesRef,
-  onFilesSelected,
-  onProjectChange,
   onCopyResponse,
-  onEditPrompt,
-  onModelChange,
+  onFilesSelected,
   onPromptChange,
   onRegenerate,
   onRemoveFile,
+  onRetry,
   onSend,
-  onStop,
   onStartVoiceCapture,
+  onStop,
   onStopVoiceCapture,
   prompt,
-  projects,
-  selectedModel,
-  selectedProjectId,
   sessionFiles,
   thinking,
+  viewerInitials,
   voiceState
 }: {
   activeProject: WorkspaceProject | null;
+  autoSwitchNotice: AutoSwitchNotice | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   copiedResponseId: string | null;
   error: string | null;
   fileInputRef: RefObject<HTMLInputElement | null>;
-  isUploadingFiles: boolean;
   isStreaming: boolean;
+  isUploadingFiles: boolean;
   lastAssistantMessage: ChatMessage | null;
   messages: ChatMessage[];
   messagesRef: RefObject<HTMLDivElement | null>;
-  onFilesSelected: (files: FileList | File[]) => void;
-  onProjectChange: (projectId: string | null) => void;
   onCopyResponse: (message: ChatMessage) => Promise<void>;
-  onEditPrompt: (value: string) => void;
-  onModelChange: (model: ModelKey) => void;
+  onFilesSelected: (files: FileList | File[]) => void;
   onPromptChange: (value: string) => void;
   onRegenerate: () => void;
   onRemoveFile: (fileId: string) => void;
+  onRetry: () => void;
   onSend: () => void;
-  onStop: () => void;
   onStartVoiceCapture: () => void;
+  onStop: () => void;
   onStopVoiceCapture: () => void;
   prompt: string;
-  projects: WorkspaceProject[];
-  selectedModel: ModelKey;
-  selectedProjectId: string | null;
   sessionFiles: UploadedFileSummary[];
   thinking: boolean;
+  viewerInitials: string;
   voiceState: VoiceState;
 }) {
   return (
-    <div className="flex min-h-screen w-full justify-center px-4 sm:px-6">
-      <div className="flex w-full max-w-[980px] flex-col">
-        <div
-          className="min-h-0 flex-1 overflow-y-auto pt-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          ref={messagesRef}
-        >
-          <div className="mx-auto flex w-full max-w-[768px] flex-col gap-10 pb-36">
-            <AnimatePresence initial={false}>
-              {messages.map((message) => {
-                const isAssistant = message.role === "assistant";
-                const isLatestAssistant = lastAssistantMessage?.id === message.id;
+    <div className="flex h-full flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto" ref={messagesRef}>
+        <div className="mx-auto flex w-full max-w-[700px] flex-col gap-4 px-5 pb-28 pt-5">
+          {error ? <ErrorBanner message={error} /> : null}
+          {autoSwitchNotice ? <AutoSwitchBanner notice={autoSwitchNotice} /> : null}
 
-                if (!isAssistant) {
-                  return (
-                    <motion.article
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group flex justify-end"
-                      initial={{ opacity: 0, y: 12 }}
-                      key={message.id}
-                      transition={{ duration: 0.14, ease: "easeOut" }}
-                    >
-                      <div className="max-w-[75%]">
-                        <div className="rounded-[1.6rem] bg-[#2b2b2b] px-4 py-3 text-[15px] leading-6 text-white">
-                          {message.content}
-                        </div>
-                        <div className="mt-2 flex justify-end opacity-0 transition group-hover:opacity-100">
-                          <button
-                            className="text-xs text-white/40 transition hover:text-white/72"
-                            onClick={() => onEditPrompt(message.content)}
-                            type="button"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </div>
-                    </motion.article>
-                  );
-                }
+          <AnimatePresence initial={false}>
+            {messages.map((message) => {
+              const isAssistant = message.role === "assistant";
+              const isLatestAssistant = lastAssistantMessage?.id === message.id;
+              const assistantModelLabel = getAssistantModelLabel(message.modelKey, message.provider);
 
+              if (!isAssistant) {
                 return (
                   <motion.article
                     animate={{ opacity: 1, y: 0 }}
-                    className="group"
-                    initial={{ opacity: 0, y: 12 }}
+                    className="flex gap-3"
+                    initial={{ opacity: 0, y: 14 }}
                     key={message.id}
-                    transition={{ duration: 0.14, ease: "easeOut" }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
                   >
+                    <AvatarBubble accent label={viewerInitials} />
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 text-[13px] font-medium text-[var(--xv-chat-text)]">
+                        You
+                      </div>
+                      <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
+                        {message.content}
+                      </div>
+                    </div>
+                  </motion.article>
+                );
+              }
+
+              return (
+                <motion.article
+                  animate={{ opacity: 1, y: 0 }}
+                  className="group flex gap-3"
+                  initial={{ opacity: 0, y: 14 }}
+                  key={message.id}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  <AvatarBubble label="X" />
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
+                      <span className="text-[var(--xv-chat-text)]">Xeivora</span>
+                      <span className="text-[var(--xv-chat-muted)]">·</span>
+                      <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
+                    </div>
+
                     {message.content ? (
-                      <div className="text-[15px] leading-7 text-white/92">
+                      <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
                         <ChatMarkdown content={toXeivoraLabel(message.content)} />
                       </div>
                     ) : (
@@ -1753,283 +1732,300 @@ function ChatThreadView({
                     )}
 
                     {message.content ? (
-                      <div className="mt-3 flex items-center gap-3 opacity-0 transition group-hover:opacity-100">
+                      <div className="mt-3 flex items-center gap-4 opacity-0 transition group-hover:opacity-100">
                         <button
-                          className="text-xs text-white/40 transition hover:text-white/72"
+                          className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
                           onClick={() => void onCopyResponse(message)}
                           type="button"
                         >
                           {copiedResponseId === message.id ? "Copied" : "Copy"}
                         </button>
                         {isLatestAssistant ? (
-                          <button
-                            className="text-xs text-white/40 transition hover:text-white/72"
-                            onClick={onRegenerate}
-                            type="button"
-                          >
-                            Regenerate
-                          </button>
+                          <>
+                            <button
+                              className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                              onClick={onRegenerate}
+                              type="button"
+                            >
+                              Regenerate
+                            </button>
+                            <button
+                              className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                              onClick={onRetry}
+                              type="button"
+                            >
+                              Retry
+                            </button>
+                          </>
                         ) : null}
                       </div>
                     ) : null}
-                  </motion.article>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+                  </div>
+                </motion.article>
+              );
+            })}
+          </AnimatePresence>
         </div>
+      </div>
 
-        <div className="sticky bottom-0 bg-gradient-to-t from-black via-black pt-4">
-          {error ? <ErrorBanner className="mx-auto max-w-[800px]" message={error} /> : null}
-          <div className="pb-6">
-            <ChatComposer
-              activeProject={activeProject}
-              composerRef={composerRef}
-              fileInputRef={fileInputRef}
-              files={sessionFiles}
-              isUploadingFiles={isUploadingFiles}
-              isStreaming={isStreaming}
-              onFilesSelected={onFilesSelected}
-              onModelChange={onModelChange}
-              onPromptChange={onPromptChange}
-              onProjectChange={onProjectChange}
-              onRemoveFile={onRemoveFile}
-              onSend={onSend}
-              onStop={onStop}
-              onStartVoiceCapture={onStartVoiceCapture}
-              onStopVoiceCapture={onStopVoiceCapture}
-              prompt={prompt}
-              projects={projects}
-              selectedModel={selectedModel}
-              selectedProjectId={selectedProjectId}
-              voiceState={voiceState}
-            />
-          </div>
-        </div>
+      <div className="sticky bottom-0 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
+        <ChatComposer
+          composerRef={composerRef}
+          fileInputRef={fileInputRef}
+          files={sessionFiles}
+          isStreaming={isStreaming}
+          isUploadingFiles={isUploadingFiles}
+          onFilesSelected={onFilesSelected}
+          onPromptChange={onPromptChange}
+          onRemoveFile={onRemoveFile}
+          onSend={onSend}
+          onStartVoiceCapture={onStartVoiceCapture}
+          onStop={onStop}
+          onStopVoiceCapture={onStopVoiceCapture}
+          prompt={prompt}
+          voiceState={voiceState}
+        />
       </div>
     </div>
   );
 }
 
 type ChatComposerProps = {
-  activeProject: WorkspaceProject | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   fileInputRef: RefObject<HTMLInputElement | null>;
   files: UploadedFileSummary[];
-  isUploadingFiles: boolean;
   isStreaming: boolean;
+  isUploadingFiles: boolean;
   onFilesSelected: (files: FileList | File[]) => void;
-  onModelChange: (model: ModelKey) => void;
   onPromptChange: (value: string) => void;
-  onProjectChange: (projectId: string | null) => void;
   onRemoveFile: (fileId: string) => void;
   onSend: () => void;
-  onStop: () => void;
   onStartVoiceCapture: () => void;
+  onStop: () => void;
   onStopVoiceCapture: () => void;
   prompt: string;
-  projects: WorkspaceProject[];
-  selectedModel: ModelKey;
-  selectedProjectId: string | null;
   voiceState: VoiceState;
 };
 
 function ChatComposer({
-  activeProject,
   composerRef,
   fileInputRef,
   files,
-  isUploadingFiles,
   isStreaming,
+  isUploadingFiles,
   onFilesSelected,
-  onModelChange,
   onPromptChange,
-  onProjectChange,
   onRemoveFile,
   onSend,
-  onStop,
   onStartVoiceCapture,
+  onStop,
   onStopVoiceCapture,
   prompt,
-  projects,
-  selectedModel,
-  selectedProjectId,
   voiceState
 }: ChatComposerProps) {
-  const modelLabel = getComposerModelLabel(selectedModel);
-
   return (
-    <form
-      className="mx-auto w-full max-w-[800px] rounded-[28px] border border-white/[0.08] bg-[#2b2b2b] px-3 py-2 shadow-[0_18px_50px_rgba(0,0,0,0.36)]"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSend();
-      }}
-    >
-      <input
-        className="hidden"
-        multiple
-        onChange={(event) => {
-          if (event.target.files?.length) {
-            onFilesSelected(event.target.files);
-          }
+    <div className="mx-auto w-full max-w-[660px]">
+      <form
+        className="rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-[10px] py-2 shadow-[var(--xv-chat-shadow)]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSend();
         }}
-        ref={fileInputRef}
-        type="file"
-      />
-
-      <div className="flex flex-wrap items-center gap-2 px-2 pb-2 pt-1">
-        <label className="relative flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#1c1c1f] px-3 py-1 text-xs text-white/62">
-          <FolderOpen className="h-3.5 w-3.5" />
-          <span>{activeProject?.name || "No project"}</span>
-          <select
-            className="absolute inset-0 cursor-pointer opacity-0"
-            onChange={(event) => onProjectChange(event.target.value || null)}
-            value={selectedProjectId ?? ""}
-          >
-            <option value="">No project</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {files.map((file) => (
-          <div
-            className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#1c1c1f] px-3 py-1 text-xs text-white/72"
-            key={file.id}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            <span className="max-w-[160px] truncate">{file.name}</span>
-            <span className="text-[10px] uppercase tracking-[0.16em] text-white/34">{file.analysisStatus}</span>
-            <button
-              aria-label={`Remove ${file.name}`}
-              className="text-white/38 transition hover:text-white"
-              onClick={(event) => {
-                event.preventDefault();
-                onRemoveFile(file.id);
-              }}
-              type="button"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))}
-
-        {isUploadingFiles ? (
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#1c1c1f] px-3 py-1 text-xs text-white/72">
-            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-            <span>Analyzing file...</span>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          aria-label="Attach file"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/55 transition hover:bg-[#303030] hover:text-white"
-          onClick={() => fileInputRef.current?.click()}
-          type="button"
-        >
-          <Paperclip className="h-4 w-4" />
-        </button>
-
-        <textarea
-          className="min-h-[24px] flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 text-white outline-none placeholder:text-white/40"
-          onChange={(event) => onPromptChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              onSend();
+      >
+        <input
+          className="hidden"
+          multiple
+          onChange={(event) => {
+            if (event.target.files?.length) {
+              onFilesSelected(event.target.files);
             }
           }}
-          placeholder="Ask anything"
-          ref={composerRef}
-          rows={1}
-          value={prompt}
+          ref={fileInputRef}
+          type="file"
         />
 
-        <div className="flex shrink-0 items-center gap-1">
-          <label className="relative hidden items-center gap-1 rounded-full px-3 py-2 text-sm text-white/72 transition hover:bg-[#303030] sm:inline-flex">
-            <span>{modelLabel}</span>
-            <select
-              aria-label="Choose model"
-              className="absolute inset-0 cursor-pointer opacity-0"
-              onChange={(event) => onModelChange(event.target.value as ModelKey)}
-              value={selectedModel}
-            >
-              {modelOptions.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {getComposerModelLabel(option.key)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="h-4 w-4 text-white/40" />
-          </label>
+        {(files.length > 0 || isUploadingFiles) && (
+          <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+            {files.map((file) => (
+              <div
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] px-3 py-1 text-[12px] text-[var(--xv-chat-muted)]"
+                key={file.id}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span className="max-w-[150px] truncate">{file.name}</span>
+                <button
+                  aria-label={`Remove ${file.name}`}
+                  className="text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onRemoveFile(file.id);
+                  }}
+                  type="button"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
 
+            {isUploadingFiles ? (
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] px-3 py-1 text-[12px] text-[var(--xv-chat-muted)]">
+                <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                <span>Analyzing file...</span>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        <div className="flex items-end gap-2">
           <button
-            aria-label="Voice input"
-            className="hidden h-9 w-9 items-center justify-center rounded-full text-white/55 transition hover:bg-[#303030] hover:text-white sm:inline-flex"
-            onMouseDown={() => void onStartVoiceCapture()}
-            onMouseUp={onStopVoiceCapture}
-            onMouseLeave={onStopVoiceCapture}
-            onTouchStart={() => void onStartVoiceCapture()}
-            onTouchEnd={onStopVoiceCapture}
+            aria-label="Attach file"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]"
+            onClick={() => fileInputRef.current?.click()}
             type="button"
           >
-            {voiceState === "idle" ? (
-              <Mic className="h-4 w-4" />
-            ) : voiceState === "listening" ? (
-              <AudioLines className="h-4 w-4 animate-pulse" />
-            ) : (
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-            )}
+            <Paperclip className="h-4 w-4" />
           </button>
 
-          {isStreaming ? (
+          <textarea
+            className="min-h-[22px] flex-1 resize-none bg-transparent px-1 py-1.5 text-[14px] font-light leading-[1.5] text-[var(--xv-chat-text)] outline-none placeholder:text-[var(--xv-chat-muted)]"
+            onChange={(event) => onPromptChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                onSend();
+              }
+            }}
+            placeholder="Ask anything"
+            ref={composerRef}
+            rows={1}
+            value={prompt}
+          />
+
+          <div className="flex shrink-0 items-center gap-1">
             <button
-              aria-label="Stop generating"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90"
-              onClick={onStop}
+              aria-label="Voice input"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]"
+              onMouseDown={() => void onStartVoiceCapture()}
+              onMouseLeave={onStopVoiceCapture}
+              onMouseUp={onStopVoiceCapture}
+              onTouchEnd={onStopVoiceCapture}
+              onTouchStart={() => void onStartVoiceCapture()}
               type="button"
             >
-              <AudioLines className="h-4 w-4" />
+              {voiceState === "idle" ? (
+                <Mic className="h-4 w-4" />
+              ) : voiceState === "listening" ? (
+                <AudioLines className="h-4 w-4 animate-pulse text-[var(--xv-chat-accent)]" />
+              ) : (
+                <LoaderCircle className="h-4 w-4 animate-spin text-[var(--xv-chat-accent)]" />
+              )}
             </button>
-          ) : (
-            <button
-              aria-label="Send message"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/30"
-              disabled={!prompt.trim() && !files.length}
-              type="submit"
-            >
-              <SendHorizontal className="h-4 w-4" />
-            </button>
-          )}
+
+            {isStreaming ? (
+              <button
+                aria-label="Stop generating"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#1f1f1f] text-white transition hover:bg-black"
+                onClick={onStop}
+                type="button"
+              >
+                <Square className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                aria-label="Send message"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#1f1f1f] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-[#d0cdc8] disabled:text-white/60"
+                disabled={!prompt.trim() && !files.length}
+                type="submit"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {voiceState !== "idle" ? (
+          <div className="mt-2 flex items-center justify-between px-2 text-[12px] text-[var(--xv-chat-muted)]">
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-3.5 w-3.5" />
+              <span>{voiceState === "listening" ? "Listening… release to transcribe" : "Transcribing…"}</span>
+            </div>
+            {voiceState === "listening" ? <Square className="h-3.5 w-3.5 text-[var(--xv-chat-accent)]" /> : null}
+          </div>
+        ) : null}
+      </form>
+
+      <p className="mt-3 text-center text-[12px] font-light text-[var(--xv-chat-muted)]">
+        Xeivora switches models automatically — your context is always preserved
+      </p>
+    </div>
+  );
+}
+
+function ModelPill({ model }: { model: ModelPillData }) {
+  return (
+    <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-muted)]">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: model.dotColor }} />
+      <span>{model.label}</span>
+      <ChevronDown className="h-3.5 w-3.5 text-[var(--xv-chat-muted)]" />
+    </div>
+  );
+}
+
+function AutoSwitchBanner({ notice }: { notice: AutoSwitchNotice }) {
+  return (
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col gap-3 rounded-r-[12px] rounded-l-none border border-[var(--xv-chat-border)] border-l-2 border-l-[var(--xv-chat-accent)] bg-[var(--xv-chat-surface)] px-3 py-3 sm:flex-row sm:items-center"
+      initial={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+    >
+      <div className="flex flex-1 items-start gap-3">
+        <div className="mt-0.5 text-[var(--xv-chat-accent)]">
+          <ArrowRightLeft className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-[12.5px] font-medium text-[var(--xv-chat-text)]">Switched automatically</p>
+          <p className="mt-0.5 text-[12px] font-light leading-5 text-[var(--xv-chat-muted)]">
+            Token limit reached — continuing with {notice.toLabel}. No context lost.
+          </p>
         </div>
       </div>
 
-      {voiceState !== "idle" ? (
-        <div className="flex items-center justify-between px-3 pb-1 pt-2 text-xs text-white/46">
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-3.5 w-3.5" />
-            <span>{voiceState === "listening" ? "Listening… release to transcribe" : "Transcribing…"}</span>
-          </div>
-          {voiceState === "listening" ? <Square className="h-3.5 w-3.5 text-white/54" /> : null}
-        </div>
-      ) : null}
-    </form>
+      <div className="flex items-center gap-1.5 pl-7 sm:ml-auto sm:pl-0">
+        <span className="rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--xv-chat-accent)]">
+          {notice.fromLabel}
+        </span>
+        <span className="text-[11px] text-[var(--xv-chat-muted)]">→</span>
+        <span className="rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-2 py-0.5 text-[11px] font-medium text-[#16a34a]">
+          {notice.toLabel}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+function AvatarBubble({ accent = false, label }: { accent?: boolean; label: string }) {
+  return (
+    <div
+      className={cn(
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
+        accent
+          ? "border-transparent bg-[var(--xv-chat-accent)] text-white"
+          : "border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-accent)]"
+      )}
+    >
+      {label}
+    </div>
   );
 }
 
 function ThinkingBlock({ active }: { active: boolean }) {
   return (
-    <div className="flex items-center gap-2 py-1">
+    <div className="flex items-center gap-2 py-2">
       {[0, 1, 2].map((index) => (
         <motion.span
-          animate={active ? { opacity: [0.24, 1, 0.24] } : { opacity: 0.35 }}
-          className="h-2 w-2 rounded-full bg-white/72"
+          animate={active ? { opacity: [0.22, 1, 0.22] } : { opacity: 0.35 }}
+          className="h-2 w-2 rounded-full bg-[var(--xv-chat-accent)]"
           key={index}
           transition={{ duration: 1, delay: index * 0.14, repeat: Infinity }}
         />
@@ -2042,7 +2038,7 @@ function ErrorBanner({ className, message }: { className?: string; message: stri
   return (
     <div
       className={cn(
-        "mb-4 rounded-2xl border border-white/[0.08] bg-[#111111] px-4 py-3 text-sm leading-6 text-white/64",
+        "rounded-[20px] border border-[rgba(209,79,66,0.16)] bg-[rgba(209,79,66,0.06)] px-4 py-3 text-[13px] leading-6 text-[#8d3f35] dark:text-[#ffc6bd]",
         className
       )}
     >
@@ -2054,8 +2050,8 @@ function ErrorBanner({ className, message }: { className?: string; message: stri
 function StatusRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-white/42">{label}</span>
-      <span className="max-w-[150px] text-right text-white/86">{value}</span>
+      <span className="text-[var(--xv-chat-muted)]">{label}</span>
+      <span className="max-w-[160px] text-right text-[var(--xv-chat-text)]">{value}</span>
     </div>
   );
 }
@@ -2108,40 +2104,87 @@ function formatProviderLabel(provider: ProviderKey | string | null) {
   }
 
   const labels: Record<string, string> = {
-    openai: "OpenAI",
+    openai: "GPT-4o",
     anthropic: "Claude",
     google: "Gemini",
     gemini: "Gemini",
     ollama: "Ollama",
-    simulation: "Simulation"
+    simulation: "Xeivora Auto"
   };
 
   return labels[provider] ?? provider;
 }
 
-function getComposerModelLabel(modelKey: ModelKey) {
-  const labels: Record<ModelKey, string> = {
-    "orbit-auto": "Instant",
-    "gpt-4o": "GPT-4o",
-    claude: "Claude",
-    gemini: "Gemini"
-  };
-
-  return labels[modelKey];
+function getInitials(value: string) {
+  return (
+    value
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("") || "X"
+  );
 }
 
-function getInitials(value: string) {
-  return value
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || "")
-    .join("") || "X";
+type ModelPillData = {
+  dotColor: string;
+  label: string;
+};
+
+function getTopbarModelMeta(modelKey: ModelKey, resolvedModel?: string | null): ModelPillData {
+  const map: Record<ModelKey, ModelPillData> = {
+    claude: { dotColor: coralAccent, label: resolvedModel || "Claude" },
+    "gpt-4o": { dotColor: "#16a34a", label: resolvedModel || "GPT-4o" },
+    gemini: { dotColor: "#2563eb", label: resolvedModel || "Gemini" },
+    "orbit-auto": { dotColor: coralAccent, label: resolvedModel || "Xeivora" }
+  };
+
+  return map[modelKey];
+}
+
+function providerToModelKey(provider: ProviderKey): ModelKey {
+  if (provider === "anthropic") {
+    return "claude";
+  }
+
+  if (provider === "openai") {
+    return "gpt-4o";
+  }
+
+  if (provider === "google" || provider === "gemini") {
+    return "gemini";
+  }
+
+  return "orbit-auto";
+}
+
+function getAssistantModelLabel(modelKey?: ModelKey, provider?: ProviderKey) {
+  if (provider === "anthropic") {
+    return "Claude 3.5";
+  }
+
+  if (provider === "openai") {
+    return "GPT-4o";
+  }
+
+  if (provider === "google" || provider === "gemini") {
+    return "Gemini";
+  }
+
+  if (modelKey === "gpt-4o") {
+    return "GPT-4o";
+  }
+
+  if (modelKey === "gemini") {
+    return "Gemini";
+  }
+
+  return "Claude 3.5";
 }
 
 function formatModelSummary(provider: ProviderKey | null, model: string | null | undefined, fallbackLabel: string) {
   if (provider && model) {
-    return `${formatProviderLabel(provider)} ${model}`;
+    return `${formatProviderLabel(provider)} ${model}`.trim();
   }
 
   if (provider) {
@@ -2157,7 +2200,7 @@ function formatFallbackSummary(
   continuityChain: ProviderKey[]
 ) {
   if (fallbackProvider && fallbackModel) {
-    return `${formatProviderLabel(fallbackProvider)} ${fallbackModel}`;
+    return `${formatProviderLabel(fallbackProvider)} ${fallbackModel}`.trim();
   }
 
   if (fallbackProvider) {
@@ -2168,8 +2211,8 @@ function formatFallbackSummary(
   return nextProvider ? formatProviderLabel(nextProvider) : "Standby";
 }
 
-function workflowModeLabel(mode: "simple_chat" | "continuity" | "coding_continuity") {
-  const labels: Record<typeof mode, string> = {
+function workflowModeLabel(mode: WorkflowMode) {
+  const labels: Record<WorkflowMode, string> = {
     simple_chat: "Conversation",
     continuity: "Continuity",
     coding_continuity: "Coding continuity"
@@ -2230,7 +2273,7 @@ async function consumeEventStream(
 function toFriendlyError(value: string) {
   const normalized = toXeivoraLabel(value);
   if (/quota|429|timeout|provider|api key|authentication|unavailable|rate limit/i.test(normalized)) {
-    return "Xeivora hit a provider interruption and kept continuity intact. Try again and it will continue cleanly.";
+    return "Xeivora switched providers automatically to protect continuity. Try again and it will keep going cleanly.";
   }
 
   return normalized;
