@@ -26,7 +26,6 @@ export function XeivoraGlyph({ className = "", size = 40 }: XeivoraGlyphProps) {
       width={size}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect fill="#0e0b08" height="100" rx="22" width="100" />
       <g transform="translate(50 50)">
         <circle cx="0" cy="0" fill="none" r="36" stroke="rgba(201,100,66,0.07)" strokeWidth="0.5" />
         <ellipse cx="0" cy="0" fill="none" rx="32" ry="9" stroke="#c96442" strokeWidth="2" transform="rotate(0)" />

@@ -1543,7 +1543,7 @@ function ChatHomeView({
         <div className="mx-auto flex min-h-[calc(100vh-170px)] w-full max-w-[960px] flex-col items-center justify-center px-5 pb-10 pt-8">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1a1410] p-1"
+            className="flex h-12 w-12 items-center justify-center"
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
@@ -1980,7 +1980,7 @@ function AvatarBubble({ accent = false, label }: { accent?: boolean; label?: str
         "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
         accent
           ? "border-transparent bg-[var(--xv-chat-accent)] text-white"
-          : "border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-accent)]"
+          : "text-[var(--xv-chat-accent)]"
       )}
     >
       {accent ? label : <XeivoraGlyph size={22} />}
