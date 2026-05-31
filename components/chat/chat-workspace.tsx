@@ -1426,7 +1426,9 @@ function RecentSessionRow({
             type="button"
           >
             {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
-            <span className="truncate">{truncateSidebarSessionTitle(session.title)}</span>
+            <span className="min-w-0 max-w-[172px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+              {session.title}
+            </span>
           </button>
 
           <button
@@ -1579,7 +1581,9 @@ function ChatTopbar({
     <header className="absolute inset-x-0 top-0 z-20 border-b border-[rgba(201,100,66,0.12)] bg-[#0e0b08]/92 backdrop-blur">
       <div className="flex h-[50px] items-center gap-3 px-4 sm:px-4">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-medium text-[var(--xv-chat-text)]">{title}</p>
+          <p className="max-w-[460px] overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-medium text-[var(--xv-chat-text)]">
+            {title}
+          </p>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -2219,15 +2223,6 @@ function groupSessions(sessions: ChatSessionSummary[]) {
   return Object.entries(groups).filter(([, items]) => items.length > 0);
 }
 
-function truncateSidebarSessionTitle(title: string) {
-  const words = `${title}`.trim().split(/\s+/).filter(Boolean);
-
-  if (words.length <= 3) {
-    return title;
-  }
-
-  return `${words.slice(0, 3).join(" ")}...`;
-}
 
 function getLastUserPrompt(session: ChatSession | null) {
   return session?.messages.filter((message) => message.role === "user").slice(-1)[0]?.content ?? "";
