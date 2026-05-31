@@ -26,9 +26,9 @@ export function WorkspacePageShell({
 }) {
   return (
     <main className="min-h-screen bg-[#0e0b08] text-[#f0ead8]">
-      <div className="mx-auto grid min-h-screen max-w-[1680px] gap-0 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="mx-auto grid min-h-screen max-w-[1680px] gap-0 md:grid-cols-[232px_minmax(0,1fr)]">
         <WorkspaceSidebar statusLabel={statusLabel} viewer={viewer} />
-        <section className="min-w-0 px-10 py-10 md:px-12">{children}</section>
+        <section className="min-w-0 px-5 py-8 md:px-8 md:py-9 xl:px-10">{children}</section>
       </div>
     </main>
   );
