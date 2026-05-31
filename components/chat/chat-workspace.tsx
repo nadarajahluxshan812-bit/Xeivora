@@ -42,6 +42,7 @@ import type { CSSProperties, RefObject } from "react";
 
 import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
+import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import type { AuthUser } from "@/lib/auth-types";
@@ -1680,78 +1681,80 @@ function ChatThreadView({
 
               if (!isAssistant) {
                 return (
-                  <motion.article
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex justify-end"
-                    initial={{ opacity: 0, y: 14 }}
-                    key={message.id}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                  >
-                    <div className="max-w-[70%] min-w-0">
-                      <div className="mb-1 text-right text-[13px] font-medium text-[var(--xv-chat-text)]">You</div>
-                      <div className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
-                        {message.content}
+                  <MessageErrorBoundary key={message.id}>
+                    <motion.article
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-end"
+                      initial={{ opacity: 0, y: 14 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                    >
+                      <div className="max-w-[70%] min-w-0">
+                        <div className="mb-1 text-right text-[13px] font-medium text-[var(--xv-chat-text)]">You</div>
+                        <div className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
+                          {message.content}
+                        </div>
                       </div>
-                    </div>
-                  </motion.article>
+                    </motion.article>
+                  </MessageErrorBoundary>
                 );
               }
 
               return (
-                <motion.article
-                  animate={{ opacity: 1, y: 0 }}
-                  className="group flex gap-3"
-                  initial={{ opacity: 0, y: 14 }}
-                  key={message.id}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                <MessageErrorBoundary key={message.id}>
+                  <motion.article
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group flex gap-3"
+                    initial={{ opacity: 0, y: 14 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
                   >
-                    <AvatarBubble label="X" />
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
-                        <span className="text-[var(--xv-chat-text)]">Xeivora</span>
-                        <span className="text-[var(--xv-chat-muted)]">·</span>
-                        <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
+                      <AvatarBubble label="X" />
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
+                          <span className="text-[var(--xv-chat-text)]">Xeivora</span>
+                          <span className="text-[var(--xv-chat-muted)]">·</span>
+                          <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
+                        </div>
+
+                        {message.content ? (
+                          <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
+                            <ChatMarkdown content={toXeivoraLabel(message.content)} />
+                          </div>
+                        ) : (
+                          <ThinkingBlock active={thinking || isStreaming} />
+                        )}
+
+                        {message.content ? (
+                          <div className="mt-3 flex items-center gap-4 opacity-0 transition group-hover:opacity-100">
+                            <button
+                              className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                              onClick={() => void onCopyResponse(message)}
+                              type="button"
+                            >
+                              {copiedResponseId === message.id ? "Copied" : "Copy"}
+                            </button>
+                            {isLatestAssistant ? (
+                              <>
+                                <button
+                                  className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                                  onClick={onRegenerate}
+                                  type="button"
+                                >
+                                  Regenerate
+                                </button>
+                                <button
+                                  className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                                  onClick={onRetry}
+                                  type="button"
+                                >
+                                  Retry
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
-
-                      {message.content ? (
-                        <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
-                          <ChatMarkdown content={toXeivoraLabel(message.content)} />
-                        </div>
-                      ) : (
-                        <ThinkingBlock active={thinking || isStreaming} />
-                      )}
-
-                      {message.content ? (
-                        <div className="mt-3 flex items-center gap-4 opacity-0 transition group-hover:opacity-100">
-                          <button
-                            className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
-                            onClick={() => void onCopyResponse(message)}
-                            type="button"
-                          >
-                            {copiedResponseId === message.id ? "Copied" : "Copy"}
-                          </button>
-                          {isLatestAssistant ? (
-                            <>
-                              <button
-                                className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
-                                onClick={onRegenerate}
-                                type="button"
-                              >
-                                Regenerate
-                              </button>
-                              <button
-                                className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
-                                onClick={onRetry}
-                                type="button"
-                              >
-                                Retry
-                              </button>
-                            </>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                </motion.article>
+                  </motion.article>
+                </MessageErrorBoundary>
               );
             })}
           </AnimatePresence>
