@@ -1410,40 +1410,38 @@ function RecentSessionRow({
           />
         </form>
       ) : (
-        <button
+        <div
           className={cn(
-            "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
-            active
-              ? "bg-[#1a1410] text-[#f0ead8]"
-              : "text-[var(--xv-chat-muted)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            "flex h-9 w-full items-center gap-1 rounded-[10px] pr-1 transition",
+            active ? "bg-[#1a1410]" : "hover:bg-[rgba(201,100,66,0.08)]"
           )}
-          onClick={onSelect}
-          type="button"
         >
-          {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
-          <span className="truncate">{session.title}</span>
-        </button>
-      )}
+          <button
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-2 rounded-[10px] px-2.5 text-left text-[12px] font-normal transition",
+              active ? "text-[#f0ead8]" : "text-[var(--xv-chat-muted)] hover:text-[var(--xv-chat-text)]"
+            )}
+            onClick={onSelect}
+            type="button"
+          >
+            {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
+            <span className="truncate">{session.title}</span>
+          </button>
 
-      <button
-        aria-label={`Open options for ${session.title}`}
-        className={cn(
-          "absolute right-2 top-1/2 z-10 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[6px] bg-transparent text-[rgba(240,234,216,0.6)] transition hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]",
-          editing
-            ? "hidden"
-            : menuOpen || menuProjectOpen
-              ? "opacity-100"
-              : "opacity-100 hover:opacity-100"
-        )}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onOpenChange(!menuOpen);
-        }}
-        type="button"
-      >
-        <Ellipsis className="h-4 w-4" />
-      </button>
+          <button
+            aria-label={`Open options for ${session.title}`}
+            className="z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-transparent text-[rgba(240,234,216,0.6)] transition hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onOpenChange(!menuOpen);
+            }}
+            type="button"
+          >
+            <Ellipsis className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
         {menuOpen ? (
