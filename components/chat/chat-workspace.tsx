@@ -1428,12 +1428,12 @@ function RecentSessionRow({
       <button
         aria-label={`Open options for ${session.title}`}
         className={cn(
-          "absolute right-2 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[6px] bg-transparent text-[rgba(240,234,216,0.6)] transition hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]",
+          "absolute right-2 top-1/2 z-10 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[6px] bg-transparent text-[rgba(240,234,216,0.6)] transition hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]",
           editing
             ? "hidden"
             : menuOpen || menuProjectOpen
               ? "opacity-100"
-              : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100"
+              : "opacity-100 hover:opacity-100"
         )}
         onClick={(event) => {
           event.preventDefault();
