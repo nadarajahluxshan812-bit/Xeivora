@@ -1413,7 +1413,7 @@ function RecentSessionRow({
       ) : (
         <div
           className={cn(
-            "flex h-9 w-full items-center gap-1 rounded-[10px] pr-1 transition",
+            "grid h-9 w-full grid-cols-[minmax(0,1fr)_28px] items-center gap-1 rounded-[10px] pr-1 transition",
             active ? "bg-[#1a1410]" : "hover:bg-[rgba(201,100,66,0.08)]"
           )}
         >
@@ -1426,16 +1426,16 @@ function RecentSessionRow({
             type="button"
           >
             {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
-            <span className="truncate">{session.title}</span>
+            <span className="truncate">{truncateSidebarSessionTitle(session.title)}</span>
           </button>
 
           <button
             aria-label={`Open options for ${session.title}`}
             className={cn(
-              "z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] transition",
+              "z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] transition",
               active || menuOpen || menuProjectOpen
-                ? "bg-[rgba(240,234,216,0.06)] text-[#f0ead8]"
-                : "bg-transparent text-[rgba(240,234,216,0.42)] opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
+                ? "bg-[rgba(240,234,216,0.08)] text-[#f0ead8]"
+                : "bg-[rgba(240,234,216,0.03)] text-[rgba(240,234,216,0.78)] opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
             )}
             onClick={(event) => {
               event.preventDefault();
@@ -1444,7 +1444,7 @@ function RecentSessionRow({
             }}
             type="button"
           >
-            <MoreVertical className="h-4 w-4" />
+            <span className="text-[15px] leading-none">⋮</span>
           </button>
         </div>
       )}
@@ -2217,6 +2217,16 @@ function groupSessions(sessions: ChatSessionSummary[]) {
   }
 
   return Object.entries(groups).filter(([, items]) => items.length > 0);
+}
+
+function truncateSidebarSessionTitle(title: string) {
+  const words = `${title}`.trim().split(/\s+/).filter(Boolean);
+
+  if (words.length <= 3) {
+    return title;
+  }
+
+  return `${words.slice(0, 3).join(" ")}...`;
 }
 
 function getLastUserPrompt(session: ChatSession | null) {
