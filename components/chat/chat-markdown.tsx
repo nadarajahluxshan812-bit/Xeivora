@@ -37,21 +37,24 @@ export function ChatMarkdown({ content }: { content: string }) {
 
             if (inline) {
               return (
-                <code className="rounded-md bg-[#1c1c1c] px-1.5 py-0.5 text-white/92" {...props}>
+                <code
+                  className="rounded-md bg-[var(--xv-chat-inline-code-bg)] px-1.5 py-0.5 text-[var(--xv-chat-inline-code-text)]"
+                  {...props}
+                >
                   {children}
                 </code>
               );
             }
 
             return (
-              <div className="relative my-4 overflow-hidden rounded-[1.1rem] border border-white/10 bg-[#171717]">
-                <div className="flex items-center justify-between border-b border-white/8 bg-white/[0.03] px-3 py-2">
-                  <span className="text-[11px] uppercase tracking-[0.16em] text-white/46">
+              <div className="relative my-4 overflow-hidden rounded-[1.1rem] border border-[var(--xv-chat-code-border)] bg-[var(--xv-chat-code-bg)]">
+                <div className="flex items-center justify-between border-b border-[var(--xv-chat-code-border)] bg-[var(--xv-chat-code-header-bg)] px-3 py-2">
+                  <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">
                     {className?.replace("language-", "") || "code"}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
-                      className="inline-flex h-8 items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[10px] uppercase tracking-[0.16em] text-white/64 transition hover:bg-white/[0.08] hover:text-white"
+                      className="inline-flex h-8 items-center gap-1 rounded-full border border-[var(--xv-chat-code-border)] bg-[var(--xv-chat-ghost-bg)] px-3 text-[10px] uppercase tracking-[0.16em] text-[var(--xv-chat-ghost-text)] transition hover:bg-[var(--xv-chat-ghost-bg-hover)] hover:text-[var(--xv-chat-text)]"
                       onClick={() =>
                         setCollapsedCode((current) => ({
                           ...current,
@@ -64,7 +67,7 @@ export function ChatMarkdown({ content }: { content: string }) {
                       <span>{isCollapsed ? "Expand" : "Collapse"}</span>
                     </button>
                     <button
-                      className="inline-flex h-8 rounded-full border border-white/10 bg-white/[0.04] px-3 text-[10px] uppercase tracking-[0.16em] text-white/64 transition hover:bg-white/[0.08] hover:text-white"
+                      className="inline-flex h-8 rounded-full border border-[var(--xv-chat-code-border)] bg-[var(--xv-chat-ghost-bg)] px-3 text-[10px] uppercase tracking-[0.16em] text-[var(--xv-chat-ghost-text)] transition hover:bg-[var(--xv-chat-ghost-bg-hover)] hover:text-[var(--xv-chat-text)]"
                       onClick={async () => {
                         await navigator.clipboard.writeText(code);
                         setCopiedCode(code);
@@ -77,7 +80,7 @@ export function ChatMarkdown({ content }: { content: string }) {
                   </div>
                 </div>
                 {!isCollapsed ? (
-                  <pre className="overflow-x-auto px-4 py-5 text-sm leading-7 text-white/88">
+                  <pre className="overflow-x-auto px-4 py-5 text-sm leading-7 text-[var(--xv-chat-code-text)]">
                     <code {...props}>{code}</code>
                   </pre>
                 ) : null}

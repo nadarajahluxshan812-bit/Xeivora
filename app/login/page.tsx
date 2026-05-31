@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { LoginForm, AuthShell } from "@/components/auth/auth-shell";
+import { AuthShell, LoginForm } from "@/components/auth/auth-shell";
 import { getViewer, sanitizeNextPath } from "@/lib/auth";
 
 export default async function LoginPage({

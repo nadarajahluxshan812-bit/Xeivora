@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-
-import { BrandHomeRedirect } from "@/components/brand-home-redirect";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,10 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>
-        <BrandHomeRedirect />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

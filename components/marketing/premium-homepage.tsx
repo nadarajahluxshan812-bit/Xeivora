@@ -371,7 +371,7 @@ export function PremiumHomepage() {
             </Reveal>
 
             <Reveal delay={220}>
-              <div className="mt-auto grid gap-px overflow-hidden rounded-[28px] border border-[#f0ead818] bg-[#f0ead80a] shadow-[0_30px_120px_rgba(0,0,0,0.35)] md:grid-cols-3">
+              <div className="mt-16 grid gap-px overflow-hidden rounded-[28px] border border-[#f0ead818] bg-[#f0ead80a] shadow-[0_30px_120px_rgba(0,0,0,0.35)] md:grid-cols-3">
                 {heroPillars.map((item) => (
                   <div className="bg-[#14100d]/92 px-6 py-5" key={item.label}>
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#b8ae9b]">{item.label}</div>
