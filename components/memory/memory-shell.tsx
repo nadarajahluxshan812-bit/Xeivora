@@ -1,0 +1,154 @@
+"use client";
+
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  WorkspaceBadge,
+  WorkspaceButton,
+  WorkspaceCard,
+  WorkspaceEmptyState,
+  WorkspacePageHero,
+  WorkspacePageShell,
+  WorkspaceSearchInput,
+  WorkspaceSectionTitle
+} from "@/components/workspace/workspace-page-ui";
+import type { AuthUser } from "@/lib/auth-types";
+
+type MemoryItem = {
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
+  const [items, setItems] = useState<MemoryItem[]>([]);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    void fetch("/api/memory", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => setItems(payload || []));
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    const lower = query.toLowerCase();
+    return items.filter((item) => `${item.title} ${item.content} ${item.type}`.toLowerCase().includes(lower));
+  }, [items, query]);
+
+  async function handleCreateMemory() {
+    const response = await fetch("/api/memory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "reusable_context",
+        title: "New reusable context",
+        content: "Add project notes, user preferences, or workflow state here.",
+        enabled: true
+      })
+    });
+    const item = (await response.json()) as MemoryItem;
+    setItems((current) => [item, ...current]);
+  }
+
+  async function handleDelete(id: string) {
+    const response = await fetch(`/api/memory/${id}`, { method: "DELETE" });
+    if (!response.ok) {
+      return;
+    }
+    setItems((current) => current.filter((item) => item.id !== id));
+  }
+
+  return (
+    <WorkspacePageShell statusLabel="Memory" viewer={viewer}>
+      <div className="space-y-10">
+        <WorkspacePageHero
+          actions={
+            <WorkspaceButton onClick={() => void handleCreateMemory()}>
+              <Plus className="h-4 w-4" />
+              Create memory
+            </WorkspaceButton>
+          }
+          description="Reusable context, product promises, coding checkpoints, and durable workspace facts stay preserved here so every conversation starts with continuity."
+          eyebrow="Memory system"
+          title="Persistent context that stays useful"
+        />
+
+        <WorkspaceSearchInput onChange={setQuery} placeholder="Search memories" value={query} />
+
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {filteredItems.map((item) => (
+            <WorkspaceCard className="flex h-full flex-col justify-between p-6" key={item.id}>
+              <div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-[15px] font-medium text-white">{item.title}</h2>
+                    <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{item.content}</p>
+                  </div>
+                  <WorkspaceBadge tone={item.enabled ? "learning" : "standby"}>
+                    {item.enabled ? item.type.replaceAll("_", " ") : "disabled"}
+                  </WorkspaceBadge>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-[rgba(201,100,66,0.1)] pt-4">
+                <span className="text-xs uppercase tracking-[0.08em] text-[rgba(255,255,255,0.3)]">
+                  {new Date(item.updatedAt).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                  })}
+                </span>
+                <button
+                  className="inline-flex items-center gap-2 text-sm text-[rgba(239,68,68,0.6)] transition-colors hover:text-[rgba(239,68,68,0.9)]"
+                  onClick={() => void handleDelete(item.id)}
+                  type="button"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+              </div>
+            </WorkspaceCard>
+          ))}
+
+          <button
+            className="flex min-h-[240px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[rgba(201,100,66,0.2)] bg-[#120e0a] text-center transition-colors hover:border-[#c96442]"
+            onClick={() => void handleCreateMemory()}
+            type="button"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(201,100,66,0.12)] text-[#c96442]">
+              <Plus className="h-5 w-5" />
+            </div>
+            <div className="mt-4 text-sm text-[rgba(255,255,255,0.3)]">Add memory</div>
+          </button>
+        </div>
+
+        {items.length > 0 && !filteredItems.length ? (
+          <WorkspaceCard>
+            <WorkspaceSectionTitle>No memory matches yet</WorkspaceSectionTitle>
+            <p className="mt-3 max-w-[36rem] text-sm leading-7 text-[rgba(255,255,255,0.55)]">
+              Try a different search term or create a new reusable memory for your workspace.
+            </p>
+          </WorkspaceCard>
+        ) : null}
+
+        {!items.length ? (
+          <WorkspaceEmptyState
+            action={
+              <WorkspaceButton onClick={() => void handleCreateMemory()}>
+                <Plus className="h-4 w-4" />
+                Create memory
+              </WorkspaceButton>
+            }
+            description="Store project facts, recurring preferences, and continuity checkpoints so Xeivora always has the right context."
+            title="No memory items yet"
+          />
+        ) : null}
+      </div>
+    </WorkspacePageShell>
+  );
+}

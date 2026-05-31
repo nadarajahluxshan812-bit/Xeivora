@@ -55,7 +55,7 @@ export function ChatMarkdown({ content }: { content: string }) {
         components={{
           code: CodeBlock
         }}
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm as never]}
       >
         {content}
       </ReactMarkdown>

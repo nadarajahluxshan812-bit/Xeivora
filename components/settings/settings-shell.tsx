@@ -1,12 +1,22 @@
 "use client";
 
+import { LogOut, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { BrainCircuit, LogOut, Save, ShieldCheck, Sparkles } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
+import {
+  WorkspaceBadge,
+  WorkspaceButton,
+  WorkspaceCard,
+  WorkspaceField,
+  WorkspaceInput,
+  WorkspacePageHero,
+  WorkspacePageShell,
+  WorkspaceSectionTitle,
+  WorkspaceToggle
+} from "@/components/workspace/workspace-page-ui";
 import type { AuthUser } from "@/lib/auth-types";
+import { cn } from "@/lib/utils";
 
 type SettingsShellProps = {
   initialUser: AuthUser;
@@ -20,8 +30,18 @@ type WorkspaceSettings = {
   modelPreferenceOrder?: string[];
 };
 
+const sections = [
+  { key: "profile", label: "Profile" },
+  { key: "workspace", label: "Workspace" },
+  { key: "providers", label: "Providers" },
+  { key: "danger", label: "Danger zone" }
+] as const;
+
+type SectionKey = (typeof sections)[number]["key"];
+
 export function SettingsShell({ initialUser }: SettingsShellProps) {
   const router = useRouter();
+  const [activeSection, setActiveSection] = useState<SectionKey>("profile");
   const [user, setUser] = useState<AuthUser>(initialUser);
   const [settings, setSettings] = useState<WorkspaceSettings | null>(null);
   const [providerStatus, setProviderStatus] = useState<Record<string, unknown> | null>(null);
@@ -99,179 +119,192 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
-      <div className="mx-auto grid max-w-[1680px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <WorkspaceSidebar statusLabel="Protected" viewer={user} />
-        <div className="space-y-4">
-          <section className="glow-shell p-6">
-            <div className="section-kicker">Account settings</div>
-            <div className="mt-4 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Control your Xeivora workspace identity</h1>
-                <p className="mt-4 max-w-3xl text-base leading-8 text-white/56">
-                  Manage your account, memory preferences, orchestration defaults, and provider readiness from a single
-                  protected surface.
-                </p>
-              </div>
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/78 transition hover:bg-white/[0.06] hover:text-white"
-                onClick={() => void handleLogout()}
-                type="button"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </button>
-            </div>
-          </section>
+    <WorkspacePageShell statusLabel="Protected" viewer={user}>
+      <div className="space-y-10">
+        <WorkspacePageHero
+          actions={
+            <WorkspaceButton onClick={() => void handleLogout()} variant="secondary">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </WorkspaceButton>
+          }
+          description="Manage your profile, workspace preferences, provider routing defaults, and account safety from one protected Xeivora control surface."
+          eyebrow="Account settings"
+          title="Profile and preferences"
+        />
 
-          {feedback ? <Feedback tone="success">{feedback}</Feedback> : null}
-          {error ? <Feedback tone="error">{error}</Feedback> : null}
+        {feedback ? <Feedback tone="success">{feedback}</Feedback> : null}
+        {error ? <Feedback tone="error">{error}</Feedback> : null}
 
-          <div className="grid gap-4 2xl:grid-cols-[1.1fr_0.9fr]">
-            <section className="glass-panel p-5">
-              <div className="section-kicker">Profile</div>
-              <div className="mt-4 grid gap-5 lg:grid-cols-[160px_minmax(0,1fr)]">
-                <div className="flex h-28 w-28 items-center justify-center rounded-[2rem] bg-gradient-to-br from-[#5b34f7]/18 via-[#7c3aed]/18 to-[#d946ef]/18 text-3xl font-semibold text-white">
-                  {initials(user.name)}
-                </div>
-                <div className="space-y-4">
-                  <label className="grid gap-2">
-                    <span className="text-sm text-white/60">Display name</span>
-                    <input
-                      className="h-14 rounded-[18px] border border-white/10 bg-slate-950/72 px-4 text-white outline-none"
-                      onChange={(event) => setNameDraft(event.target.value)}
-                      value={nameDraft}
-                    />
-                  </label>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <ReadOnlyField label="Email" value={user.email} />
-                    <ReadOnlyField label="Authentication" value={user.provider === "google" ? "Google Sign-In" : "Email + password"} />
-                  </div>
+        <div className="grid gap-8 xl:grid-cols-[240px_minmax(0,1fr)]">
+          <aside className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] p-3">
+            <nav className="space-y-1">
+              {sections.map((section) => {
+                const active = activeSection === section.key;
+                return (
                   <button
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-950"
-                    disabled={savingProfile}
-                    onClick={() => void handleSaveProfile()}
+                    className={cn(
+                      "flex w-full items-center rounded-[8px] border-l-2 px-4 py-3 text-left text-sm transition-colors",
+                      active
+                        ? "border-l-[#c96442] bg-[rgba(201,100,66,0.12)] text-white"
+                        : "border-l-transparent text-[rgba(255,255,255,0.55)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                    )}
+                    key={section.key}
+                    onClick={() => setActiveSection(section.key)}
                     type="button"
                   >
-                    <Save className="h-4 w-4" />
-                    {savingProfile ? "Saving..." : "Save profile"}
+                    {section.label}
                   </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          <div className="space-y-6">
+            <WorkspaceCard className={activeSection !== "profile" ? "opacity-70" : ""}>
+              <div className="flex items-center justify-between gap-4 border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <WorkspaceSectionTitle>Profile</WorkspaceSectionTitle>
+                <WorkspaceButton onClick={() => void handleSaveProfile()} variant="secondary">
+                  Edit profile
+                </WorkspaceButton>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#c96442] text-base font-semibold text-white">
+                  {initials(user.name)}
+                </div>
+                <div className="min-w-0 flex-1 space-y-5">
+                  <div>
+                    <div className="text-lg font-bold text-white">{user.name}</div>
+                    <div className="mt-1 text-sm text-[rgba(255,255,255,0.4)]">{user.email}</div>
+                    <div className="mt-3">
+                      <WorkspaceBadge tone="learning">{user.plan}</WorkspaceBadge>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <WorkspaceField label="Display name">
+                      <WorkspaceInput onChange={(event) => setNameDraft(event.target.value)} value={nameDraft} />
+                    </WorkspaceField>
+                    <WorkspaceField label="Authentication">
+                      <WorkspaceInput disabled value={user.provider === "google" ? "Google Sign-In" : "Email + password"} />
+                    </WorkspaceField>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <WorkspaceButton disabled={savingProfile} onClick={() => void handleSaveProfile()}>
+                      <Save className="h-4 w-4" />
+                      {savingProfile ? "Saving..." : "Save profile"}
+                    </WorkspaceButton>
+                  </div>
                 </div>
               </div>
-            </section>
+            </WorkspaceCard>
 
-            <section className="glass-panel p-5">
-              <div className="section-kicker">Account overview</div>
-              <div className="mt-4 grid gap-3">
-                {accountSummary.map(([label, value]) => (
-                  <div className="rounded-[1.3rem] border border-white/8 bg-slate-950/72 px-4 py-4" key={label}>
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-white/36">{label}</div>
-                    <div className="mt-2 text-base font-medium text-white">{value}</div>
-                  </div>
-                ))}
+            <WorkspaceCard className={activeSection !== "workspace" ? "opacity-70" : ""}>
+              <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <WorkspaceSectionTitle>Workspace preferences</WorkspaceSectionTitle>
               </div>
-            </section>
-          </div>
-
-          <div className="grid gap-4 2xl:grid-cols-[1.1fr_0.9fr]">
-            <section className="glass-panel p-5">
-              <div className="section-kicker">Workspace behavior</div>
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                <ToggleCard
-                  active={Boolean(settings?.memoryEnabled)}
-                  description="Keep reusable facts and preferences available across sessions."
-                  icon={BrainCircuit}
+              <div className="mt-6 space-y-4">
+                <PreferenceRow
+                  checked={Boolean(settings?.memoryEnabled)}
+                  description="Keep reusable facts and user context available across sessions."
                   label="Memory"
-                  onClick={() => void handleToggle("memoryEnabled")}
+                  onToggle={() => void handleToggle("memoryEnabled")}
                 />
-                <ToggleCard
-                  active={Boolean(settings?.orchestrationEnabled)}
-                  description="Let Xeivora route across providers, tools, and continuity steps automatically."
-                  icon={Sparkles}
+                <PreferenceRow
+                  checked={Boolean(settings?.orchestrationEnabled)}
+                  description="Automatically route tasks across providers, tools, and workflows."
                   label="Orchestration"
-                  onClick={() => void handleToggle("orchestrationEnabled")}
+                  onToggle={() => void handleToggle("orchestrationEnabled")}
                 />
-                <ToggleCard
-                  active={Boolean(settings?.continuityEnabled)}
-                  description="Preserve checkpoints and recover tasks when providers fail or switch."
-                  icon={ShieldCheck}
+                <PreferenceRow
+                  checked={Boolean(settings?.continuityEnabled)}
+                  description="Preserve checkpoints and resume work when providers switch."
                   label="Continuity"
-                  onClick={() => void handleToggle("continuityEnabled")}
+                  onToggle={() => void handleToggle("continuityEnabled")}
                 />
               </div>
-              {savingSettings ? <p className="mt-4 text-sm text-white/42">Saving workspace settings...</p> : null}
-            </section>
+              {savingSettings ? <p className="mt-4 text-sm text-[rgba(255,255,255,0.35)]">Saving workspace settings…</p> : null}
+            </WorkspaceCard>
 
-            <section className="glass-panel p-5">
-              <div className="section-kicker">Provider readiness</div>
-              <div className="mt-4 space-y-3">
+            <WorkspaceCard className={activeSection !== "providers" ? "opacity-70" : ""}>
+              <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <WorkspaceSectionTitle>Provider readiness</WorkspaceSectionTitle>
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {Object.entries(providerStatus || {}).map(([key, value]) => (
-                  <div className="rounded-[1.3rem] border border-white/8 bg-slate-950/72 px-4 py-4" key={key}>
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-white/36">{key}</div>
-                    <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs leading-6 text-white/58">
+                  <div className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] p-4" key={key}>
+                    <div className="text-[12px] uppercase tracking-[0.06em] text-[rgba(255,255,255,0.5)]">{key}</div>
+                    <pre className="mt-3 overflow-x-auto whitespace-pre-wrap text-xs leading-6 text-[rgba(255,255,255,0.55)]">
                       {JSON.stringify(value, null, 2)}
                     </pre>
                   </div>
                 ))}
               </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {accountSummary.map(([label, value]) => (
+                  <div className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4" key={label}>
+                    <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">{label}</div>
+                    <div className="mt-2 text-sm text-white">{value}</div>
+                  </div>
+                ))}
+              </div>
+            </WorkspaceCard>
+
+            <section className={cn(activeSection !== "danger" ? "opacity-70" : "")}>
+              <div className="rounded-[8px] border border-[rgba(239,68,68,0.2)] bg-[#1a1410] p-6">
+                <div className="border-b border-[rgba(239,68,68,0.16)] pb-4">
+                  <WorkspaceSectionTitle>Danger zone</WorkspaceSectionTitle>
+                </div>
+                <p className="mt-4 max-w-[36rem] text-sm leading-7 text-[rgba(255,255,255,0.5)]">
+                  Removing this account would affect your current authenticated workspace. This action is intentionally locked until
+                  account deletion flows are finalized.
+                </p>
+                <div className="mt-6">
+                  <WorkspaceButton variant="danger">Delete account</WorkspaceButton>
+                </div>
+              </div>
             </section>
           </div>
         </div>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[18px] border border-white/10 bg-slate-950/72 px-4 py-4">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-white/36">{label}</div>
-      <div className="mt-2 text-sm text-white">{value}</div>
-    </div>
-  );
-}
-
-function ToggleCard({
-  active,
+function PreferenceRow({
+  checked,
   description,
-  icon: Icon,
   label,
-  onClick
+  onToggle
 }: {
-  active: boolean;
+  checked: boolean;
   description: string;
-  icon: LucideIcon;
   label: string;
-  onClick: () => void;
+  onToggle: () => void;
 }) {
   return (
-    <button
-      className={`rounded-[1.5rem] border p-5 text-left transition ${
-        active
-          ? "border-[#8b5cf6]/30 bg-[#171126] text-white"
-          : "border-white/10 bg-slate-950/72 text-white/74 hover:border-white/16 hover:bg-white/[0.03]"
-      }`}
-      onClick={onClick}
-      type="button"
-    >
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.05]">
-        <Icon className="h-5 w-5" />
+    <div className="flex items-start justify-between gap-4 rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4">
+      <div>
+        <div className="text-sm font-medium text-white">{label}</div>
+        <p className="mt-2 max-w-[34rem] text-sm leading-7 text-[rgba(255,255,255,0.5)]">{description}</p>
       </div>
-      <div className="mt-4 text-base font-medium">{label}</div>
-      <p className="mt-2 text-sm leading-7 opacity-80">{description}</p>
-      <div className="mt-4 text-[11px] uppercase tracking-[0.18em] text-white/34">{active ? "Enabled" : "Disabled"}</div>
-    </button>
+      <WorkspaceToggle checked={checked} onClick={onToggle} />
+    </div>
   );
 }
 
 function Feedback({ children, tone }: { children: string; tone: "success" | "error" }) {
   return (
     <div
-      className={`rounded-[1.4rem] border px-4 py-3 text-sm ${
+      className={cn(
+        "rounded-[8px] border px-4 py-3 text-sm",
         tone === "success"
-          ? "border-emerald-400/18 bg-emerald-400/[0.08] text-emerald-100"
-          : "border-rose-400/20 bg-rose-400/[0.08] text-rose-100"
-      }`}
+          ? "border-[rgba(34,197,94,0.3)] bg-[rgba(34,197,94,0.12)] text-[#22c55e]"
+          : "border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)] text-[rgba(239,68,68,0.85)]"
+      )}
     >
       {children}
     </div>

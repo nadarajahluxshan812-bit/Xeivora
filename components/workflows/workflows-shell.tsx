@@ -2,9 +2,16 @@
 
 import { motion } from "framer-motion";
 
-import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
+import {
+  WorkspaceBadge,
+  WorkspaceCard,
+  WorkspacePageHero,
+  WorkspacePageShell,
+  WorkspaceProgressBar,
+  WorkspaceSectionTitle,
+  WorkspaceStatCard
+} from "@/components/workspace/workspace-page-ui";
 import type { AuthUser } from "@/lib/auth-types";
-import { formatClock, formatPercent } from "@/lib/format";
 import type { OrbitOverview } from "@/lib/types";
 import { useOrbitOverview } from "@/lib/use-orbit-overview";
 
@@ -12,119 +19,103 @@ export function WorkflowsShell({ viewer = null }: { viewer?: AuthUser | null }) 
   const { overview, connectionState } = useOrbitOverview();
 
   if (!overview) {
-    return <WorkspaceLoading />;
+    return <WorkspaceLoading viewer={viewer} />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
-      <div className="mx-auto grid max-w-[1680px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <WorkspaceSidebar statusLabel={connectionState} viewer={viewer} />
-        <div className="space-y-4">
-          <section className="glow-shell p-6">
-            <div className="section-kicker">Workflow control</div>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
-              Visual orchestration builder
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-8 text-white/56">
-              Design multi-step AI automations, route tasks between providers, and track every
-              execution branch from one control surface.
-            </p>
+    <WorkspacePageShell statusLabel={connectionState} viewer={viewer}>
+      <div className="space-y-10">
+        <WorkspacePageHero
+          description="Design multi-step orchestration paths, route prompts across models, and keep continuity alive even when providers switch under load."
+          eyebrow="Workflow control"
+          title="Visual orchestration builder"
+        />
 
-            <div className="mt-6 grid gap-3 md:grid-cols-4">
-              {[
-                ["Live workflows", `${overview.workflows.length}`],
-                ["Automations", `${overview.summary.automations}`],
-                ["Queue depth", `${overview.summary.queueDepth}`],
-                ["Model switches", `${overview.summary.modelSwitches}`]
-              ].map(([label, value]) => (
-                <div className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] px-4 py-4" key={label}>
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-white/38">{label}</div>
-                  <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
-                </div>
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <WorkspaceStatCard label="LIVE WORKFLOWS" value={`${overview.workflows.length}`} />
+          <WorkspaceStatCard label="AUTOMATIONS" value={`${overview.summary.automations}`} />
+          <WorkspaceStatCard label="QUEUE DEPTH" value={`${overview.summary.queueDepth}`} />
+          <WorkspaceStatCard label="MODEL SWITCHES" value={`${overview.summary.modelSwitches}`} />
+        </div>
+
+        <div className="grid gap-10 2xl:grid-cols-[1.1fr_.9fr]">
+          <WorkflowCanvas overview={overview} />
+
+          <WorkspaceCard>
+            <WorkspaceSectionTitle>Live execution feed</WorkspaceSectionTitle>
+            <div className="mt-6 space-y-3">
+              {overview.activityLogs.map((log, index) => (
+                <motion.div
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  key={log.id}
+                  transition={{ delay: index * 0.03 }}
+                >
+                  <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.35)]">
+                    <span>{log.actor}</span>
+                    <span>{new Date(log.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{log.message}</p>
+                </motion.div>
               ))}
             </div>
-          </section>
+          </WorkspaceCard>
+        </div>
 
-          <div className="grid gap-4 2xl:grid-cols-[1.15fr_.85fr]">
-            <WorkflowCanvas overview={overview} />
-            <div className="glass-panel p-5">
-              <div className="section-kicker">Execution log</div>
-              <div className="mt-4 space-y-3">
-                {overview.activityLogs.map((log, index) => (
-                  <motion.div
-                    animate={{ opacity: 1, x: 0 }}
-                    className="rounded-[1.3rem] border border-white/8 bg-slate-950/74 p-4"
-                    initial={{ opacity: 0, x: 16 }}
-                    key={log.id}
-                    transition={{ delay: index * 0.03 }}
-                  >
-                    <div className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.2em] text-white/36">
-                      <span>{log.actor}</span>
-                      <span>{formatClock(log.timestamp)}</span>
-                    </div>
-                    <div className="mt-3 text-sm leading-7 text-white/58">{log.message}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-3">
-            {overview.workflows.map((workflow) => (
-              <div className="glass-panel p-5" key={workflow.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-lg font-medium text-white">{workflow.name}</div>
-                    <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/40">
-                      {workflow.trigger}
-                    </div>
-                  </div>
-                  <div className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-cyan-100">
-                    {workflow.status}
+        <div className="grid gap-5 xl:grid-cols-3">
+          {overview.workflows.map((workflow) => (
+            <WorkspaceCard className="p-5" key={workflow.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-base font-medium text-white">{workflow.name}</div>
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.3)]">
+                    {workflow.trigger}
                   </div>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-white/56">{workflow.description}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {workflow.tools.map((tool) => (
-                    <span
-                      className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-white/52"
-                      key={tool}
-                    >
-                      {tool}
-                    </span>
-                  ))}
+                <WorkspaceBadge tone={workflow.status === "Live" ? "live" : workflow.status === "Optimizing" ? "learning" : "standby"}>
+                  {workflow.status}
+                </WorkspaceBadge>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{workflow.description}</p>
+              <div className="mt-5 space-y-4">
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-xs text-[rgba(255,255,255,0.35)]">
+                    <span>Success rate</span>
+                    <span>{workflow.successRate.toFixed(1)}%</span>
+                  </div>
+                  <WorkspaceProgressBar value={workflow.successRate} />
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <MetricCard label="Success" value={formatPercent(workflow.successRate)} />
-                  <MetricCard label="Latency" value={`${workflow.latencyMs}ms`} />
+                <div className="grid grid-cols-2 gap-3">
+                  <Metric label="Latency" value={`${workflow.latencyMs}ms`} />
+                  <Metric label="Tools" value={`${workflow.tools.length}`} />
                 </div>
               </div>
-            ))}
-          </div>
+            </WorkspaceCard>
+          ))}
         </div>
       </div>
-    </div>
+    </WorkspacePageShell>
   );
 }
 
 function WorkflowCanvas({ overview }: { overview: OrbitOverview }) {
   return (
-    <section className="glow-shell p-5">
-      <div className="section-kicker">Builder canvas</div>
-      <div className="mt-4 grid gap-4 xl:grid-cols-[240px_minmax(0,1fr)]">
-        <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
-          <div className="text-sm font-medium text-white">Palette</div>
-          <div className="mt-4 space-y-3">
-            {overview.builder.palette.map((item) => (
-              <div className="rounded-2xl border border-white/8 bg-slate-950/70 px-4 py-3 text-sm text-white/70" key={item}>
-                {item}
-              </div>
-            ))}
-          </div>
+    <WorkspaceCard className="p-6">
+      <WorkspaceSectionTitle>Builder canvas</WorkspaceSectionTitle>
+      <div className="mt-6 grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="space-y-3">
+          {overview.builder.palette.map((item) => (
+            <div
+              className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#1a1410] px-4 py-3 text-sm text-[rgba(255,255,255,0.65)] transition-colors hover:border-[#c96442] hover:text-white"
+              key={item}
+            >
+              {item}
+            </div>
+          ))}
         </div>
 
-        <div className="relative min-h-[420px] overflow-hidden rounded-[1.8rem] border border-white/8 bg-slate-950/76 p-5">
-          <div className="orbital-grid absolute inset-0 opacity-60" />
+        <div className="relative min-h-[460px] overflow-hidden rounded-[8px] border border-[rgba(201,100,66,0.1)] bg-[#0a0806] p-5">
           <svg className="pointer-events-none absolute inset-0 h-full w-full" fill="none" viewBox="0 0 100 100">
             {overview.builder.connections.map((connection) => {
               const from = overview.builder.nodes.find((node) => node.id === connection.from);
@@ -139,13 +130,13 @@ function WorkflowCanvas({ overview }: { overview: OrbitOverview }) {
               const endY = to.y + 6;
 
               return (
-                <g key={`${connection.from}-${connection.to}`}>
-                  <path
-                    d={`M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`}
-                    stroke="rgba(103,232,249,0.55)"
-                    strokeWidth="0.55"
-                  />
-                </g>
+                <path
+                  d={`M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`}
+                  key={`${connection.from}-${connection.to}`}
+                  opacity="0.5"
+                  stroke="#c96442"
+                  strokeWidth="0.55"
+                />
               );
             })}
           </svg>
@@ -153,46 +144,65 @@ function WorkflowCanvas({ overview }: { overview: OrbitOverview }) {
           {overview.builder.nodes.map((node, index) => (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="absolute w-36 rounded-2xl border border-cyan-300/14 bg-cyan-300/10 px-4 py-3 backdrop-blur-xl"
-              initial={{ opacity: 0, y: 14 }}
+              className={nodeClassName(node.kind)}
+              initial={{ opacity: 0, y: 10 }}
               key={node.id}
               style={{ left: `${node.x}%`, top: `${node.y}%` }}
               transition={{ delay: index * 0.04 }}
             >
-              <div className="text-[10px] uppercase tracking-[0.2em] text-white/42">{node.kind}</div>
+              <div className="text-[9px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.3)]">{node.kind}</div>
               <div className="mt-2 text-sm font-medium text-white">{node.label}</div>
             </motion.div>
           ))}
         </div>
       </div>
-    </section>
+    </WorkspaceCard>
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function nodeClassName(kind: string) {
+  const base =
+    "absolute w-36 rounded-[8px] bg-[#1a1410] px-4 py-3 backdrop-blur-xl";
+  switch (kind.toUpperCase()) {
+    case "TRIGGER":
+      return `${base} border border-[rgba(201,100,66,0.3)]`;
+    case "CORE":
+      return `${base} border border-[rgba(201,100,66,0.5)]`;
+    case "MODEL":
+      return `${base} border border-[rgba(201,100,66,0.2)]`;
+    case "STATE":
+      return `${base} border border-[rgba(201,100,66,0.2)]`;
+    case "HUMAN":
+      return `${base} border border-[rgba(255,255,255,0.1)]`;
+    default:
+      return `${base} border border-[rgba(255,255,255,0.1)]`;
+  }
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.2rem] border border-white/8 bg-slate-950/72 px-3 py-3">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-white/36">{label}</div>
+    <div className="rounded-[8px] border border-[rgba(201,100,66,0.1)] bg-[#120e0a] px-3 py-3">
+      <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-white">{value}</div>
     </div>
   );
 }
 
-function WorkspaceLoading() {
+function WorkspaceLoading({ viewer = null }: { viewer?: AuthUser | null }) {
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-4 md:px-6">
-      <div className="mx-auto grid max-w-[1680px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="glass-panel h-[calc(100vh-2rem)] animate-pulse" />
-        <div className="space-y-4">
-          <div className="glass-panel h-40 animate-pulse" />
-          <div className="glass-panel h-80 animate-pulse" />
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className="glass-panel h-72 animate-pulse" />
-            <div className="glass-panel h-72 animate-pulse" />
-            <div className="glass-panel h-72 animate-pulse" />
-          </div>
+    <WorkspacePageShell statusLabel="Connecting" viewer={viewer}>
+      <div className="space-y-5">
+        <div className="h-36 animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" />
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div className="h-28 animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" key={index} />
+          ))}
+        </div>
+        <div className="grid gap-5 2xl:grid-cols-[1.1fr_.9fr]">
+          <div className="h-[520px] animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" />
+          <div className="h-[520px] animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" />
         </div>
       </div>
-    </div>
+    </WorkspacePageShell>
   );
 }

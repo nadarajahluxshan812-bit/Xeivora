@@ -1,9 +1,17 @@
 "use client";
 
-import { FolderKanban, Plus, Search, Sparkles } from "lucide-react";
+import { FileText, FolderKanban, Plus, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
+import {
+  WorkspaceButton,
+  WorkspaceCard,
+  WorkspaceEmptyState,
+  WorkspacePageHero,
+  WorkspacePageShell,
+  WorkspaceSearchInput,
+  WorkspaceSectionTitle
+} from "@/components/workspace/workspace-page-ui";
 import type { AuthUser } from "@/lib/auth-types";
 import type { UploadedFileSummary, WorkspaceProject } from "@/lib/chat-types";
 
@@ -35,9 +43,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
   const filteredProjects = useMemo(() => {
     const lower = query.toLowerCase();
-    return projects.filter((project) =>
-      `${project.name} ${project.description}`.toLowerCase().includes(lower)
-    );
+    return projects.filter((project) => `${project.name} ${project.description}`.toLowerCase().includes(lower));
   }, [projects, query]);
 
   async function handleCreateProject() {
@@ -52,132 +58,161 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
       body: JSON.stringify({
         name,
         description: "Workspace for chats, files, memories, and orchestrated tasks.",
-        color: "#8b5cf6"
+        color: "#c96442"
       })
     });
+
     const project = (await response.json()) as WorkspaceProject;
     setProjects((current) => [project, ...current]);
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
-      <div className="mx-auto grid max-w-[1680px] gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <WorkspaceSidebar statusLabel="Workspace" viewer={viewer} />
-        <div className="space-y-4">
-          <section className="glow-shell p-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <div className="section-kicker">Projects workspace</div>
-                <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
-                  Organize chats, files, memory, and workflows by project
-                </h1>
-                <p className="mt-4 max-w-3xl text-base leading-8 text-white/56">
-                  Xeivora projects keep related conversations, uploaded files, workspace memory, and tool activity together
-                  so the AI operating system has durable context.
-                </p>
-              </div>
+    <WorkspacePageShell statusLabel="Projects" viewer={viewer}>
+      <div className="space-y-10">
+        <WorkspacePageHero
+          actions={
+            <WorkspaceButton onClick={() => void handleCreateProject()}>
+              <Plus className="h-4 w-4" />
+              New project
+            </WorkspaceButton>
+          }
+          description="Create persistent workspaces for chats, files, memory, and orchestration traces so Xeivora can maintain continuity around every initiative."
+          eyebrow="Projects workspace"
+          title="Organize work around durable context"
+        />
 
-              <button
-                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5"
-                onClick={() => void handleCreateProject()}
-                type="button"
-              >
-                <Plus className="h-4 w-4" />
-                <span>New project</span>
-              </button>
-            </div>
-          </section>
+        <WorkspaceSearchInput onChange={setQuery} placeholder="Search projects" value={query} />
 
-          <section className="glass-panel p-5">
-            <label className="flex items-center gap-3 rounded-[1.2rem] border border-white/8 bg-slate-950/70 px-4 py-3">
-              <Search className="h-4 w-4 text-white/42" />
-              <input
-                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/34"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search projects"
-                value={query}
-              />
-            </label>
-          </section>
-
-          <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
-            <section className="glow-shell p-5">
-              <div className="section-kicker">Project registry</div>
-              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredProjects.map((project) => (
-                  <article className="rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5" key={project.id}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex h-11 w-11 items-center justify-center rounded-2xl"
-                          style={{ backgroundColor: `${project.color}22`, color: project.color }}
-                        >
-                          <FolderKanban className="h-5 w-5" />
+        <div className="grid gap-10 xl:grid-cols-[1.15fr_.85fr]">
+          <div className="space-y-10">
+            <WorkspaceCard>
+              <WorkspaceSectionTitle>Project registry</WorkspaceSectionTitle>
+              {filteredProjects.length ? (
+                <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredProjects.map((project) => (
+                    <article
+                      className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] p-5 transition-colors hover:border-[rgba(201,100,66,0.35)]"
+                      key={project.id}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div
+                            className="flex h-11 w-11 items-center justify-center rounded-[8px]"
+                            style={{ backgroundColor: `${project.color}22`, color: project.color }}
+                          >
+                            <FolderKanban className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-base font-medium text-white">{project.name}</div>
+                            <div className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[rgba(255,255,255,0.35)]">
+                              {project.status}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-lg font-medium text-white">{project.name}</div>
-                          <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-white/38">
-                            {project.status}
+                        <span className="text-xs text-[rgba(255,255,255,0.35)]">{project.chatCount} chats</span>
+                      </div>
+
+                      <p className="mt-4 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{project.description}</p>
+
+                      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-[rgba(201,100,66,0.1)] pt-4">
+                        <Metric label="Chats" value={`${project.chatCount}`} />
+                        <Metric label="Files" value={`${project.fileCount}`} />
+                        <Metric label="Memory" value={`${project.memoryCount}`} />
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <WorkspaceEmptyState
+                    action={
+                      <WorkspaceButton onClick={() => void handleCreateProject()}>
+                        <Plus className="h-4 w-4" />
+                        {projects.length ? "Create another project" : "Create project"}
+                      </WorkspaceButton>
+                    }
+                    description={
+                      projects.length
+                        ? "Try a different search term or create another project to expand your workspace."
+                        : "Create your first project to organise chats, files, and memory"
+                    }
+                    title={projects.length ? "No matching projects" : "No projects yet"}
+                  />
+                </div>
+              )}
+            </WorkspaceCard>
+
+            <WorkspaceCard>
+              <WorkspaceSectionTitle>Workspace activity</WorkspaceSectionTitle>
+              <div className="mt-6 space-y-3">
+                {toolLogs.length ? (
+                  toolLogs.map((log) => (
+                    <div
+                      className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4"
+                      key={log.id}
+                    >
+                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[rgba(255,255,255,0.35)]">
+                        <Sparkles className="h-3.5 w-3.5 text-[#c96442]" />
+                        <span>{log.tool}</span>
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{log.summary}</p>
+                    </div>
+                  ))
+                ) : (
+                  <WorkspaceEmptyState
+                    description="Execution traces, file analysis jobs, and orchestration actions will appear here once your workspace starts running."
+                    title="No activity yet"
+                  />
+                )}
+              </div>
+            </WorkspaceCard>
+          </div>
+
+          <WorkspaceCard>
+            <WorkspaceSectionTitle>Recent files</WorkspaceSectionTitle>
+            <div className="mt-6 space-y-3">
+              {files.length ? (
+                files.slice(0, 8).map((file) => (
+                  <div
+                    className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4 transition-colors hover:border-[rgba(201,100,66,0.25)]"
+                    key={file.id}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[rgba(201,100,66,0.08)] text-[#c96442]">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-white">{file.name}</div>
+                          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">
+                            {file.kind}
                           </div>
                         </div>
                       </div>
-                      <span className="rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-cyan-100/74">
-                        {project.chatCount} chats
-                      </span>
                     </div>
-                    <p className="mt-4 text-sm leading-7 text-white/56">{project.description}</p>
-                    <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
-                      <Metric label="Chats" value={`${project.chatCount}`} />
-                      <Metric label="Files" value={`${project.fileCount}`} />
-                      <Metric label="Memory" value={`${project.memoryCount}`} />
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <div className="space-y-4">
-              <section className="glass-panel p-5">
-                <div className="section-kicker">Recent files</div>
-                <div className="mt-4 space-y-3">
-                  {files.slice(0, 8).map((file) => (
-                    <div className="rounded-[1.3rem] border border-white/8 bg-slate-950/72 p-4" key={file.id}>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-white">{file.name}</div>
-                        <span className="text-[10px] uppercase tracking-[0.18em] text-white/36">{file.kind}</span>
-                      </div>
-                      <div className="mt-2 text-sm text-white/52">{file.summary || file.previewText || "Ready for analysis."}</div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="glass-panel p-5">
-                <div className="section-kicker">Workspace activity</div>
-                <div className="mt-4 space-y-3">
-                  {toolLogs.map((log) => (
-                    <div className="rounded-[1.3rem] border border-white/8 bg-slate-950/72 p-4" key={log.id}>
-                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/34">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span>{log.tool}</span>
-                      </div>
-                      <div className="mt-2 text-sm text-white/60">{log.summary}</div>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                    <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">
+                      {file.summary || file.previewText || "Ready for analysis."}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <WorkspaceEmptyState
+                  description="Uploaded files, parsed documents, and extracted insights will show up here once you attach them to a project."
+                  title="No files yet"
+                />
+              )}
             </div>
-          </div>
+          </WorkspaceCard>
         </div>
       </div>
-    </div>
+    </WorkspacePageShell>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.2rem] border border-white/8 bg-slate-950/72 px-3 py-3">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-white/36">{label}</div>
+    <div className="rounded-[8px] border border-[rgba(201,100,66,0.1)] bg-[#1a1410] px-3 py-3">
+      <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-white">{value}</div>
     </div>
   );
