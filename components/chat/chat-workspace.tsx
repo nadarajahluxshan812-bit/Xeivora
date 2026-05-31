@@ -132,25 +132,25 @@ type WorkflowMode = "simple_chat" | "continuity" | "coding_continuity";
 
 const chatTheme = {
   "--xeivora-coral": coralAccent,
-  "--xv-chat-bg": "#faf8f4",
-  "--xv-chat-surface": "#ffffff",
-  "--xv-chat-surface-soft": "#f4f1eb",
-  "--xv-chat-sidebar": "#f4f0e8",
-  "--xv-chat-border": "rgba(17, 24, 39, 0.08)",
-  "--xv-chat-border-strong": "rgba(17, 24, 39, 0.14)",
-  "--xv-chat-text": "#171717",
-  "--xv-chat-muted": "#6b7280",
+  "--xv-chat-bg": "#0e0b08",
+  "--xv-chat-surface": "#1a1410",
+  "--xv-chat-surface-soft": "rgba(201,100,66,0.08)",
+  "--xv-chat-sidebar": "#120e0a",
+  "--xv-chat-border": "rgba(201,100,66,0.12)",
+  "--xv-chat-border-strong": "rgba(201,100,66,0.2)",
+  "--xv-chat-text": "#f0ead8",
+  "--xv-chat-muted": "rgba(240,234,216,0.7)",
   "--xv-chat-accent": coralAccent,
-  "--xv-chat-code-bg": "#f3efe9",
-  "--xv-chat-code-header-bg": "rgba(20, 20, 20, 0.04)",
-  "--xv-chat-code-border": "rgba(17, 24, 39, 0.08)",
-  "--xv-chat-code-text": "#1f2937",
-  "--xv-chat-inline-code-bg": "rgba(201, 100, 66, 0.12)",
-  "--xv-chat-inline-code-text": "#7f3d27",
-  "--xv-chat-ghost-bg": "rgba(20, 20, 20, 0.04)",
-  "--xv-chat-ghost-bg-hover": "rgba(20, 20, 20, 0.08)",
-  "--xv-chat-ghost-text": "rgba(20, 20, 20, 0.72)",
-  "--xv-chat-shadow": "0 16px 38px rgba(15, 23, 42, 0.04)"
+  "--xv-chat-code-bg": "#1a1410",
+  "--xv-chat-code-header-bg": "rgba(201,100,66,0.08)",
+  "--xv-chat-code-border": "rgba(201,100,66,0.15)",
+  "--xv-chat-code-text": "#f0ead8",
+  "--xv-chat-inline-code-bg": "rgba(201,100,66,0.16)",
+  "--xv-chat-inline-code-text": "#f0ead8",
+  "--xv-chat-ghost-bg": "rgba(201,100,66,0.08)",
+  "--xv-chat-ghost-bg-hover": "rgba(201,100,66,0.12)",
+  "--xv-chat-ghost-text": "rgba(240,234,216,0.7)",
+  "--xv-chat-shadow": "0 12px 30px rgba(0, 0, 0, 0.28)"
 } as CSSProperties;
 
 export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
@@ -207,7 +207,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const messages = activeSession?.messages ?? [];
   const hasMessages = messages.length > 0;
   const viewerName = viewer?.name || "Nadarajah Luxshan";
-  const viewerInitials = getInitials(viewerName);
   const filteredSessions = useMemo(() => sessions, [sessions]);
   const groupedSessions = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
   const lastAssistantMessage = useMemo(
@@ -934,7 +933,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       style={{ ...chatTheme, fontFamily: "Inter, system-ui, sans-serif" }}
     >
       <div className="flex min-h-screen bg-[var(--xv-chat-bg)]">
-        <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[var(--xv-chat-border)] bg-[var(--xv-chat-sidebar)] md:flex">
+        <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-sidebar)] md:flex">
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
             collapsed={false}
@@ -1036,7 +1035,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 prompt={prompt}
                 sessionFiles={sessionFiles}
                 thinking={thinking}
-                viewerInitials={viewerInitials}
                 voiceState={voiceState}
               />
             ) : (
@@ -1113,11 +1111,11 @@ function SidebarContent({
     <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
       <div className="mb-2 flex items-center justify-between gap-3 px-1.5">
         <Link
-          className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[var(--xv-chat-surface)]/80"
+          className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[rgba(201,100,66,0.08)]"
           href="/"
           onClick={() => onDismiss?.()}
         >
-          <div className="text-[15px] font-medium tracking-[-0.01em] text-[var(--xv-chat-text)]">
+          <div className="text-[15px] font-medium tracking-[-0.01em] text-[#f0ead8]">
             Xei<span className="text-[var(--xv-chat-accent)]">vora</span>
           </div>
         </Link>
@@ -1125,7 +1123,7 @@ function SidebarContent({
         <div className="flex items-center gap-2">
           <button
             aria-label="Start new chat"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
             onClick={onNewChat}
             type="button"
           >
@@ -1134,7 +1132,7 @@ function SidebarContent({
           {mobile ? (
             <button
               aria-label="Close sidebar"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
               onClick={onToggleCollapse}
               type="button"
             >
@@ -1146,7 +1144,7 @@ function SidebarContent({
 
       <button
         className={cn(
-          "mb-2 flex h-10 items-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 text-[13px] font-normal text-[var(--xv-chat-muted)] shadow-sm transition hover:border-[var(--xv-chat-border-strong)] hover:text-[var(--xv-chat-text)]",
+          "mb-2 flex h-10 items-center rounded-[10px] border border-[rgba(201,100,66,0.15)] bg-[var(--xv-chat-surface)] px-3 text-[13px] font-normal text-[var(--xv-chat-muted)] shadow-sm transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]",
           collapsed ? "justify-center px-0" : "gap-2.5"
         )}
         onClick={onNewChat}
@@ -1158,7 +1156,7 @@ function SidebarContent({
 
       {!collapsed || mobile ? (
         <>
-          <nav className="grid gap-[1px] border-b border-[var(--xv-chat-border)] pb-2" aria-label="Workspace navigation">
+          <nav className="grid gap-[1px] border-b border-[rgba(201,100,66,0.1)] pb-2" aria-label="Workspace navigation">
             {navItems.map((item) => (
               <SidebarNavItem item={item} key={item.label} onDismiss={onDismiss} pathname={pathname} />
             ))}
@@ -1166,7 +1164,7 @@ function SidebarContent({
 
           <div className="mt-2 min-h-0 flex-1 overflow-hidden">
             <div className="mb-1 flex items-center justify-between px-2">
-              <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--xv-chat-muted)]">
+              <p className="text-[11px] font-normal tracking-[0.01em] text-[rgba(240,234,216,0.35)]">
                 Recents
               </p>
             </div>
@@ -1176,7 +1174,7 @@ function SidebarContent({
                 {sessionGroups.length ? (
                   sessionGroups.map(([group, items]) => (
                     <div className="space-y-1" key={group}>
-                      <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
+                      <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
                         {group}
                       </h3>
                       {items.map((session) => (
@@ -1205,8 +1203,8 @@ function SidebarContent({
             </ScrollArea>
           </div>
 
-          <div className="mt-auto border-t border-[var(--xv-chat-border)] px-1 pt-2">
-            <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[var(--xv-chat-surface)]">
+          <div className="mt-auto border-t border-[rgba(201,100,66,0.1)] px-1 pt-2">
+            <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[rgba(201,100,66,0.08)]">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[10px] font-medium text-white">
                 {getInitials(profileName)}
               </div>
@@ -1216,7 +1214,7 @@ function SidebarContent({
               </div>
               <button
                 aria-label="Profile options"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
                 type="button"
               >
                 <Ellipsis className="h-4 w-4" />
@@ -1269,8 +1267,8 @@ function SidebarNavItem({
       className={cn(
         "flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] transition",
         isActive
-          ? "bg-[var(--xv-chat-surface)] font-medium text-[var(--xv-chat-text)]"
-          : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+          ? "bg-[#1a1410] font-medium text-[#f0ead8]"
+          : "text-[var(--xv-chat-muted)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
       )}
       href={item.href}
       onClick={() => onDismiss?.()}
@@ -1306,10 +1304,10 @@ function RecentSessionRow({
     <div className="group relative">
       <button
         className={cn(
-          "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
-          active
-            ? "bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)]"
-            : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+        "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
+        active
+            ? "bg-[#1a1410] text-[#f0ead8]"
+            : "text-[var(--xv-chat-muted)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
         )}
         onClick={onSelect}
         type="button"
@@ -1321,7 +1319,7 @@ function RecentSessionRow({
       <button
         aria-label={`Open options for ${session.title}`}
         className={cn(
-          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]",
+          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]",
           menuOpen || active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
         onClick={(event) => {
@@ -1338,19 +1336,19 @@ function RecentSessionRow({
         {menuOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute left-0 top-[calc(100%+8px)] z-40 w-[228px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-2 shadow-[var(--xv-chat-shadow)]"
+            className="absolute left-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
           >
-            <SessionMenuButton icon={Pin} label={session.pinned ? "Unpin chat" : "Pin chat"} onClick={onPin} />
-            <SessionMenuButton icon={Pencil} label="Rename chat" onClick={onRename} />
+            <SessionMenuButton icon={Pin} label={session.pinned ? "Unpin conversation" : "Pin conversation"} onClick={onPin} />
+            <SessionMenuButton icon={Pencil} label="Rename" onClick={onRename} />
             <SessionMenuButton
               icon={session.archived ? ArchiveRestore : Archive}
-              label={session.archived ? "Restore chat" : "Archive chat"}
+              label={session.archived ? "Restore conversation" : "Archive"}
               onClick={onArchive}
             />
-            <SessionMenuButton destructive icon={Trash2} label="Delete chat" onClick={onDelete} />
+            <SessionMenuButton destructive icon={Trash2} label="Delete" onClick={onDelete} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -1372,10 +1370,10 @@ function SessionMenuButton({
   return (
     <button
       className={cn(
-        "flex h-10 w-full items-center gap-3 rounded-[14px] px-3 text-left text-[13px] transition",
+        "flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] transition",
         destructive
-          ? "text-[#d14f42] hover:bg-[#fce9e5] dark:hover:bg-white/6"
-          : "text-[var(--xv-chat-text)] hover:bg-[var(--xv-chat-surface-soft)]"
+          ? "text-[#f07f67] hover:bg-[rgba(201,100,66,0.1)]"
+          : "text-[#f0ead8] hover:bg-[rgba(201,100,66,0.1)]"
       )}
       onClick={onClick}
       type="button"
@@ -1422,7 +1420,7 @@ function ChatTopbar({
   workflowMode: WorkflowMode;
 }) {
   return (
-    <header className="absolute inset-x-0 top-0 z-20 border-b border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)]/92 backdrop-blur">
+    <header className="absolute inset-x-0 top-0 z-20 border-b border-[rgba(201,100,66,0.12)] bg-[#0e0b08]/92 backdrop-blur">
       <div className="flex h-[50px] items-center gap-3 px-4 sm:px-4">
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-medium text-[var(--xv-chat-text)]">{title}</p>
@@ -1433,7 +1431,7 @@ function ChatTopbar({
 
           <button
             aria-label="Share chat"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)] disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)] disabled:cursor-not-allowed disabled:opacity-55"
             disabled={!shareReady}
             onClick={onShare}
             title={shareFeedback || "Share"}
@@ -1445,7 +1443,7 @@ function ChatTopbar({
           <div className="relative">
             <button
               aria-label="Open workspace status"
-              className="relative inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+              className="relative inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleStatus();
@@ -1462,7 +1460,7 @@ function ChatTopbar({
               {statusOpen ? (
                 <motion.div
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute right-0 top-[calc(100%+10px)] z-30 w-[300px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-4 shadow-[var(--xv-chat-shadow)]"
+                  className="absolute right-0 top-[calc(100%+10px)] z-30 w-[300px] rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-4 shadow-[var(--xv-chat-shadow)]"
                   initial={{ opacity: 0, y: -6, scale: 0.98 }}
                   onClick={(event) => event.stopPropagation()}
                   transition={{ duration: 0.16, ease: "easeOut" }}
@@ -1563,7 +1561,7 @@ function ChatHomeView({
 
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 max-w-[400px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
+            className="mt-2 max-w-[400px] text-center text-[14px] font-light leading-[1.6] text-[rgba(240,234,216,0.7)]"
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
           >
@@ -1576,16 +1574,16 @@ function ChatHomeView({
           <div className="mt-6 grid w-full max-w-[520px] grid-cols-2 gap-2">
             {welcomeSuggestions.map((suggestion) => (
               <button
-                className="group rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-[14px] text-left transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-surface-soft)]"
+                className="group rounded-[16px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] p-[14px] text-left transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[rgba(201,100,66,0.08)]"
                 key={suggestion.label}
                 onClick={() => onSuggestion(suggestion.prompt)}
                 type="button"
               >
-                <div className="text-[var(--xv-chat-muted)]">
+                <div className="text-[rgba(201,100,66,0.7)]">
                   <suggestion.icon className="h-4 w-4" />
                 </div>
                 <h3 className="mt-2 text-[13px] font-medium text-[var(--xv-chat-text)]">{suggestion.label}</h3>
-                <p className="mt-1 text-[12px] font-light leading-[1.4] text-[var(--xv-chat-muted)]">
+                <p className="mt-1 text-[12px] font-light leading-[1.4] text-[rgba(240,234,216,0.8)]">
                   {suggestion.detail}
                 </p>
               </button>
@@ -1594,7 +1592,7 @@ function ChatHomeView({
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
+      <div className="sticky bottom-0 border-t border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
         <ChatComposer
           composerRef={composerRef}
           fileInputRef={fileInputRef}
@@ -1640,7 +1638,6 @@ function ChatThreadView({
   prompt,
   sessionFiles,
   thinking,
-  viewerInitials,
   voiceState
 }: {
   autoSwitchNotice: ModelSwitch | null;
@@ -1666,7 +1663,6 @@ function ChatThreadView({
   prompt: string;
   sessionFiles: UploadedFileSummary[];
   thinking: boolean;
-  viewerInitials: string;
   voiceState: VoiceState;
 }) {
   return (
@@ -1686,17 +1682,14 @@ function ChatThreadView({
                 return (
                   <motion.article
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-3"
+                    className="flex justify-end"
                     initial={{ opacity: 0, y: 14 }}
                     key={message.id}
                     transition={{ duration: 0.18, ease: "easeOut" }}
                   >
-                    <AvatarBubble accent label={viewerInitials} />
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 text-[13px] font-medium text-[var(--xv-chat-text)]">
-                        You
-                      </div>
-                      <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
+                    <div className="max-w-[70%] min-w-0">
+                      <div className="mb-1 text-right text-[13px] font-medium text-[var(--xv-chat-text)]">You</div>
+                      <div className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
                         {message.content}
                       </div>
                     </div>
@@ -1711,53 +1704,53 @@ function ChatThreadView({
                   initial={{ opacity: 0, y: 14 }}
                   key={message.id}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                >
-                  <AvatarBubble label="X" />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
-                      <span className="text-[var(--xv-chat-text)]">Xeivora</span>
-                      <span className="text-[var(--xv-chat-muted)]">·</span>
-                      <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
+                  >
+                    <AvatarBubble label="X" />
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
+                        <span className="text-[var(--xv-chat-text)]">Xeivora</span>
+                        <span className="text-[var(--xv-chat-muted)]">·</span>
+                        <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
+                      </div>
+
+                      {message.content ? (
+                        <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
+                          <ChatMarkdown content={toXeivoraLabel(message.content)} />
+                        </div>
+                      ) : (
+                        <ThinkingBlock active={thinking || isStreaming} />
+                      )}
+
+                      {message.content ? (
+                        <div className="mt-3 flex items-center gap-4 opacity-0 transition group-hover:opacity-100">
+                          <button
+                            className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                            onClick={() => void onCopyResponse(message)}
+                            type="button"
+                          >
+                            {copiedResponseId === message.id ? "Copied" : "Copy"}
+                          </button>
+                          {isLatestAssistant ? (
+                            <>
+                              <button
+                                className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                                onClick={onRegenerate}
+                                type="button"
+                              >
+                                Regenerate
+                              </button>
+                              <button
+                                className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
+                                onClick={onRetry}
+                                type="button"
+                              >
+                                Retry
+                              </button>
+                            </>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
-
-                    {message.content ? (
-                      <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
-                        <ChatMarkdown content={toXeivoraLabel(message.content)} />
-                      </div>
-                    ) : (
-                      <ThinkingBlock active={thinking || isStreaming} />
-                    )}
-
-                    {message.content ? (
-                      <div className="mt-3 flex items-center gap-4 opacity-0 transition group-hover:opacity-100">
-                        <button
-                          className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
-                          onClick={() => void onCopyResponse(message)}
-                          type="button"
-                        >
-                          {copiedResponseId === message.id ? "Copied" : "Copy"}
-                        </button>
-                        {isLatestAssistant ? (
-                          <>
-                            <button
-                              className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
-                              onClick={onRegenerate}
-                              type="button"
-                            >
-                              Regenerate
-                            </button>
-                            <button
-                              className="text-[12px] text-[var(--xv-chat-muted)] transition hover:text-[var(--xv-chat-text)]"
-                              onClick={onRetry}
-                              type="button"
-                            >
-                              Retry
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
                 </motion.article>
               );
             })}
@@ -1765,7 +1758,7 @@ function ChatThreadView({
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
+      <div className="sticky bottom-0 border-t border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
         <ChatComposer
           composerRef={composerRef}
           fileInputRef={fileInputRef}
@@ -1823,7 +1816,7 @@ function ChatComposer({
   return (
     <div className="mx-auto w-full max-w-[660px]">
       <form
-        className="rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-[10px] py-2 shadow-[var(--xv-chat-shadow)]"
+        className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] py-2 shadow-[var(--xv-chat-shadow)] focus-within:border-[#c96442]"
         onSubmit={(event) => {
           event.preventDefault();
           onSend();
@@ -1845,7 +1838,7 @@ function ChatComposer({
           <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
             {files.map((file) => (
               <div
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] px-3 py-1 text-[12px] text-[var(--xv-chat-muted)]"
+                className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-3 py-1 text-[12px] text-[rgba(240,234,216,0.8)]"
                 key={file.id}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -1865,7 +1858,7 @@ function ChatComposer({
             ))}
 
             {isUploadingFiles ? (
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] px-3 py-1 text-[12px] text-[var(--xv-chat-muted)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-3 py-1 text-[12px] text-[rgba(240,234,216,0.8)]">
                 <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                 <span>Analyzing file...</span>
               </div>
@@ -1876,7 +1869,7 @@ function ChatComposer({
         <div className="flex items-end gap-2">
           <button
             aria-label="Attach file"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
             onClick={() => fileInputRef.current?.click()}
             type="button"
           >
@@ -1884,7 +1877,7 @@ function ChatComposer({
           </button>
 
           <textarea
-            className="min-h-[22px] flex-1 resize-none bg-transparent px-1 py-1.5 text-[14px] font-light leading-[1.5] text-[var(--xv-chat-text)] outline-none placeholder:text-[var(--xv-chat-muted)]"
+            className="min-h-[22px] flex-1 resize-none bg-transparent px-1 py-1.5 text-[14px] font-light leading-[1.5] text-[#f0ead8] outline-none placeholder:text-[rgba(240,234,216,0.35)]"
             onChange={(event) => onPromptChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -1901,7 +1894,7 @@ function ChatComposer({
           <div className="flex shrink-0 items-center gap-1">
             <button
               aria-label="Voice input"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] hover:text-[var(--xv-chat-text)]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
               onMouseDown={() => void onStartVoiceCapture()}
               onMouseLeave={onStopVoiceCapture}
               onMouseUp={onStopVoiceCapture}
@@ -1921,7 +1914,7 @@ function ChatComposer({
             {isStreaming ? (
               <button
                 aria-label="Stop generating"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#1f1f1f] text-white transition hover:bg-black"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#c96442] text-white transition hover:bg-[#b85a3b]"
                 onClick={onStop}
                 type="button"
               >
@@ -1930,7 +1923,7 @@ function ChatComposer({
             ) : (
               <button
                 aria-label="Send message"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#1f1f1f] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-[#d0cdc8] disabled:text-white/60"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#c96442] text-white transition hover:bg-[#b85a3b] disabled:cursor-not-allowed disabled:bg-[#46362c] disabled:text-[rgba(240,234,216,0.4)]"
                 disabled={!prompt.trim() && !files.length}
                 type="submit"
               >
@@ -1960,20 +1953,20 @@ function ChatComposer({
 
 function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boolean }) {
   return (
-    <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-muted)]">
+    <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] text-[12px] text-[#f0ead8]">
       <span className="relative inline-flex h-2.5 w-2.5">
         {pulse ? (
           <motion.span
             animate={{ opacity: [0.45, 0, 0], scale: [1, 1.9, 2.2] }}
             className="absolute inset-0 rounded-full"
-            style={{ backgroundColor: model.dotColor }}
+            style={{ backgroundColor: coralAccent }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           />
         ) : null}
-        <span className="relative h-2.5 w-2.5 rounded-full" style={{ backgroundColor: model.dotColor }} />
+        <span className="relative h-2.5 w-2.5 rounded-full" style={{ backgroundColor: coralAccent }} />
       </span>
       <span>{model.label}</span>
-      <ChevronDown className="h-3.5 w-3.5 text-[var(--xv-chat-muted)]" />
+      <ChevronDown className="h-3.5 w-3.5 text-[rgba(240,234,216,0.7)]" />
     </div>
   );
 }
@@ -2012,7 +2005,7 @@ function ErrorBanner({ className, message }: { className?: string; message: stri
   return (
     <div
       className={cn(
-        "rounded-[20px] border border-[rgba(209,79,66,0.16)] bg-[rgba(209,79,66,0.06)] px-4 py-3 text-[13px] leading-6 text-[#8d3f35] dark:text-[#ffc6bd]",
+        "rounded-[20px] border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-4 py-3 text-[13px] leading-6 text-[#f4c0b4]",
         className
       )}
     >
