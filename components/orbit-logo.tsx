@@ -27,16 +27,16 @@ export function XeivoraGlyph({ className = "", size = 40 }: XeivoraGlyphProps) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <g transform="translate(50 50)">
-        <circle cx="0" cy="0" fill="none" r="36" stroke="rgba(201,100,66,0.07)" strokeWidth="0.5" />
-        <ellipse cx="0" cy="0" fill="none" rx="32" ry="9" stroke="#c96442" strokeWidth="2" transform="rotate(0)" />
+        <circle cx="0" cy="0" fill="none" r="36" stroke="rgba(201,100,66,0.05)" strokeWidth="0.5" />
+        <ellipse cx="0" cy="0" fill="none" rx="32" ry="9" stroke="rgba(201,100,66,0.9)" strokeWidth="1.85" transform="rotate(0)" />
         <ellipse
           cx="0"
           cy="0"
           fill="none"
           rx="32"
           ry="9"
-          stroke="rgba(201,100,66,0.5)"
-          strokeWidth="1.2"
+          stroke="rgba(201,100,66,0.34)"
+          strokeWidth="1.05"
           transform="rotate(60)"
         />
         <ellipse
@@ -45,16 +45,16 @@ export function XeivoraGlyph({ className = "", size = 40 }: XeivoraGlyphProps) {
           fill="none"
           rx="32"
           ry="9"
-          stroke="rgba(201,100,66,0.28)"
-          strokeWidth="0.8"
+          stroke="rgba(201,100,66,0.18)"
+          strokeWidth="0.72"
           transform="rotate(120)"
         />
-        <circle cx="0" cy="0" fill="rgba(201,100,66,0.15)" r="8" />
+        <circle cx="0" cy="0" fill="rgba(201,100,66,0.11)" r="8" />
         <circle cx="0" cy="0" fill="#c96442" r="5" />
-        <circle cx="0" cy="0" fill="#0e0b08" r="2" />
-        <circle cx="30" cy="0" fill="#c96442" r="2.5" />
-        <circle cx="-15" cy="26" fill="#c96442" opacity="0.6" r="2" />
-        <circle cx="-15" cy="-26" fill="#c96442" opacity="0.35" r="1.5" />
+        <circle cx="0" cy="0" fill="rgba(14,11,8,0.78)" r="2" />
+        <circle cx="30" cy="0" fill="#c96442" opacity="0.88" r="2.35" />
+        <circle cx="-15" cy="26" fill="#c96442" opacity="0.42" r="1.9" />
+        <circle cx="-15" cy="-26" fill="#c96442" opacity="0.24" r="1.45" />
       </g>
     </svg>
   );
