@@ -4,10 +4,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
-import { OrbitLogo } from "@/components/orbit-logo";
 import { Button } from "@/components/ui/button";
 
 type AuthShellProps = {
@@ -48,72 +47,93 @@ const authHighlights = [
   }
 ];
 
+const authBg = "#0e0b08";
+const authPanel = "#120e0a";
+const authCard = "#1a1410";
+const authBorder = "rgba(201,100,66,0.15)";
+const authBorderStrong = "rgba(201,100,66,0.3)";
+const authText = "#f0ead8";
+const authMuted = "rgba(240,234,216,0.6)";
+const authCoral = "#c96442";
+
 export function AuthShell({ children, eyebrow, title, subtitle }: AuthShellProps) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#040406] text-white">
+    <div className="relative min-h-screen overflow-hidden text-white" style={{ backgroundColor: authBg }}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(91,52,247,0.24),transparent_32%),radial-gradient(circle_at_18%_18%,rgba(129,140,248,0.1),transparent_20%),radial-gradient(circle_at_82%_14%,rgba(217,70,239,0.08),transparent_22%),linear-gradient(180deg,#040406_0%,#090910_48%,#040406_100%)]" />
-        <div className="absolute left-1/2 top-[-20%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-[#6d28d9]/12 blur-[120px]" />
-        <div className="absolute bottom-[-8rem] right-[-4rem] h-[20rem] w-[20rem] rounded-full bg-cyan-400/8 blur-[120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,100,66,0.16),transparent_30%),radial-gradient(circle_at_18%_18%,rgba(201,100,66,0.07),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(240,234,216,0.04),transparent_20%),linear-gradient(180deg,#0e0b08_0%,#120e0a_48%,#0e0b08_100%)]" />
+        <div className="absolute left-1/2 top-[-20%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full blur-[120px]" style={{ backgroundColor: "rgba(201,100,66,0.12)" }} />
+        <div className="absolute bottom-[-8rem] right-[-4rem] h-[20rem] w-[20rem] rounded-full blur-[120px]" style={{ backgroundColor: "rgba(201,100,66,0.06)" }} />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1280px] flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between rounded-full border px-5 py-3 backdrop-blur" style={{ borderColor: authBorder, backgroundColor: "rgba(26,20,16,0.72)" }}>
           <Link className="flex items-center gap-3" href="/">
-            <OrbitLogo compact className="scale-[0.82]" />
-            <span className="text-[15px] font-medium tracking-[0.02em] text-white/92">Xeivora</span>
+            <span className="text-[15px] font-medium tracking-[0.02em]" style={{ color: authText }}>
+              Xei<span className="italic" style={{ color: authCoral }}>vora</span>
+            </span>
           </Link>
-          <Link className="text-sm text-white/56 transition hover:text-white" href="/">
-            Back to home
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link className="inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm transition hover:bg-[rgba(201,100,66,0.08)]" href="/" style={{ borderColor: authBorder, color: authText }}>
+              Back to home
+            </Link>
+          </div>
         </header>
 
         <div className="flex flex-1 items-center justify-center py-10">
           <div className="grid w-full max-w-[1120px] gap-8 lg:grid-cols-[1.02fr_0.98fr]">
             <motion.section
               animate={{ opacity: 1, x: 0 }}
-              className="hidden rounded-[32px] border border-white/[0.08] bg-white/[0.03] p-8 shadow-[0_32px_120px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:flex lg:flex-col"
+              className="hidden rounded-[32px] border p-8 shadow-[0_32px_120px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:flex lg:flex-col"
+              style={{ borderColor: authBorder, backgroundColor: authBg }}
               initial={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.34, ease: "easeOut" }}
             >
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/62">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.22em]" style={{ borderColor: authBorderStrong, color: authCoral, backgroundColor: "rgba(201,100,66,0.06)" }}>
                 {eyebrow}
               </div>
-              <h1 className="mt-7 max-w-[12ch] text-[3.6rem] font-semibold leading-[0.92] tracking-[-0.06em] text-white">
+              <h1
+                className="mt-7 max-w-[12ch] text-[3.6rem] font-semibold leading-[0.92] tracking-[-0.06em] sm:text-[4rem]"
+                style={{ color: authText, fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
                 {title}
               </h1>
-              <p className="mt-5 max-w-[42ch] text-base leading-8 text-white/58">{subtitle}</p>
+              <p className="mt-5 max-w-[42ch] text-base leading-8" style={{ color: authMuted }}>{subtitle}</p>
 
               <div className="mt-10 space-y-4">
                 {authHighlights.map((item, index) => (
                   <motion.div
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-4 rounded-[24px] border border-white/[0.08] bg-[#0d0d12]/78 px-5 py-5"
+                    className="flex items-start gap-4 rounded-[24px] border px-5 py-5"
+                    style={{ borderColor: authBorder, backgroundColor: authCard }}
                     initial={{ opacity: 0, y: 16 }}
                     key={item.title}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4f46e5]/22 to-[#c026d3]/18 text-white">
+                    <div
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
+                      style={{ backgroundColor: "rgba(201,100,66,0.14)", color: authCoral }}
+                    >
                       <item.icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h2 className="text-base font-medium text-white">{item.title}</h2>
-                      <p className="mt-2 text-sm leading-7 text-white/54">{item.detail}</p>
+                      <h2 className="text-base font-medium" style={{ color: authText }}>{item.title}</h2>
+                      <p className="mt-2 text-sm leading-7" style={{ color: authMuted }}>{item.detail}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
 
-              <div className="mt-auto flex items-center gap-3 pt-10 text-sm text-white/46">
-                <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">AI Operating System</span>
-                <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">Memory-native</span>
-                <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">Provider-orchestrated</span>
+              <div className="mt-auto flex items-center gap-3 pt-10 text-sm" style={{ color: authMuted }}>
+                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>AI Operating System</span>
+                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>Memory-native</span>
+                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>Provider-orchestrated</span>
               </div>
             </motion.section>
 
             <motion.section
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-[32px] border border-white/[0.08] bg-[rgba(12,12,16,0.92)] p-6 shadow-[0_32px_120px_rgba(0,0,0,0.34)] backdrop-blur-2xl sm:p-8"
+              className="rounded-[32px] border p-6 shadow-[0_32px_120px_rgba(0,0,0,0.34)] backdrop-blur-2xl sm:p-8"
+              style={{ borderColor: authBorder, backgroundColor: authPanel }}
               initial={{ opacity: 0, y: 18 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
@@ -163,9 +183,9 @@ export function LoginForm({ nextPath = "/chat", initialError = null }: AuthFormP
   return (
     <AuthFormCard
       alternateAction={
-        <p className="text-sm text-white/48">
+        <p className="text-sm" style={{ color: authMuted }}>
           New to Xeivora?{" "}
-          <Link className="font-medium text-white transition hover:text-[#c4b5fd]" href={`/signup?next=${encodeURIComponent(nextPath)}`}>
+          <Link className="font-medium transition hover:opacity-80" href={`/signup?next=${encodeURIComponent(nextPath)}`} style={{ color: authCoral }}>
             Create an account
           </Link>
         </p>
@@ -173,10 +193,10 @@ export function LoginForm({ nextPath = "/chat", initialError = null }: AuthFormP
       eyebrow="Sign in"
       footer={
         <div className="flex items-center justify-between gap-3">
-          <Link className="text-sm text-white/48 transition hover:text-white" href="/forgot-password">
+          <Link className="text-sm transition hover:opacity-80" href="/forgot-password" style={{ color: authCoral }}>
             Forgot password?
           </Link>
-          <span className="text-xs uppercase tracking-[0.18em] text-white/26">Session persisted</span>
+          <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Session persisted</span>
         </div>
       }
       state={state}
@@ -230,15 +250,15 @@ export function SignupForm({ nextPath = "/chat", initialError = null }: AuthForm
   return (
     <AuthFormCard
       alternateAction={
-        <p className="text-sm text-white/48">
+        <p className="text-sm" style={{ color: authMuted }}>
           Already have an account?{" "}
-          <Link className="font-medium text-white transition hover:text-[#c4b5fd]" href={`/login?next=${encodeURIComponent(nextPath)}`}>
+          <Link className="font-medium transition hover:opacity-80" href={`/login?next=${encodeURIComponent(nextPath)}`} style={{ color: authCoral }}>
             Sign in
           </Link>
         </p>
       }
       eyebrow="Create account"
-      footer={<span className="text-xs uppercase tracking-[0.18em] text-white/26">Password-secured workspace</span>}
+      footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Password-secured workspace</span>}
       state={state}
       subtitle="Create your Xeivora workspace to unify memory, providers, tools, projects, and conversations."
       title="Start inside the AI operating system"
@@ -293,9 +313,9 @@ export function ForgotPasswordForm({ initialError = null }: AuthFormProps) {
   return (
     <AuthFormCard
       alternateAction={
-        <p className="text-sm text-white/48">
+        <p className="text-sm" style={{ color: authMuted }}>
           Remembered it?{" "}
-          <Link className="font-medium text-white transition hover:text-[#c4b5fd]" href="/login">
+          <Link className="font-medium transition hover:opacity-80" href="/login" style={{ color: authCoral }}>
             Back to sign in
           </Link>
         </p>
@@ -303,12 +323,12 @@ export function ForgotPasswordForm({ initialError = null }: AuthFormProps) {
       eyebrow="Password reset"
       footer={
         previewUrl ? (
-          <Link className="inline-flex items-center gap-2 text-sm text-[#c4b5fd] transition hover:text-white" href={previewUrl}>
+          <Link className="inline-flex items-center gap-2 text-sm transition hover:opacity-80" href={previewUrl} style={{ color: authCoral }}>
             Open preview reset link
             <ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
-          <span className="text-xs uppercase tracking-[0.18em] text-white/26">Reset links expire in 30 minutes</span>
+          <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Reset links expire in 30 minutes</span>
         )
       }
       state={state}
@@ -374,15 +394,15 @@ export function ResetPasswordForm({ initialError = null, resetToken = null }: Au
   return (
     <AuthFormCard
       alternateAction={
-        <p className="text-sm text-white/48">
+        <p className="text-sm" style={{ color: authMuted }}>
           Need a new link?{" "}
-          <Link className="font-medium text-white transition hover:text-[#c4b5fd]" href="/forgot-password">
+          <Link className="font-medium transition hover:opacity-80" href="/forgot-password" style={{ color: authCoral }}>
             Request another reset
           </Link>
         </p>
       }
       eyebrow="Choose a new password"
-      footer={<span className="text-xs uppercase tracking-[0.18em] text-white/26">You’ll be signed in after reset</span>}
+      footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>You’ll be signed in after reset</span>}
       state={state}
       subtitle="Set a new password to continue your Xeivora workspace without losing momentum."
       title="Create a new password"
@@ -414,29 +434,35 @@ function AuthFormCard({
 }) {
   return (
     <div>
-      <div className="rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/54">
+      <div
+        className="rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.22em]"
+        style={{ borderColor: authBorderStrong, color: authCoral, backgroundColor: "rgba(201,100,66,0.06)" }}
+      >
         {eyebrow}
       </div>
-      <h1 className="mt-6 text-[2rem] font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-[2.35rem]">
+      <h1
+        className="mt-6 text-[2rem] font-semibold leading-[1.02] tracking-[-0.05em] sm:text-[2.35rem]"
+        style={{ color: authText, fontFamily: "Georgia, 'Times New Roman', serif" }}
+      >
         {title}
       </h1>
-      <p className="mt-4 max-w-[42ch] text-[15px] leading-7 text-white/56">{subtitle}</p>
+      <p className="mt-4 max-w-[42ch] text-[15px] leading-7" style={{ color: authMuted }}>{subtitle}</p>
 
       <div className="mt-8">{children}</div>
 
       {state.error ? (
-        <div className="mt-5 rounded-[18px] border border-[#f87171]/24 bg-[#2a1216] px-4 py-3 text-sm text-[#fecaca]">
+        <div className="mt-5 rounded-[18px] border px-4 py-3 text-sm" style={{ borderColor: "rgba(201,100,66,0.28)", backgroundColor: "rgba(201,100,66,0.08)", color: "#f3c0b4" }}>
           {state.error}
         </div>
       ) : null}
       {state.success ? (
-        <div className="mt-5 rounded-[18px] border border-emerald-400/18 bg-emerald-400/[0.08] px-4 py-3 text-sm text-emerald-100">
+        <div className="mt-5 rounded-[18px] border px-4 py-3 text-sm" style={{ borderColor: "rgba(201,100,66,0.24)", backgroundColor: "rgba(201,100,66,0.06)", color: authText }}>
           {state.success}
         </div>
       ) : null}
 
       <div className="mt-6">{alternateAction}</div>
-      <div className="mt-8 border-t border-white/[0.08] pt-5">{footer}</div>
+      <div className="mt-8 border-t pt-5" style={{ borderColor: authBorder }}>{footer}</div>
     </div>
   );
 }
@@ -463,7 +489,7 @@ function AuthForm({
     >
       {children}
       <Button
-        className="mt-2 h-14 w-full rounded-full bg-gradient-to-r from-[#5b34f7] via-[#7c3aed] to-[#d946ef] text-base font-semibold text-white shadow-[0_18px_48px_rgba(124,58,237,0.32)] hover:brightness-110"
+        className="mt-2 h-14 w-full rounded-full bg-[#c96442] text-base font-semibold text-white shadow-[0_18px_48px_rgba(201,100,66,0.24)] transition hover:bg-[#a04e32]"
         disabled={state.loading}
         type="submit"
       >
@@ -486,13 +512,22 @@ function Field({
 }) {
   return (
     <label className="grid gap-2">
-      <span className="text-sm font-medium text-white/72">{label}</span>
+      <span className="text-sm font-medium" style={{ color: authText }}>{label}</span>
       <input
-        className="h-14 rounded-[20px] border border-white/[0.08] bg-[#101016] px-4 text-[15px] text-white outline-none transition placeholder:text-white/28 focus:border-[#8b5cf6]/60 focus:bg-[#13131b]"
+        className="h-14 rounded-[20px] border bg-[#1a1410] px-4 text-[15px] text-[#f0ead8] outline-none transition placeholder:text-[rgba(240,234,216,0.35)]"
+        style={{
+          borderColor: "rgba(201,100,66,0.2)"
+        }}
         name={name}
         placeholder={placeholder}
         required
         type={type}
+        onFocus={(event) => {
+          event.currentTarget.style.borderColor = authCoral;
+        }}
+        onBlur={(event) => {
+          event.currentTarget.style.borderColor = "rgba(201,100,66,0.2)";
+        }}
       />
     </label>
   );
@@ -500,10 +535,10 @@ function Field({
 
 function Divider() {
   return (
-    <div className="my-6 flex items-center gap-4 text-xs uppercase tracking-[0.18em] text-white/24">
-      <div className="h-px flex-1 bg-white/[0.08]" />
+    <div className="my-6 flex items-center gap-4 text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>
+      <div className="h-px flex-1" style={{ backgroundColor: "rgba(240,234,216,0.15)" }} />
       <span>or</span>
-      <div className="h-px flex-1 bg-white/[0.08]" />
+      <div className="h-px flex-1" style={{ backgroundColor: "rgba(240,234,216,0.15)" }} />
     </div>
   );
 }
@@ -511,10 +546,11 @@ function Divider() {
 function GoogleButton({ href, label }: { href: string; label: string }) {
   return (
     <Link
-      className="flex h-14 items-center justify-center gap-3 rounded-full border border-white/[0.1] bg-white/[0.03] text-[15px] font-medium text-white transition hover:bg-white/[0.06]"
+      className="flex h-14 items-center justify-center gap-3 rounded-full border text-[15px] font-medium transition hover:bg-[rgba(201,100,66,0.08)]"
       href={href}
+      style={{ borderColor: "rgba(201,100,66,0.3)", backgroundColor: authCard, color: authText }}
     >
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-950">
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold" style={{ backgroundColor: authText, color: authBg }}>
         G
       </span>
       {label}
