@@ -43,6 +43,7 @@ import type { CSSProperties, RefObject } from "react";
 import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
+import { OrbitLogo, XeivoraGlyph } from "@/components/orbit-logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import type { AuthUser } from "@/lib/auth-types";
@@ -1116,9 +1117,7 @@ function SidebarContent({
           href="/"
           onClick={() => onDismiss?.()}
         >
-          <div className="text-[15px] font-medium tracking-[-0.01em] text-[#f0ead8]">
-            Xei<span className="text-[var(--xv-chat-accent)]">vora</span>
-          </div>
+          <OrbitLogo iconSize={28} nameClassName="text-[15px] tracking-[-0.01em]" showTagline={false} />
         </Link>
 
         <div className="flex items-center gap-2">
@@ -1544,11 +1543,11 @@ function ChatHomeView({
         <div className="mx-auto flex min-h-[calc(100vh-170px)] w-full max-w-[960px] flex-col items-center justify-center px-5 pb-10 pt-8">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[20px] font-medium text-white"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1a1410] p-1"
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            X
+            <XeivoraGlyph size={40} />
           </motion.div>
 
           <motion.h1
@@ -1707,7 +1706,7 @@ function ChatThreadView({
                     initial={{ opacity: 0, y: 14 }}
                     transition={{ duration: 0.18, ease: "easeOut" }}
                   >
-                      <AvatarBubble label="X" />
+                      <AvatarBubble />
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
                           <span className="text-[var(--xv-chat-text)]">Xeivora</span>
@@ -1974,7 +1973,7 @@ function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boo
   );
 }
 
-function AvatarBubble({ accent = false, label }: { accent?: boolean; label: string }) {
+function AvatarBubble({ accent = false, label }: { accent?: boolean; label?: string }) {
   return (
     <div
       className={cn(
@@ -1984,7 +1983,7 @@ function AvatarBubble({ accent = false, label }: { accent?: boolean; label: stri
           : "border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-accent)]"
       )}
     >
-      {label}
+      {accent ? label : <XeivoraGlyph size={22} />}
     </div>
   );
 }

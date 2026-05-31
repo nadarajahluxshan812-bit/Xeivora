@@ -1,57 +1,88 @@
-import { useId } from "react";
-
 import { cn } from "@/lib/utils";
+
+type XeivoraGlyphProps = {
+  className?: string;
+  size?: number;
+};
 
 type OrbitLogoProps = {
   compact?: boolean;
   className?: string;
   showTagline?: boolean;
   nameClassName?: string;
+  taglineClassName?: string;
+  iconClassName?: string;
+  iconSize?: number;
 };
+
+export function XeivoraGlyph({ className = "", size = 40 }: XeivoraGlyphProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      height={size}
+      role="img"
+      viewBox="0 0 100 100"
+      width={size}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect fill="#0e0b08" height="100" rx="22" width="100" />
+      <g transform="translate(50 50)">
+        <circle cx="0" cy="0" fill="none" r="36" stroke="rgba(201,100,66,0.07)" strokeWidth="0.5" />
+        <ellipse cx="0" cy="0" fill="none" rx="32" ry="9" stroke="#c96442" strokeWidth="2" transform="rotate(0)" />
+        <ellipse
+          cx="0"
+          cy="0"
+          fill="none"
+          rx="32"
+          ry="9"
+          stroke="rgba(201,100,66,0.5)"
+          strokeWidth="1.2"
+          transform="rotate(60)"
+        />
+        <ellipse
+          cx="0"
+          cy="0"
+          fill="none"
+          rx="32"
+          ry="9"
+          stroke="rgba(201,100,66,0.28)"
+          strokeWidth="0.8"
+          transform="rotate(120)"
+        />
+        <circle cx="0" cy="0" fill="rgba(201,100,66,0.15)" r="8" />
+        <circle cx="0" cy="0" fill="#c96442" r="5" />
+        <circle cx="0" cy="0" fill="#0e0b08" r="2" />
+        <circle cx="30" cy="0" fill="#c96442" r="2.5" />
+        <circle cx="-15" cy="26" fill="#c96442" opacity="0.6" r="2" />
+        <circle cx="-15" cy="-26" fill="#c96442" opacity="0.35" r="1.5" />
+      </g>
+    </svg>
+  );
+}
 
 export function OrbitLogo({
   compact = false,
   className = "",
   showTagline = !compact,
-  nameClassName = ""
+  nameClassName = "",
+  taglineClassName = "",
+  iconClassName = "",
+  iconSize
 }: OrbitLogoProps) {
-  const gradientId = useId();
+  const resolvedIconSize = iconSize ?? (compact ? 32 : 40);
 
   return (
     <div className={cn("inline-flex items-center gap-3", className)}>
-      <div
-        aria-hidden="true"
-        className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#111111] shadow-[0_12px_32px_rgba(0,0,0,0.28)] ring-1 ring-white/8"
-      >
-        <svg viewBox="0 0 40 40" role="img">
-          <defs>
-            <linearGradient id={gradientId} x1="7" x2="33" y1="7" y2="33">
-              <stop stopColor="#8b5cf6" />
-              <stop offset="1" stopColor="#22d3ee" />
-            </linearGradient>
-          </defs>
-          <rect height="40" rx="12" width="40" fill={`url(#${gradientId})`} />
-          <path
-            d="M12 12.5c5.8 0 10.8 15 16.8 15 2.6 0 4.2-1.5 4.2-3.8 0-2.4-1.8-3.9-4.3-3.9-6.1 0-10.8 15-16.7 15-2.9 0-5-1.9-5-4.7 0-2.6 2-4.6 5-4.6"
-            fill="none"
-            stroke="rgba(255,255,255,.92)"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="3"
-            transform="translate(0 -3.5)"
-          />
-          <path
-            d="M13 13l14 14M27 13 13 27"
-            stroke="rgba(255,255,255,.72)"
-            strokeLinecap="round"
-            strokeWidth="2.4"
-          />
-        </svg>
-      </div>
+      <XeivoraGlyph className={iconClassName} size={resolvedIconSize} />
       {!compact ? (
-        <div>
-          <div className={cn("text-[15px] font-semibold tracking-tight text-white", nameClassName)}>Xeivora</div>
-          {showTagline ? <div className="text-xs text-white/58">Unified AI Intelligence</div> : null}
+        <div className="min-w-0">
+          <div className={cn("text-[15px] font-medium tracking-tight text-[#f0ead8]", nameClassName)}>
+            Xei<span className="italic text-[#c96442]">vora</span>
+          </div>
+          {showTagline ? (
+            <div className={cn("text-xs text-[rgba(240,234,216,0.58)]", taglineClassName)}>Unified AI Intelligence</div>
+          ) : null}
         </div>
       ) : null}
     </div>

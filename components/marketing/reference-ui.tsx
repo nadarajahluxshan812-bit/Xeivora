@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { OrbitLogo } from "@/components/orbit-logo";
 import type {
   MarketingIconKey,
   MarketingPricingPlan,
@@ -69,13 +70,7 @@ const iconMap = {
 
 export function MarketingBrand({ className = "" }: { className?: string }) {
   return (
-    <div className={cn("inline-flex items-center gap-3", className)}>
-      <div aria-hidden="true" className="relative h-8 w-8 shrink-0">
-        <span className="absolute left-[2px] top-[3px] h-[9px] w-[31px] rotate-45 rounded-full bg-gradient-to-r from-[#7c3aed] via-[#8b5cf6] to-[#c084fc]" />
-        <span className="absolute left-[2px] top-[20px] h-[9px] w-[31px] -rotate-45 rounded-full bg-gradient-to-r from-[#5b34f7] via-[#8b5cf6] to-[#d946ef]" />
-      </div>
-      <span className="text-[19px] font-semibold tracking-[-0.03em] text-white">Xeivora</span>
-    </div>
+    <OrbitLogo className={className} iconSize={32} nameClassName="text-[19px] font-semibold tracking-[-0.03em]" showTagline={false} />
   );
 }
 

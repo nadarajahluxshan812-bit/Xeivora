@@ -16,13 +16,13 @@ import {
   Menu,
   Moon,
   Search,
-  Sparkles,
-  X
+  Sparkles
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { OrbitLogo } from "@/components/orbit-logo";
 import { cn } from "@/lib/utils";
 
 const bg = "#0e0b08";
@@ -686,14 +686,11 @@ function MarketingNavbar({
 
 function XeivoraWordmark() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02]">
-        <X className="h-4 w-4" style={{ color: coral }} />
-      </div>
-      <div className="text-[24px] font-medium tracking-[-0.05em] text-[#f0ead8]">
-        Xei<span className="italic" style={{ color: coral }}>vora</span>
-      </div>
-    </div>
+    <OrbitLogo
+      iconSize={36}
+      nameClassName="text-[24px] font-medium tracking-[-0.05em]"
+      showTagline={false}
+    />
   );
 }
 

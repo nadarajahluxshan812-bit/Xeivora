@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
+import { OrbitLogo } from "@/components/orbit-logo";
 import { Button } from "@/components/ui/button";
 
 type AuthShellProps = {
@@ -68,9 +69,7 @@ export function AuthShell({ children, eyebrow, title, subtitle }: AuthShellProps
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1280px] flex-col px-6 py-6 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between rounded-full border px-5 py-3 backdrop-blur" style={{ borderColor: authBorder, backgroundColor: "rgba(26,20,16,0.72)" }}>
           <Link className="flex items-center gap-3" href="/">
-            <span className="text-[15px] font-medium tracking-[0.02em]" style={{ color: authText }}>
-              Xei<span className="italic" style={{ color: authCoral }}>vora</span>
-            </span>
+            <OrbitLogo iconSize={36} nameClassName="text-[15px]" showTagline={false} />
           </Link>
           <div className="flex items-center gap-3">
             <Link className="inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm transition hover:bg-[rgba(201,100,66,0.08)]" href="/" style={{ borderColor: authBorder, color: authText }}>
