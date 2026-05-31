@@ -1412,7 +1412,7 @@ function RecentSessionRow({
       ) : (
         <div
           className={cn(
-            "grid h-9 w-full grid-cols-[minmax(0,1fr)_30px] items-center gap-1 rounded-[10px] pr-1 transition",
+            "flex h-9 w-full items-center gap-1 rounded-[10px] pl-0.5 pr-1 transition",
             active ? "bg-[#1a1410]" : "hover:bg-[rgba(201,100,66,0.08)]"
           )}
         >
@@ -1425,7 +1425,7 @@ function RecentSessionRow({
             type="button"
           >
             {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
-            <span className="min-w-0 max-w-[172px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
               {truncateSidebarSessionTitle(session.title)}
             </span>
           </button>
@@ -1433,10 +1433,10 @@ function RecentSessionRow({
           <button
             aria-label={`Open options for ${session.title}`}
             className={cn(
-              "z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] transition",
+              "z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] border border-transparent transition",
               active || menuOpen || menuProjectOpen
                 ? "bg-[rgba(240,234,216,0.08)] text-[#f0ead8]"
-                : "bg-[rgba(240,234,216,0.04)] text-[rgba(240,234,216,0.82)] opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
+                : "bg-transparent text-[rgba(240,234,216,0.58)] hover:bg-[rgba(201,100,66,0.12)] hover:text-[var(--xv-chat-text)]"
             )}
             onClick={(event) => {
               event.preventDefault();
