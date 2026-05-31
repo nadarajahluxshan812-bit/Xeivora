@@ -33,6 +33,14 @@ export type ChatMessage = {
   provider?: ProviderKey;
 };
 
+export type ModelSwitch = {
+  fromModel: string;
+  toModel: string;
+  reason: string;
+  contextPreserved: boolean;
+  decisionsRestored: number;
+};
+
 export type ChatSessionSummary = {
   id: string;
   title: string;

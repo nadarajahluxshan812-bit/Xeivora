@@ -7,7 +7,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   Archive,
   ArchiveRestore,
-  ArrowRightLeft,
   ArrowUp,
   AudioLines,
   Bot,
@@ -41,6 +40,7 @@ import {
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, RefObject } from "react";
 
+import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -50,6 +50,7 @@ import type {
   ChatMessage,
   ChatSession,
   ChatSessionSummary,
+  ModelSwitch,
   ModelKey,
   OrchestrationStep,
   ProviderKey,
@@ -60,7 +61,6 @@ import type {
   WorkspaceProject
 } from "@/lib/chat-types";
 import { cn } from "@/lib/utils";
-import { modelOptions } from "@/lib/workspace";
 
 const workspaceName = "Xeivora";
 const coralAccent = "#c96442";
@@ -130,13 +130,6 @@ type ContinuityState = StreamContinuityPayload;
 type VoiceState = "idle" | "listening" | "processing";
 type WorkflowMode = "simple_chat" | "continuity" | "coding_continuity";
 
-type AutoSwitchNotice = {
-  from: ProviderKey;
-  fromLabel: string;
-  to: ProviderKey;
-  toLabel: string;
-};
-
 const chatTheme = {
   "--xeivora-coral": coralAccent,
   "--xv-chat-bg": "#faf8f4",
@@ -186,7 +179,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("simple_chat");
-  const [autoSwitchNotice, setAutoSwitchNotice] = useState<AutoSwitchNotice | null>(null);
+  const [autoSwitchNotice, setAutoSwitchNotice] = useState<ModelSwitch | null>(null);
+  const [modelPulseActive, setModelPulseActive] = useState(false);
   const [continuityStatus, setContinuityStatus] = useState<ContinuityState>({
     currentProvider: "simulation",
     currentModel: null,
@@ -220,11 +214,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     () => messages.filter((message) => message.role === "assistant").slice(-1)[0] || null,
     [messages]
   );
-  const selectedModelLabel = modelOptions.find((option) => option.key === selectedModel)?.label ?? "Instant";
-  const activeProject = useMemo(
-    () => projects.find((project) => project.id === selectedProjectId) || null,
-    [projects, selectedProjectId]
-  );
   const continuityChain =
     continuityStatus.finalProviderChain.length > 0
       ? continuityStatus.finalProviderChain
@@ -232,7 +221,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const currentModelSummary = formatModelSummary(
     continuityStatus.currentProvider,
     continuityStatus.currentModel,
-    selectedModelLabel
+    "Instant"
   );
   const fallbackSummary = formatFallbackSummary(
     continuityStatus.fallbackProvider,
@@ -256,6 +245,12 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     activeSession?.title && activeSession.title.trim() !== "New Xeivora chat"
       ? activeSession.title
       : "New chat";
+
+  useEffect(() => {
+    setModelPulseActive(true);
+    const timeout = window.setTimeout(() => setModelPulseActive(false), 900);
+    return () => window.clearTimeout(timeout);
+  }, [topbarModel.label, topbarModel.dotColor]);
 
   useEffect(() => {
     void bootstrapWorkspace().catch((nextError) => {
@@ -855,10 +850,11 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             typedEvent.payload.currentProvider !== previousProvider
           ) {
             setAutoSwitchNotice({
-              from: previousProvider,
-              fromLabel: formatProviderLabel(previousProvider),
-              to: typedEvent.payload.currentProvider,
-              toLabel: formatProviderLabel(typedEvent.payload.currentProvider)
+              fromModel: providerToSwitchModel(previousProvider),
+              toModel: providerToSwitchModel(typedEvent.payload.currentProvider),
+              reason: normalizeSwitchReason(typedEvent.payload.tokenRateStatus),
+              contextPreserved: typedEvent.payload.memoryPreserved,
+              decisionsRestored: estimateDecisionsRestored(messages.length)
             });
           }
 
@@ -996,6 +992,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             currentModelSummary={currentModelSummary}
             fallbackSummary={fallbackSummary}
             model={topbarModel}
+            modelPulseActive={modelPulseActive}
             onShare={() => void handleShareSession()}
             onToggleStatus={() => setStatusOpen((value) => !value)}
             orchestrationSteps={orchestrationSteps}
@@ -1012,7 +1009,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           <div className="min-h-0 flex-1 pt-[50px]">
             {hasMessages ? (
               <ChatThreadView
-                activeProject={activeProject}
                 autoSwitchNotice={autoSwitchNotice}
                 composerRef={composerRef}
                 copiedResponseId={copiedResponseId}
@@ -1396,6 +1392,7 @@ function ChatTopbar({
   currentModelSummary,
   fallbackSummary,
   model,
+  modelPulseActive,
   onShare,
   onToggleStatus,
   orchestrationSteps,
@@ -1412,6 +1409,7 @@ function ChatTopbar({
   currentModelSummary: string;
   fallbackSummary: string;
   model: ModelPillData;
+  modelPulseActive: boolean;
   onShare: () => void;
   onToggleStatus: () => void;
   orchestrationSteps: OrchestrationStep[];
@@ -1431,7 +1429,7 @@ function ChatTopbar({
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <ModelPill model={model} />
+          <ModelPill model={model} pulse={modelPulseActive} />
 
           <button
             aria-label="Share chat"
@@ -1645,8 +1643,7 @@ function ChatThreadView({
   viewerInitials,
   voiceState
 }: {
-  activeProject: WorkspaceProject | null;
-  autoSwitchNotice: AutoSwitchNotice | null;
+  autoSwitchNotice: ModelSwitch | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   copiedResponseId: string | null;
   error: string | null;
@@ -1677,7 +1674,7 @@ function ChatThreadView({
       <div className="min-h-0 flex-1 overflow-y-auto" ref={messagesRef}>
         <div className="mx-auto flex w-full max-w-[700px] flex-col gap-4 px-5 pb-28 pt-5">
           {error ? <ErrorBanner message={error} /> : null}
-          {autoSwitchNotice ? <AutoSwitchBanner notice={autoSwitchNotice} /> : null}
+          {autoSwitchNotice ? <AutoSwitchBanner switchData={autoSwitchNotice} /> : null}
 
           <AnimatePresence initial={false}>
             {messages.map((message) => {
@@ -1961,46 +1958,23 @@ function ChatComposer({
   );
 }
 
-function ModelPill({ model }: { model: ModelPillData }) {
+function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boolean }) {
   return (
     <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-muted)]">
-      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: model.dotColor }} />
+      <span className="relative inline-flex h-2.5 w-2.5">
+        {pulse ? (
+          <motion.span
+            animate={{ opacity: [0.45, 0, 0], scale: [1, 1.9, 2.2] }}
+            className="absolute inset-0 rounded-full"
+            style={{ backgroundColor: model.dotColor }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          />
+        ) : null}
+        <span className="relative h-2.5 w-2.5 rounded-full" style={{ backgroundColor: model.dotColor }} />
+      </span>
       <span>{model.label}</span>
       <ChevronDown className="h-3.5 w-3.5 text-[var(--xv-chat-muted)]" />
     </div>
-  );
-}
-
-function AutoSwitchBanner({ notice }: { notice: AutoSwitchNotice }) {
-  return (
-    <motion.div
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-3 rounded-r-[12px] rounded-l-none border border-[var(--xv-chat-border)] border-l-2 border-l-[var(--xv-chat-accent)] bg-[var(--xv-chat-surface)] px-3 py-3 sm:flex-row sm:items-center"
-      initial={{ opacity: 0, y: 12 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-    >
-      <div className="flex flex-1 items-start gap-3">
-        <div className="mt-0.5 text-[var(--xv-chat-accent)]">
-          <ArrowRightLeft className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-[12.5px] font-medium text-[var(--xv-chat-text)]">Switched automatically</p>
-          <p className="mt-0.5 text-[12px] font-light leading-5 text-[var(--xv-chat-muted)]">
-            Token limit reached — continuing with {notice.toLabel}. No context lost.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1.5 pl-7 sm:ml-auto sm:pl-0">
-        <span className="rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--xv-chat-accent)]">
-          {notice.fromLabel}
-        </span>
-        <span className="text-[11px] text-[var(--xv-chat-muted)]">→</span>
-        <span className="rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-2 py-0.5 text-[11px] font-medium text-[#16a34a]">
-          {notice.toLabel}
-        </span>
-      </div>
-    </motion.div>
   );
 }
 
@@ -2113,6 +2087,42 @@ function formatProviderLabel(provider: ProviderKey | string | null) {
   };
 
   return labels[provider] ?? provider;
+}
+
+function providerToSwitchModel(provider: ProviderKey | string | null) {
+  if (!provider) {
+    return "claude";
+  }
+
+  const map: Record<string, string> = {
+    anthropic: "claude",
+    openai: "gpt-4o",
+    google: "gemini",
+    gemini: "gemini",
+    ollama: "ollama"
+  };
+
+  return map[provider] || "claude";
+}
+
+function normalizeSwitchReason(tokenRateStatus: string) {
+  if (/token/i.test(tokenRateStatus)) {
+    return "Token limit reached";
+  }
+
+  if (/retrying/i.test(tokenRateStatus)) {
+    return "Provider retry triggered";
+  }
+
+  if (/switching/i.test(tokenRateStatus) || /fallback/i.test(tokenRateStatus)) {
+    return "Capacity limit reached";
+  }
+
+  return "Provider handoff triggered";
+}
+
+function estimateDecisionsRestored(messageCount: number) {
+  return Math.max(5, Math.min(19, Math.ceil(messageCount / 2) + 4));
 }
 
 function getInitials(value: string) {
