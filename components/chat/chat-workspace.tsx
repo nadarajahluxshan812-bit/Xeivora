@@ -1428,8 +1428,12 @@ function RecentSessionRow({
       <button
         aria-label={`Open options for ${session.title}`}
         className={cn(
-          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]",
-          editing ? "hidden" : menuOpen || menuProjectOpen || active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          "absolute right-2 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[6px] bg-transparent text-[rgba(240,234,216,0.6)] transition hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]",
+          editing
+            ? "hidden"
+            : menuOpen || menuProjectOpen
+              ? "opacity-100"
+              : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100"
         )}
         onClick={(event) => {
           event.preventDefault();
@@ -1445,16 +1449,12 @@ function RecentSessionRow({
         {menuOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute left-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
+            className="absolute right-0 top-[calc(100%+4px)] z-[999] min-w-[160px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
           >
-            <SessionMenuButton
-              icon={Star}
-              label={session.pinned ? "Unstar / Unpin" : "Star / Pin"}
-              onClick={onPin}
-            />
+            <SessionMenuButton icon={Star} label={session.pinned ? "Unstar" : "Star"} onClick={onPin} />
             <SessionMenuButton icon={Pencil} label="Rename" onClick={onRename} />
             <SessionMenuButton
               icon={FolderPlus}
@@ -1473,7 +1473,7 @@ function RecentSessionRow({
         {menuProjectOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute left-0 top-[calc(100%+8px)] z-[100] w-[240px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
+            className="absolute right-0 top-[calc(100%+4px)] z-[999] min-w-[180px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
@@ -1522,7 +1522,7 @@ function SessionMenuButton({
   return (
     <button
       className={cn(
-        "flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] transition",
+        "flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-left text-[13px] transition",
         destructive
           ? "text-[#f0ead8] hover:bg-[rgba(239,68,68,0.12)] hover:text-[#ef4444]"
           : "text-[#f0ead8] hover:bg-[rgba(201,100,66,0.1)]"
@@ -1744,7 +1744,7 @@ function ChatHomeView({
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[rgba(201,100,66,0.12)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
         <ChatComposer
           composerRef={composerRef}
           fileInputRef={fileInputRef}
@@ -1820,7 +1820,7 @@ function ChatThreadView({
   return (
     <div className="flex h-full flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto" ref={messagesRef}>
-        <div className="mx-auto flex w-full max-w-[900px] flex-col gap-5 px-5 pb-28 pt-6 sm:px-8 lg:px-10">
+        <div className="mx-auto flex w-full max-w-[900px] flex-col gap-5 px-5 pb-[140px] pt-6 sm:px-8 lg:px-10">
           {error ? <ErrorBanner message={error} /> : null}
           {autoSwitchNotice ? <AutoSwitchBanner switchData={autoSwitchNotice} /> : null}
 
@@ -1839,9 +1839,9 @@ function ChatThreadView({
                       initial={{ opacity: 0, y: 14 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
-                      <div className="ml-auto max-w-[70%] min-w-0">
-                        <div className="mb-1 text-right text-[13px] font-medium text-[var(--xv-chat-text)]">You</div>
-                        <div className="rounded-[18px_18px_4px_18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
+                      <div className="ml-auto min-w-[120px] max-w-[65%]">
+                        <div className="mb-1 text-right text-[12px] font-normal text-[rgba(240,234,216,0.5)]">You</div>
+                        <div className="rounded-[18px_18px_4px_18px] border border-[rgba(201,100,66,0.25)] bg-[#2a2118] px-[18px] py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
                           {message.content}
                         </div>
                       </div>
@@ -1912,7 +1912,7 @@ function ChatThreadView({
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-bg)] px-4 pb-[14px] pt-3">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[rgba(201,100,66,0.12)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
         <ChatComposer
           composerRef={composerRef}
           fileInputRef={fileInputRef}
@@ -1968,7 +1968,7 @@ function ChatComposer({
   voiceState
 }: ChatComposerProps) {
   return (
-    <div className="mx-auto w-full max-w-[900px] pl-0 md:pl-10">
+    <div className="mx-auto w-full max-w-[760px] pl-0 md:pl-10">
       <form
         className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] py-2 shadow-[var(--xv-chat-shadow)] focus-within:border-[#c96442]"
         onSubmit={(event) => {
