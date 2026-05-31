@@ -148,6 +148,19 @@ export type ToolExecutionResult = {
   payload?: Record<string, unknown>;
 };
 
+export type ChatToolExecution = {
+  id: string;
+  name: string;
+  uiLabel: string;
+  status: "completed" | "not_connected" | "error";
+  connected: boolean;
+  source: "mcp" | "workspace";
+  summary: string;
+  input?: Record<string, unknown>;
+  payload?: Record<string, unknown>;
+  durationMs?: number;
+};
+
 export type StreamMetaPayload = {
   assistantMessageId: string;
   modelKey: ModelKey;
@@ -182,6 +195,11 @@ export type StreamContinuityPayload = {
   finalProviderChain: ProviderKey[];
 };
 
+export type StreamToolPayload = {
+  assistantMessageId: string;
+  executions: ChatToolExecution[];
+};
+
 export type StreamDonePayload = {
   session: ChatSession;
   sessions: ChatSessionSummary[];
@@ -189,6 +207,7 @@ export type StreamDonePayload = {
 
 export type StreamEvent =
   | { type: "meta"; payload: StreamMetaPayload }
+  | { type: "tool"; payload: StreamToolPayload }
   | { type: "orchestration"; payload: StreamOrchestrationPayload }
   | { type: "continuity"; payload: StreamContinuityPayload }
   | { type: "delta"; payload: { text: string } }

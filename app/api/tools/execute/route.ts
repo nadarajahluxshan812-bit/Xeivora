@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-const { executeTools } = require("@/lib/server/tool-executor");
+const { executeMcpTools } = require("@/lib/mcp/executor");
 const { listFiles } = require("@/lib/server/workspace-store");
+const { getLightweightMemorySnapshot } = require("@/lib/server/lightweight-memory");
 const { enforceRateLimit } = require("@/lib/server/rate-limit");
 
 export const dynamic = "force-dynamic";
@@ -28,11 +29,13 @@ export async function POST(request: Request) {
   }
 
   const files = sessionId ? await listFiles({ sessionId, limit: 20 }) : [];
-  const result = await executeTools({
+  const memorySnapshot = await getLightweightMemorySnapshot({ sessionId });
+  const result = await executeMcpTools({
     prompt,
     sessionId,
     projectId,
-    files
+    files,
+    memorySnapshot
   });
 
   return NextResponse.json(result, {

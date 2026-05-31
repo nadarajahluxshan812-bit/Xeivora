@@ -51,6 +51,7 @@ import type {
   ChatMessage,
   ChatSession,
   ChatSessionSummary,
+  ChatToolExecution,
   ModelSwitch,
   ModelKey,
   OrchestrationStep,
@@ -185,6 +186,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("simple_chat");
   const [autoSwitchNotice, setAutoSwitchNotice] = useState<ModelSwitch | null>(null);
   const [modelPulseActive, setModelPulseActive] = useState(false);
+  const [toolExecutionsByMessageId, setToolExecutionsByMessageId] = useState<Record<string, ChatToolExecution[]>>({});
   const [continuityStatus, setContinuityStatus] = useState<ContinuityState>({
     currentProvider: "simulation",
     currentModel: null,
@@ -851,6 +853,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           });
         }
 
+        if (typedEvent.type === "tool") {
+          setToolExecutionsByMessageId((current) => ({
+            ...current,
+            [typedEvent.payload.assistantMessageId]: typedEvent.payload.executions
+          }));
+        }
+
         if (typedEvent.type === "orchestration") {
           setRouteLabel(toXeivoraLabel(typedEvent.payload.routeLabel));
           setActiveProvider(typedEvent.payload.provider);
@@ -1077,6 +1086,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 prompt={prompt}
                 sessionFiles={sessionFiles}
                 thinking={thinking}
+                toolExecutionsByMessageId={toolExecutionsByMessageId}
                 voiceState={voiceState}
               />
             ) : (
@@ -1797,6 +1807,7 @@ function ChatThreadView({
   prompt,
   sessionFiles,
   thinking,
+  toolExecutionsByMessageId,
   voiceState
 }: {
   autoSwitchNotice: ModelSwitch | null;
@@ -1822,6 +1833,7 @@ function ChatThreadView({
   prompt: string;
   sessionFiles: UploadedFileSummary[];
   thinking: boolean;
+  toolExecutionsByMessageId: Record<string, ChatToolExecution[]>;
   voiceState: VoiceState;
 }) {
   return (
@@ -1836,6 +1848,7 @@ function ChatThreadView({
               const isAssistant = message.role === "assistant";
               const isLatestAssistant = lastAssistantMessage?.id === message.id;
               const assistantModelLabel = getAssistantModelLabel(message.modelKey, message.provider);
+              const toolExecutions = toolExecutionsByMessageId[message.id] || [];
 
               if (!isAssistant) {
                 return (
@@ -1872,6 +1885,8 @@ function ChatThreadView({
                           <span className="text-[var(--xv-chat-muted)]">·</span>
                           <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
                         </div>
+
+                        {toolExecutions.length ? <ToolExecutionGroup executions={toolExecutions} /> : null}
 
                         {message.content ? (
                           <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
@@ -2108,6 +2123,45 @@ function ChatComposer({
       <p className="mt-3 text-center text-[12px] font-light text-[var(--xv-chat-muted)]">
         Xeivora switches models automatically — your context is always preserved
       </p>
+    </div>
+  );
+}
+
+function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] }) {
+  return (
+    <div className="mb-3 space-y-2">
+      {executions.map((execution) => (
+        <div
+          className={cn(
+            "rounded-[14px] border px-3 py-2.5",
+            execution.status === "error"
+              ? "border-[rgba(239,68,68,0.28)] bg-[rgba(239,68,68,0.08)]"
+              : execution.connected
+                ? "border-[rgba(201,100,66,0.16)] bg-[rgba(201,100,66,0.06)]"
+                : "border-[rgba(201,100,66,0.16)] bg-[rgba(240,234,216,0.03)]"
+          )}
+          key={execution.id}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[12px] font-medium text-[var(--xv-chat-text)]">{execution.uiLabel}</div>
+              <div className="mt-0.5 text-[12px] text-[var(--xv-chat-muted)]">{execution.summary}</div>
+            </div>
+            <span
+              className={cn(
+                "shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em]",
+                execution.status === "error"
+                  ? "border-[rgba(239,68,68,0.28)] text-[#ef4444]"
+                  : execution.connected
+                    ? "border-[rgba(201,100,66,0.2)] text-[#c96442]"
+                    : "border-[rgba(240,234,216,0.12)] text-[rgba(240,234,216,0.7)]"
+              )}
+            >
+              {formatToolStatus(execution)}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -2384,6 +2438,18 @@ function workflowModeLabel(mode: WorkflowMode) {
   };
 
   return labels[mode];
+}
+
+function formatToolStatus(execution: ChatToolExecution) {
+  if (execution.status === "error") {
+    return "Error";
+  }
+
+  if (!execution.connected || execution.status === "not_connected") {
+    return "Standby";
+  }
+
+  return execution.source === "mcp" ? "MCP" : "Ready";
 }
 
 function truncateSidebarSessionTitle(title: string) {
