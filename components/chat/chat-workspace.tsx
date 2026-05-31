@@ -21,7 +21,6 @@ import {
   LoaderCircle,
   MessageSquareText,
   Mic,
-  MoreVertical,
   PanelLeft,
   Paperclip,
   Pencil,
@@ -1413,7 +1412,7 @@ function RecentSessionRow({
       ) : (
         <div
           className={cn(
-            "grid h-9 w-full grid-cols-[minmax(0,1fr)_28px] items-center gap-1 rounded-[10px] pr-1 transition",
+            "grid h-9 w-full grid-cols-[minmax(0,1fr)_30px] items-center gap-1 rounded-[10px] pr-1 transition",
             active ? "bg-[#1a1410]" : "hover:bg-[rgba(201,100,66,0.08)]"
           )}
         >
@@ -1427,7 +1426,7 @@ function RecentSessionRow({
           >
             {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
             <span className="min-w-0 max-w-[172px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-              {session.title}
+              {truncateSidebarSessionTitle(session.title)}
             </span>
           </button>
 
@@ -1437,7 +1436,7 @@ function RecentSessionRow({
               "z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] transition",
               active || menuOpen || menuProjectOpen
                 ? "bg-[rgba(240,234,216,0.08)] text-[#f0ead8]"
-                : "bg-[rgba(240,234,216,0.03)] text-[rgba(240,234,216,0.78)] opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
+                : "bg-[rgba(240,234,216,0.04)] text-[rgba(240,234,216,0.82)] opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
             )}
             onClick={(event) => {
               event.preventDefault();
@@ -1446,7 +1445,7 @@ function RecentSessionRow({
             }}
             type="button"
           >
-            <span className="text-[15px] leading-none">⋮</span>
+            <span className="text-[16px] leading-none">⋮</span>
           </button>
         </div>
       )}
@@ -2385,6 +2384,16 @@ function workflowModeLabel(mode: WorkflowMode) {
   };
 
   return labels[mode];
+}
+
+function truncateSidebarSessionTitle(title: string) {
+  const words = `${title}`.trim().split(/\s+/).filter(Boolean);
+
+  if (words.length <= 3) {
+    return title;
+  }
+
+  return `${words.slice(0, 3).join(" ")}...`;
 }
 
 async function consumeEventStream(
