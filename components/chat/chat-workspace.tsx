@@ -5,8 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
-  Archive,
-  ArchiveRestore,
   ArrowUp,
   AudioLines,
   Bot,
@@ -17,6 +15,7 @@ import {
   Ellipsis,
   FileText,
   FolderKanban,
+  FolderPlus,
   GraduationCap,
   Heart,
   LoaderCircle,
@@ -25,13 +24,13 @@ import {
   PanelLeft,
   Paperclip,
   Pencil,
-  Pin,
   Plane,
   Plus,
   Search,
   Settings2,
   Share2,
   Square,
+  Star,
   Trash2,
   Volume2,
   Workflow,
@@ -178,6 +177,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [showContinuityPanel, setShowContinuityPanel] = useState(false);
   const [sessionMenuOpenId, setSessionMenuOpenId] = useState<string | null>(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingSessionTitle, setEditingSessionTitle] = useState("");
+  const [projectMenuSessionId, setProjectMenuSessionId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("simple_chat");
@@ -285,19 +287,21 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   }, [prompt]);
 
   useEffect(() => {
-    if (!sessionMenuOpenId && !statusOpen) {
+    if (!sessionMenuOpenId && !statusOpen && !projectMenuSessionId) {
       return;
     }
 
     function handleClose() {
       setSessionMenuOpenId(null);
       setStatusOpen(false);
+      setProjectMenuSessionId(null);
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setSessionMenuOpenId(null);
         setStatusOpen(false);
+        setProjectMenuSessionId(null);
       }
     }
 
@@ -308,7 +312,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       window.removeEventListener("click", handleClose);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [sessionMenuOpenId, statusOpen]);
+  }, [projectMenuSessionId, sessionMenuOpenId, statusOpen]);
 
   async function bootstrapWorkspace() {
     const response = await fetch("/api/chat/bootstrap", { cache: "no-store" });
@@ -346,6 +350,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setError(null);
       setMobileSidebarOpen(false);
       setSessionMenuOpenId(null);
+      setEditingSessionId(null);
+      setProjectMenuSessionId(null);
     });
   }
 
@@ -379,6 +385,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setAutoSwitchNotice(null);
       setMobileSidebarOpen(false);
       setSessionMenuOpenId(null);
+      setEditingSessionId(null);
+      setProjectMenuSessionId(null);
     });
 
     composerRef.current?.focus();
@@ -398,20 +406,24 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     setWorkflowMode("simple_chat");
     setMobileSidebarOpen(false);
     setSessionMenuOpenId(null);
+    setEditingSessionId(null);
+    setProjectMenuSessionId(null);
     setShareFeedback(null);
     composerRef.current?.focus();
   }
 
   async function handleRenameSession(sessionId: string) {
-    const session = sessions.find((candidate) => candidate.id === sessionId);
-    const nextTitle = window.prompt("Rename chat", session?.title || "");
-
-    if (!nextTitle || nextTitle.trim() === session?.title) {
-      setSessionMenuOpenId(null);
-      return;
-    }
-
     try {
+      const nextTitle = editingSessionTitle.trim();
+      const session = sessions.find((candidate) => candidate.id === sessionId);
+
+      if (!nextTitle || nextTitle === session?.title) {
+        setEditingSessionId(null);
+        setEditingSessionTitle("");
+        setSessionMenuOpenId(null);
+        return;
+      }
+
       const response = await fetch(`/api/chat/sessions/${sessionId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -436,10 +448,20 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           setActiveSession(nextSession);
         }
       });
+      setEditingSessionId(null);
+      setEditingSessionTitle("");
       setSessionMenuOpenId(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Unable to rename this chat.");
     }
+  }
+
+  function beginInlineRename(sessionId: string) {
+    const session = sessions.find((candidate) => candidate.id === sessionId);
+    setEditingSessionId(sessionId);
+    setEditingSessionTitle(session?.title || "");
+    setSessionMenuOpenId(null);
+    setProjectMenuSessionId(null);
   }
 
   async function handleDeleteSession(sessionId: string) {
@@ -523,14 +545,10 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     }
   }
 
-  async function handleArchiveSession(sessionId: string, archived: boolean) {
+  async function handleAssignSessionProject(sessionId: string, projectId: string | null) {
     try {
-      await handleUpdateSessionMetadata(sessionId, { archived });
-      if (activeSession?.id === sessionId && archived) {
-        setActiveSession(null);
-        setSessionFiles([]);
-      }
-      setSessionMenuOpenId(null);
+      await handleUpdateSessionMetadata(sessionId, { projectId });
+      setProjectMenuSessionId(null);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : "Unable to update this chat.");
     }
@@ -934,24 +952,35 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       className="min-h-screen bg-[var(--xv-chat-bg)] text-[var(--xv-chat-text)]"
       style={{ ...chatTheme, fontFamily: "Inter, system-ui, sans-serif" }}
     >
-      <div className="flex min-h-screen bg-[var(--xv-chat-bg)]">
-        <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-sidebar)] md:flex">
+      <div className="min-h-screen bg-[var(--xv-chat-bg)]">
+        <aside className="fixed inset-y-0 left-0 z-50 hidden w-[260px] shrink-0 border-r border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-sidebar)] md:flex">
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
             collapsed={false}
-            onArchiveSession={(sessionId, archived) => void handleArchiveSession(sessionId, archived)}
             onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
             onDismiss={() => setMobileSidebarOpen(false)}
             onNewChat={() => void handleNewChat()}
+            onAssignProject={(sessionId, projectId) => void handleAssignSessionProject(sessionId, projectId)}
             onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
-            onRenameSession={(sessionId) => void handleRenameSession(sessionId)}
+            onRenameSession={beginInlineRename}
             onSelectSession={(sessionId) => void loadSession(sessionId)}
             onToggleCollapse={() => setMobileSidebarOpen(false)}
+            onToggleProjectMenu={setProjectMenuSessionId}
             onToggleSessionMenu={setSessionMenuOpenId}
+            openProjectMenuId={projectMenuSessionId}
             openSessionMenuId={sessionMenuOpenId}
             pathname={pathname}
+            projects={projects}
             sessionGroups={groupedSessions}
             viewer={viewer}
+            editingSessionId={editingSessionId}
+            editingSessionTitle={editingSessionTitle}
+            onEditingSessionTitleChange={setEditingSessionTitle}
+            onEditingSessionSubmit={(sessionId) => void handleRenameSession(sessionId)}
+            onEditingSessionCancel={() => {
+              setEditingSessionId(null);
+              setEditingSessionTitle("");
+            }}
           />
         </aside>
 
@@ -961,24 +990,35 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               activeSessionId={activeSession?.id ?? null}
               collapsed={false}
               mobile
-              onArchiveSession={(sessionId, archived) => void handleArchiveSession(sessionId, archived)}
               onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
               onDismiss={() => setMobileSidebarOpen(false)}
               onNewChat={() => void handleNewChat()}
+              onAssignProject={(sessionId, projectId) => void handleAssignSessionProject(sessionId, projectId)}
               onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
-              onRenameSession={(sessionId) => void handleRenameSession(sessionId)}
+              onRenameSession={beginInlineRename}
               onSelectSession={(sessionId) => void loadSession(sessionId)}
               onToggleCollapse={() => setMobileSidebarOpen(false)}
+              onToggleProjectMenu={setProjectMenuSessionId}
               onToggleSessionMenu={setSessionMenuOpenId}
+              openProjectMenuId={projectMenuSessionId}
               openSessionMenuId={sessionMenuOpenId}
               pathname={pathname}
+              projects={projects}
               sessionGroups={groupedSessions}
               viewer={viewer}
+              editingSessionId={editingSessionId}
+              editingSessionTitle={editingSessionTitle}
+              onEditingSessionTitleChange={setEditingSessionTitle}
+              onEditingSessionSubmit={(sessionId) => void handleRenameSession(sessionId)}
+              onEditingSessionCancel={() => {
+                setEditingSessionId(null);
+                setEditingSessionTitle("");
+              }}
             />
           </SheetContent>
         </Sheet>
 
-        <main className="relative flex min-w-0 flex-1 flex-col bg-[var(--xv-chat-bg)]">
+        <main className="relative flex min-h-screen min-w-0 flex-1 flex-col bg-[var(--xv-chat-bg)] md:ml-[260px]">
           <button
             aria-label="Open sidebar"
             className="absolute left-3 top-[10px] z-30 inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] md:hidden"
@@ -1072,18 +1112,26 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 type SidebarContentProps = {
   activeSessionId: string | null;
   collapsed: boolean;
+  editingSessionId: string | null;
+  editingSessionTitle: string;
   mobile?: boolean;
-  onArchiveSession: (sessionId: string, archived: boolean) => void;
+  onAssignProject: (sessionId: string, projectId: string | null) => void;
   onDeleteSession: (sessionId: string) => void;
   onDismiss?: () => void;
+  onEditingSessionCancel: () => void;
+  onEditingSessionSubmit: (sessionId: string) => void;
+  onEditingSessionTitleChange: (value: string) => void;
   onNewChat: () => void;
   onPinSession: (sessionId: string, pinned: boolean) => void;
   onRenameSession: (sessionId: string) => void;
   onSelectSession: (sessionId: string) => void;
   onToggleCollapse: () => void;
+  onToggleProjectMenu: (sessionId: string | null) => void;
   onToggleSessionMenu: (sessionId: string | null) => void;
+  openProjectMenuId: string | null;
   openSessionMenuId: string | null;
   pathname: string;
+  projects: WorkspaceProject[];
   sessionGroups: Array<[string, ChatSessionSummary[]]>;
   viewer?: AuthUser | null;
 };
@@ -1091,18 +1139,26 @@ type SidebarContentProps = {
 function SidebarContent({
   activeSessionId,
   collapsed,
+  editingSessionId,
+  editingSessionTitle,
   mobile = false,
-  onArchiveSession,
+  onAssignProject,
   onDeleteSession,
   onDismiss,
+  onEditingSessionCancel,
+  onEditingSessionSubmit,
+  onEditingSessionTitleChange,
   onNewChat,
   onPinSession,
   onRenameSession,
   onSelectSession,
   onToggleCollapse,
+  onToggleProjectMenu,
   onToggleSessionMenu,
+  openProjectMenuId,
   openSessionMenuId,
   pathname,
+  projects,
   sessionGroups,
   viewer = null
 }: SidebarContentProps) {
@@ -1180,17 +1236,25 @@ function SidebarContent({
                       {items.map((session) => (
                         <RecentSessionRow
                           active={activeSessionId === session.id}
+                          editing={editingSessionId === session.id}
+                          editingTitle={editingSessionTitle}
                           key={session.id}
+                          menuProjectOpen={openProjectMenuId === session.id}
                           menuOpen={openSessionMenuId === session.id}
-                          onArchive={() => onArchiveSession(session.id, !session.archived)}
+                          onAssignProject={(projectId) => onAssignProject(session.id, projectId)}
                           onDelete={() => onDeleteSession(session.id)}
+                          onEditingCancel={onEditingSessionCancel}
+                          onEditingSubmit={() => onEditingSessionSubmit(session.id)}
+                          onEditingTitleChange={onEditingSessionTitleChange}
                           onOpenChange={(nextOpen) => onToggleSessionMenu(nextOpen ? session.id : null)}
+                          onProjectMenuOpenChange={(nextOpen) => onToggleProjectMenu(nextOpen ? session.id : null)}
                           onPin={() => onPinSession(session.id, !session.pinned)}
                           onRename={() => onRenameSession(session.id)}
                           onSelect={() => {
                             onSelectSession(session.id);
                             onDismiss?.();
                           }}
+                          projects={projects}
                           session={session}
                         />
                       ))}
@@ -1281,46 +1345,91 @@ function SidebarNavItem({
 
 function RecentSessionRow({
   active,
+  editing,
+  editingTitle,
+  menuProjectOpen,
   menuOpen,
-  onArchive,
+  onAssignProject,
   onDelete,
+  onEditingCancel,
+  onEditingSubmit,
+  onEditingTitleChange,
   onOpenChange,
+  onProjectMenuOpenChange,
   onPin,
   onRename,
   onSelect,
+  projects,
   session
 }: {
   active: boolean;
+  editing: boolean;
+  editingTitle: string;
+  menuProjectOpen: boolean;
   menuOpen: boolean;
-  onArchive: () => void;
+  onAssignProject: (projectId: string | null) => void;
   onDelete: () => void;
+  onEditingCancel: () => void;
+  onEditingSubmit: () => void;
+  onEditingTitleChange: (value: string) => void;
   onOpenChange: (nextOpen: boolean) => void;
+  onProjectMenuOpenChange: (nextOpen: boolean) => void;
   onPin: () => void;
   onRename: () => void;
   onSelect: () => void;
+  projects: WorkspaceProject[];
   session: ChatSessionSummary;
 }) {
   return (
     <div className="group relative">
-      <button
-        className={cn(
-        "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
-        active
-            ? "bg-[#1a1410] text-[#f0ead8]"
-            : "text-[var(--xv-chat-muted)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
-        )}
-        onClick={onSelect}
-        type="button"
-      >
-        {session.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--xv-chat-accent)]" /> : null}
-        <span className="truncate">{session.title}</span>
-      </button>
+      {editing ? (
+        <form
+          className={cn(
+            "flex h-9 w-full items-center gap-2 rounded-[10px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-2.5 pr-2 text-left text-[12px] font-normal",
+            active ? "text-[#f0ead8]" : "text-[var(--xv-chat-muted)]"
+          )}
+          onClick={(event) => event.stopPropagation()}
+          onSubmit={(event) => {
+            event.preventDefault();
+            onEditingSubmit();
+          }}
+        >
+          {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
+          <input
+            autoFocus
+            className="w-full bg-transparent text-[12px] text-[#f0ead8] outline-none"
+            onBlur={onEditingSubmit}
+            onChange={(event) => onEditingTitleChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                onEditingCancel();
+              }
+            }}
+            value={editingTitle}
+          />
+        </form>
+      ) : (
+        <button
+          className={cn(
+            "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
+            active
+              ? "bg-[#1a1410] text-[#f0ead8]"
+              : "text-[var(--xv-chat-muted)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+          )}
+          onClick={onSelect}
+          type="button"
+        >
+          {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
+          <span className="truncate">{session.title}</span>
+        </button>
+      )}
 
       <button
         aria-label={`Open options for ${session.title}`}
         className={cn(
           "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]",
-          menuOpen || active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          editing ? "hidden" : menuOpen || menuProjectOpen || active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
         onClick={(event) => {
           event.preventDefault();
@@ -1341,14 +1450,57 @@ function RecentSessionRow({
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
           >
-            <SessionMenuButton icon={Pin} label={session.pinned ? "Unpin conversation" : "Pin conversation"} onClick={onPin} />
+            <SessionMenuButton
+              icon={Star}
+              label={session.pinned ? "Unstar / Unpin" : "Star / Pin"}
+              onClick={onPin}
+            />
             <SessionMenuButton icon={Pencil} label="Rename" onClick={onRename} />
             <SessionMenuButton
-              icon={session.archived ? ArchiveRestore : Archive}
-              label={session.archived ? "Restore conversation" : "Archive"}
-              onClick={onArchive}
+              icon={FolderPlus}
+              label="Add to project"
+              onClick={() => {
+                onOpenChange(false);
+                onProjectMenuOpenChange(true);
+              }}
             />
             <SessionMenuButton destructive icon={Trash2} label="Delete" onClick={onDelete} />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {menuProjectOpen ? (
+          <motion.div
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="absolute left-0 top-[calc(100%+8px)] z-[100] w-[240px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            onClick={(event) => event.stopPropagation()}
+            transition={{ duration: 0.14, ease: "easeOut" }}
+          >
+            <button
+              className="flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.1)]"
+              onClick={() => onAssignProject(null)}
+              type="button"
+            >
+              <FolderPlus className="h-4 w-4 shrink-0" />
+              <span>No project</span>
+            </button>
+
+            {projects.map((project) => (
+              <button
+                className="flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.1)]"
+                key={project.id}
+                onClick={() => onAssignProject(project.id)}
+                type="button"
+              >
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: project.color }}
+                />
+                <span className="truncate">{project.name}</span>
+              </button>
+            ))}
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -1372,7 +1524,7 @@ function SessionMenuButton({
       className={cn(
         "flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] transition",
         destructive
-          ? "text-[#f07f67] hover:bg-[rgba(201,100,66,0.1)]"
+          ? "text-[#f0ead8] hover:bg-[rgba(239,68,68,0.12)] hover:text-[#ef4444]"
           : "text-[#f0ead8] hover:bg-[rgba(201,100,66,0.1)]"
       )}
       onClick={onClick}
@@ -1668,7 +1820,7 @@ function ChatThreadView({
   return (
     <div className="flex h-full flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto" ref={messagesRef}>
-        <div className="mx-auto flex w-full max-w-[700px] flex-col gap-4 px-5 pb-28 pt-5">
+        <div className="mx-auto flex w-full max-w-[900px] flex-col gap-5 px-5 pb-28 pt-6 sm:px-8 lg:px-10">
           {error ? <ErrorBanner message={error} /> : null}
           {autoSwitchNotice ? <AutoSwitchBanner switchData={autoSwitchNotice} /> : null}
 
@@ -1687,9 +1839,9 @@ function ChatThreadView({
                       initial={{ opacity: 0, y: 14 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
-                      <div className="max-w-[70%] min-w-0">
+                      <div className="ml-auto max-w-[70%] min-w-0">
                         <div className="mb-1 text-right text-[13px] font-medium text-[var(--xv-chat-text)]">You</div>
-                        <div className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
+                        <div className="rounded-[18px_18px_4px_18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
                           {message.content}
                         </div>
                       </div>
@@ -1700,14 +1852,14 @@ function ChatThreadView({
 
               return (
                 <MessageErrorBoundary key={message.id}>
-                  <motion.article
-                    animate={{ opacity: 1, y: 0 }}
-                    className="group flex gap-3"
-                    initial={{ opacity: 0, y: 14 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                  >
+                    <motion.article
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group flex gap-3"
+                      initial={{ opacity: 0, y: 14 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                    >
                       <AvatarBubble />
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 max-w-[85%] flex-1">
                         <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
                           <span className="text-[var(--xv-chat-text)]">Xeivora</span>
                           <span className="text-[var(--xv-chat-muted)]">·</span>
@@ -1816,7 +1968,7 @@ function ChatComposer({
   voiceState
 }: ChatComposerProps) {
   return (
-    <div className="mx-auto w-full max-w-[660px]">
+    <div className="mx-auto w-full max-w-[900px] pl-0 md:pl-10">
       <form
         className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] py-2 shadow-[var(--xv-chat-shadow)] focus-within:border-[#c96442]"
         onSubmit={(event) => {
