@@ -1435,7 +1435,7 @@ function RecentSessionRow({
               "z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] transition",
               active || menuOpen || menuProjectOpen
                 ? "bg-[rgba(240,234,216,0.06)] text-[#f0ead8]"
-                : "bg-transparent text-[rgba(240,234,216,0.45)] opacity-0 group-hover:opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
+                : "bg-transparent text-[rgba(240,234,216,0.42)] opacity-100 hover:bg-[rgba(201,100,66,0.15)] hover:text-[var(--xv-chat-text)]"
             )}
             onClick={(event) => {
               event.preventDefault();
