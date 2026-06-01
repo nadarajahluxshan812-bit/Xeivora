@@ -27,17 +27,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "An image prompt is required." }, { status: 400 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
-      {
-        connected: false,
-        images: [],
-        message: "Image generation architecture is ready, but no image provider is connected yet."
-      },
-      { status: 200 }
-    );
-  }
-
   try {
     const result = await generateImages({
       prompt,
@@ -45,16 +34,22 @@ export async function POST(request: Request) {
       viewerId: viewer?.id || null,
       viewerPlan: viewer?.plan || "Starter"
     });
-    return NextResponse.json(result);
+
+    const primary = result.images[0] || null;
+
+    return NextResponse.json({
+      ...result,
+      imageUrl: primary?.url || null,
+      revisedPrompt: primary?.revisedPrompt || prompt
+    });
   } catch (error) {
     return NextResponse.json(
       {
         connected: false,
         images: [],
-        message:
-          error instanceof Error
-            ? error.message
-            : "Xeivora could not generate the image right now. The provider fallback architecture is ready.",
+        imageUrl: null,
+        revisedPrompt: prompt,
+        message: error instanceof Error ? error.message : "Xeivora could not generate the image right now.",
         provider: "openai",
         model: null
       },

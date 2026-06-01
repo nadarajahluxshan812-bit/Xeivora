@@ -50,6 +50,8 @@ export type McpExecutionResult = {
   executions: McpToolExecution[];
   localResponse: string | null;
   promptAugmentation: string | null;
+  providerPromptOverride?: string | null;
+  skipProviderResponse?: boolean;
 };
 
 type ExecutionContext = {
@@ -58,6 +60,8 @@ type ExecutionContext = {
   projectId?: string | null;
   files?: UploadedFileSummary[];
   memorySnapshot?: MemorySnapshot;
+  viewerId?: string | null;
+  viewerPlan?: string | null;
 };
 
 type PlannedToolCall = {
@@ -466,7 +470,9 @@ export async function executeMcpTools(context: ExecutionContext): Promise<McpExe
     prompt,
     sessionId: context.sessionId || null,
     projectId: context.projectId || null,
-    files
+    files,
+    viewerId: context.viewerId || null,
+    viewerPlan: context.viewerPlan || "Starter"
   });
 
   const executions: McpToolExecution[] = (legacyResult.executions || []).map(mapLegacyExecution);
@@ -479,7 +485,9 @@ export async function executeMcpTools(context: ExecutionContext): Promise<McpExe
       tools: Array.from(toolNames),
       executions,
       localResponse,
-      promptAugmentation
+      promptAugmentation,
+      providerPromptOverride: legacyResult.providerPromptOverride || null,
+      skipProviderResponse: Boolean(legacyResult.skipProviderResponse)
     };
   }
 
@@ -576,6 +584,8 @@ export async function executeMcpTools(context: ExecutionContext): Promise<McpExe
     tools: Array.from(toolNames),
     executions,
     localResponse,
-    promptAugmentation
+    promptAugmentation,
+    providerPromptOverride: legacyResult.providerPromptOverride || null,
+    skipProviderResponse: Boolean(legacyResult.skipProviderResponse)
   };
 }

@@ -63,7 +63,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
         prompt: input,
         res: sink,
         session,
-        viewerId: viewer?.id || null
+        viewerId: viewer?.id || null,
+        viewerPlan: viewer?.plan || "Starter"
       });
     });
   } catch (error) {

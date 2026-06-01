@@ -174,7 +174,7 @@ export type ChatToolExecution = {
   id: string;
   name: string;
   uiLabel: string;
-  status: "completed" | "not_connected" | "error";
+  status: "completed" | "not_connected" | "error" | "running";
   connected: boolean;
   source: "mcp" | "workspace" | "integration";
   summary: string;

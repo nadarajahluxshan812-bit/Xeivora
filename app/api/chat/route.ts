@@ -38,7 +38,8 @@ export async function POST(request: Request) {
       historyMessages: Array.isArray(body?.messages) ? body.messages : [],
       integrations,
       enabledIntegrationProviders: enabledIntegrationProviders as IntegrationProvider[],
-      viewerId: viewer?.id || null
+      viewerId: viewer?.id || null,
+      viewerPlan: viewer?.plan || "Starter"
     });
     const attemptedProviders = Array.isArray(result.attemptedProviders) ? result.attemptedProviders : [];
     const switched = attemptedProviders.length > 1 && attemptedProviders[0] !== attemptedProviders[attemptedProviders.length - 1];

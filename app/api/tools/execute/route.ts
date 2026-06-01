@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     files,
     memorySnapshot,
     viewerId: viewer?.id || null,
+    viewerPlan: viewer?.plan || "Starter",
     integrations,
     enabledIntegrationProviders: enabledIntegrationProviders as IntegrationProvider[]
   });

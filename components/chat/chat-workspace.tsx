@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Code2,
   Command,
+  Download,
   Ellipsis,
   Folder,
   FolderOpen,
@@ -37,6 +38,7 @@ import {
   Plane,
   PlugZap,
   Plus,
+  RefreshCcw,
   Search,
   Save,
   Settings2,
@@ -246,6 +248,21 @@ type DesktopCommandResult = {
   stderr?: string;
   stdout?: string;
   success: boolean;
+};
+
+type ImageIntent = {
+  count: number;
+  imagePrompt: string;
+  isImageAndText: boolean;
+  isImageOnly: boolean;
+  isImageRequest: boolean;
+  textPrompt: string | null;
+};
+
+type ExecutionImage = {
+  id: string;
+  revisedPrompt: string;
+  url: string;
 };
 
 const chatTheme = {
@@ -585,6 +602,105 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     setEnabledIntegrationProviders((current) =>
       current.includes(provider) ? current.filter((entry) => entry !== provider) : [...current, provider]
     );
+  }
+
+  async function handleRegenerateImageExecution(
+    messageId: string,
+    executionId: string,
+    nextPrompt: string,
+    count = 1
+  ) {
+    const cleanPrompt = `${nextPrompt || ""}`.trim();
+    const safeCount = Math.min(4, Math.max(1, Number.parseInt(`${count || 1}`, 10) || 1));
+
+    if (!cleanPrompt) {
+      return;
+    }
+
+    setToolExecutionsByMessageId((current) => ({
+      ...current,
+      [messageId]: (current[messageId] || []).map((execution) =>
+        execution.id === executionId
+          ? {
+              ...execution,
+              status: "running",
+              connected: true,
+              summary: "Generating your image...",
+              payload: {
+                ...execution.payload,
+                prompt: cleanPrompt,
+                count: safeCount,
+                images: [],
+                loading: true
+              }
+            }
+          : execution
+      )
+    }));
+
+    try {
+      const response = await fetch("/api/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: cleanPrompt,
+          count: safeCount
+        })
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      setToolExecutionsByMessageId((current) => ({
+        ...current,
+        [messageId]: (current[messageId] || []).map((execution) =>
+          execution.id === executionId
+            ? {
+                ...execution,
+                status: result?.connected ? "completed" : "error",
+                connected: Boolean(result?.connected),
+                summary: result?.connected
+                  ? `Generated ${result.images?.length || safeCount} image${result.images?.length === 1 ? "" : "s"} with ${result.modelLabel || result.model || "DALL-E 3"}.`
+                  : result?.message || "Xeivora could not generate the image right now.",
+                payload: {
+                  ...execution.payload,
+                  images: Array.isArray(result?.images) ? result.images : [],
+                  prompt: cleanPrompt,
+                  count: result?.count || safeCount,
+                  model: result?.model || null,
+                  modelLabel: result?.modelLabel || result?.model || "DALL-E 3",
+                  provider: result?.provider || "openai",
+                  attempts: Array.isArray(result?.attempts) ? result.attempts : [],
+                  dailyLimit: result?.dailyLimit,
+                  remaining: result?.remaining,
+                  usedToday: result?.usedToday,
+                  loading: false
+                }
+              }
+            : execution
+        )
+      }));
+    } catch (nextError) {
+      setToolExecutionsByMessageId((current) => ({
+        ...current,
+        [messageId]: (current[messageId] || []).map((execution) =>
+          execution.id === executionId
+            ? {
+                ...execution,
+                status: "error",
+                connected: false,
+                summary:
+                  nextError instanceof Error ? nextError.message : "Xeivora could not generate the image right now.",
+                payload: {
+                  ...execution.payload,
+                  prompt: cleanPrompt,
+                  count: safeCount,
+                  loading: false
+                }
+              }
+            : execution
+        )
+      }));
+    }
   }
 
   async function loadSession(sessionId: string) {
@@ -1212,11 +1328,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
     const abortController = new AbortController();
     abortRef.current = abortController;
+    let assistantDraftId = "";
 
     try {
       const session = activeSession ?? (await createSession());
       const desktopContext = await buildDesktopContext(input);
-      const assistantDraftId = `draft-${Date.now()}`;
+      const pendingImageExecution = buildPendingImageExecution(input);
+      assistantDraftId = `draft-${Date.now()}`;
 
       startTransition(() => {
         setActiveSession((current) => {
@@ -1257,6 +1375,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         });
       });
 
+      if (pendingImageExecution) {
+        setToolExecutionsByMessageId((current) => ({
+          ...current,
+          [assistantDraftId]: [pendingImageExecution]
+        }));
+      }
+
       setPrompt("");
       setRouteLabel("Routing prompt...");
 
@@ -1286,6 +1411,16 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           activeProviderRef.current = typedEvent.payload.provider;
           setShowContinuityPanel(Boolean(typedEvent.payload.showContinuityPanel));
           setWorkflowMode(typedEvent.payload.workflowMode ?? "simple_chat");
+          setToolExecutionsByMessageId((current) => {
+            if (!assistantDraftId || !current[assistantDraftId]) {
+              return current;
+            }
+
+            const next = { ...current };
+            next[typedEvent.payload.assistantMessageId] = next[assistantDraftId];
+            delete next[assistantDraftId];
+            return next;
+          });
           setActiveSession((current) => {
             if (!current) {
               return current;
@@ -1404,6 +1539,17 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           )
         };
       });
+      if (assistantDraftId) {
+        setToolExecutionsByMessageId((current) => {
+          if (!current[assistantDraftId]) {
+            return current;
+          }
+
+          const next = { ...current };
+          delete next[assistantDraftId];
+          return next;
+        });
+      }
       setError(
         toFriendlyError(nextError instanceof Error ? nextError.message : "Xeivora could not complete the response.")
       );
@@ -1605,6 +1751,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     onFilesSelected={(files) => void handleUploadFiles(files)}
                     onPromptChange={setPrompt}
                     onRegenerate={() => void handleSend(true)}
+                    onRegenerateImage={(messageId, executionId, nextPrompt, count) =>
+                      void handleRegenerateImageExecution(messageId, executionId, nextPrompt, count)
+                    }
                     onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
                     onRetry={() => void handleSend(true)}
                     onSend={() => void handleSend(false)}
@@ -3211,6 +3360,7 @@ function ChatThreadView({
   onFilesSelected,
   onPromptChange,
   onRegenerate,
+  onRegenerateImage,
   onRemoveFile,
   onRetry,
   onSend,
@@ -3243,6 +3393,7 @@ function ChatThreadView({
   onFilesSelected: (files: FileList | File[]) => void;
   onPromptChange: (value: string) => void;
   onRegenerate: () => void;
+  onRegenerateImage: (messageId: string, executionId: string, prompt: string, count?: number) => Promise<void> | void;
   onRemoveFile: (fileId: string) => void;
   onRetry: () => void;
   onSend: () => void;
@@ -3336,13 +3487,19 @@ function ChatThreadView({
                           <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
                         </div>
 
-                        {toolExecutions.length ? <ToolExecutionGroup executions={toolExecutions} /> : null}
+                        {toolExecutions.length ? (
+                          <ToolExecutionGroup
+                            executions={toolExecutions}
+                            messageId={message.id}
+                            onRegenerateImage={onRegenerateImage}
+                          />
+                        ) : null}
 
                         {message.content ? (
                           <div className="text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
                             <ChatMarkdown content={toXeivoraLabel(message.content)} />
                           </div>
-                        ) : (
+                        ) : toolExecutions.length ? null : (
                           <ThinkingBlock active={thinking || isStreaming} />
                         )}
 
@@ -3652,11 +3809,177 @@ function ChatComposer({
   );
 }
 
-function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] }) {
+function ToolExecutionGroup({
+  executions,
+  messageId,
+  onRegenerateImage
+}: {
+  executions: ChatToolExecution[];
+  messageId: string;
+  onRegenerateImage: (messageId: string, executionId: string, prompt: string, count?: number) => Promise<void> | void;
+}) {
+  const [expandedImage, setExpandedImage] = useState<ExecutionImage | null>(null);
+  const [editingExecutionId, setEditingExecutionId] = useState<string | null>(null);
+  const [editingPrompt, setEditingPrompt] = useState("");
+
   return (
-    <div className="mb-3 space-y-2">
+    <>
+      <div className="mb-3 space-y-2">
       {executions.map((execution) => {
         const previewImages = getExecutionImages(execution);
+        const isImageExecution = execution.name === "image_generation";
+        const isLoading = execution.status === "running" || execution.payload?.loading === true;
+
+        if (isImageExecution) {
+          const modelLabel = getExecutionModelLabel(execution);
+          const promptValue =
+            typeof execution.payload?.prompt === "string" && execution.payload.prompt
+              ? execution.payload.prompt
+              : "Generated image";
+          const imageCount = getExecutionImageCount(execution);
+          const isEditing = editingExecutionId === execution.id;
+
+          return (
+            <div
+              className="max-w-[480px] overflow-hidden rounded-[20px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] shadow-[var(--xv-chat-shadow)]"
+              key={execution.id}
+            >
+              {isLoading ? (
+                <div className="px-4 pb-4 pt-4">
+                  <div className="flex aspect-square items-center justify-center rounded-[16px] border border-[var(--xv-chat-border)] bg-[linear-gradient(135deg,rgba(201,100,66,0.08),rgba(201,100,66,0.18),rgba(201,100,66,0.08))] bg-[length:200%_200%] animate-pulse">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                      <LoaderCircle className="h-6 w-6 animate-spin text-[var(--xv-chat-accent)]" />
+                      <p className="text-[13px] font-medium text-[var(--xv-chat-text)]">Generating your image...</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center rounded-full bg-[var(--xv-chat-inline-code-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--xv-chat-accent)]">
+                      Generated by {modelLabel}
+                    </span>
+                    <span className="text-[11px] text-[var(--xv-chat-muted)]">Creating {imageCount > 1 ? `${imageCount} variations` : "1 image"}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-4 pb-4 pt-4">
+                  <div className={cn("grid gap-3", previewImages.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+                    {previewImages.map((image) => (
+                      <div
+                        className="overflow-hidden rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]"
+                        key={image.id}
+                      >
+                        <button
+                          className="block w-full"
+                          onClick={() => setExpandedImage(image)}
+                          type="button"
+                        >
+                          <Image
+                            alt={image.revisedPrompt || promptValue}
+                            className="aspect-square w-full object-cover transition hover:scale-[1.01]"
+                            height={1024}
+                            src={image.url}
+                            unoptimized
+                            width={1024}
+                          />
+                        </button>
+                        <div className="flex items-center justify-between gap-2 px-3 py-2">
+                          <div className="min-w-0 text-[11px] text-[var(--xv-chat-muted)]">
+                            <div className="truncate">{image.revisedPrompt || promptValue}</div>
+                          </div>
+                          <a
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                            download={`${image.id}.png`}
+                            href={image.url}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Download</span>
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-[var(--xv-chat-inline-code-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--xv-chat-accent)]">
+                      Generated by {modelLabel}
+                    </span>
+                    <button
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                      onClick={() => void onRegenerateImage(messageId, execution.id, promptValue, imageCount)}
+                      type="button"
+                    >
+                      <RefreshCcw className="h-3.5 w-3.5" />
+                      <span>Regenerate</span>
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                      onClick={() => {
+                        setEditingExecutionId(execution.id);
+                        setEditingPrompt(promptValue);
+                      }}
+                      type="button"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span>Edit prompt</span>
+                    </button>
+                  </div>
+
+                  {isEditing ? (
+                    <form
+                      className="mt-3 rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] p-3"
+                      onSubmit={async (event) => {
+                        event.preventDefault();
+                        const nextPrompt = editingPrompt.trim();
+                        if (!nextPrompt) {
+                          return;
+                        }
+
+                        setEditingExecutionId(null);
+                        await onRegenerateImage(messageId, execution.id, nextPrompt, imageCount);
+                      }}
+                    >
+                      <input
+                        className="w-full rounded-[12px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-2 text-[13px] text-[var(--xv-chat-text)] outline-none placeholder:text-[var(--xv-chat-muted)] focus:border-[var(--xv-chat-accent)]"
+                        onChange={(event) => setEditingPrompt(event.target.value)}
+                        placeholder="Describe the image you want"
+                        value={editingPrompt}
+                      />
+                      <div className="mt-2 flex items-center justify-end gap-2">
+                        <button
+                          className="rounded-full border border-[var(--xv-chat-border)] px-3 py-1 text-[11px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                          onClick={() => {
+                            setEditingExecutionId(null);
+                            setEditingPrompt("");
+                          }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="rounded-full bg-[var(--xv-chat-accent)] px-3 py-1 text-[11px] font-medium text-white transition hover:brightness-95"
+                          type="submit"
+                        >
+                          Update image
+                        </button>
+                      </div>
+                    </form>
+                  ) : null}
+
+                  {execution.summary && execution.connected ? (
+                    <p className="mt-3 text-[12px] text-[var(--xv-chat-muted)]">{execution.summary}</p>
+                  ) : null}
+                </div>
+              )}
+
+              {!execution.connected && !isLoading ? (
+                <div className="border-t border-[var(--xv-chat-border)] px-4 py-3 text-[12px] text-[#ef4444]">
+                  {execution.summary}
+                </div>
+              ) : null}
+            </div>
+          );
+        }
 
         return (
           <div
@@ -3724,7 +4047,46 @@ function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] })
           </div>
         );
       })}
-    </div>
+      </div>
+
+      {expandedImage ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[24px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
+            <button
+              aria-label="Close image preview"
+              className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+              onClick={() => setExpandedImage(null)}
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <Image
+              alt={expandedImage.revisedPrompt || "Generated Xeivora image"}
+              className="max-h-[78vh] w-full rounded-[18px] object-contain"
+              height={1400}
+              src={expandedImage.url}
+              unoptimized
+              width={1400}
+            />
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-[13px] text-[var(--xv-chat-muted)]">
+                {expandedImage.revisedPrompt || "Generated image"}
+              </p>
+              <a
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[12px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                download={`${expandedImage.id}.png`}
+                href={expandedImage.url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Download</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -4174,6 +4536,10 @@ function workflowModeLabel(mode: WorkflowMode) {
 }
 
 function formatToolStatus(execution: ChatToolExecution) {
+  if (execution.status === "running") {
+    return "Generating";
+  }
+
   if (execution.status === "error") {
     return "Error";
   }
@@ -4185,7 +4551,7 @@ function formatToolStatus(execution: ChatToolExecution) {
   return execution.source === "mcp" ? "MCP" : "Ready";
 }
 
-function getExecutionImages(execution: ChatToolExecution) {
+function getExecutionImages(execution: ChatToolExecution): ExecutionImage[] {
   const rawImages = execution.payload?.images;
   if (!Array.isArray(rawImages)) {
     return [];
@@ -4208,7 +4574,123 @@ function getExecutionImages(execution: ChatToolExecution) {
         revisedPrompt: typeof candidate.revisedPrompt === "string" ? candidate.revisedPrompt : ""
       };
     })
-    .filter(Boolean) as Array<{ id: string; url: string; revisedPrompt: string }>;
+    .filter(Boolean) as ExecutionImage[];
+}
+
+function getExecutionImageCount(execution: ChatToolExecution) {
+  const rawCount = execution.payload?.count;
+  const parsed = Number.parseInt(`${rawCount || 1}`, 10);
+  return Math.min(4, Math.max(1, parsed || Math.max(1, getExecutionImages(execution).length)));
+}
+
+function getExecutionModelLabel(execution: ChatToolExecution) {
+  if (typeof execution.payload?.modelLabel === "string" && execution.payload.modelLabel) {
+    return execution.payload.modelLabel;
+  }
+
+  if (typeof execution.payload?.model === "string" && execution.payload.model) {
+    return execution.payload.model;
+  }
+
+  return "DALL-E 3";
+}
+
+const clientImageTriggerPrefixPattern =
+  /^(?:\/image\b|(?:please\s+)?(?:generate|create|make|show|draw|illustrate|visual(?:ise|ize)))(?:\s+me)?(?:\s+(?:an?|the|some))?(?:\s+\d+)?(?:\s+(?:different|multiple))?(?:\s+(?:images?|pictures?|photos?|posters?|illustrations?|graphics?|art(?:work)?|visuals?)\b)?(?:\s+(?:of|for|showing))?\s*/i;
+
+const clientImageTriggerPatterns = [
+  clientImageTriggerPrefixPattern,
+  /\bdraw me\b/i,
+  /\billustrate\b/i,
+  /\bvisual(?:ise|ize)\b/i,
+  /^\/image\b/i
+];
+
+const clientComboPattern =
+  /\s*(?:,?\s*and\s+)(tell me about|tell me|explain|describe|write about|write me|give me|also tell me about|also explain|and then explain)\s+(.+)$/i;
+
+function parseClientImageIntent(prompt = ""): ImageIntent {
+  const normalized = `${prompt}`.replace(/\s+/g, " ").trim();
+  const isImageRequest = normalized ? clientImageTriggerPatterns.some((pattern) => pattern.test(normalized)) : false;
+  const count =
+    normalized.match(/\b([2-4])\s+(?:different\s+|multiple\s+)?(?:images?|pictures?|versions?)\b/i)?.[1] !== undefined
+      ? Number.parseInt(normalized.match(/\b([2-4])\s+(?:different\s+|multiple\s+)?(?:images?|pictures?|versions?)\b/i)?.[1] || "1", 10)
+      : /\b(two|three|four)\s+(?:different\s+|multiple\s+)?(?:images?|pictures?|versions?)\b/i.test(normalized)
+        ? { two: 2, three: 3, four: 4 }[
+            normalized.match(/\b(two|three|four)\s+(?:different\s+|multiple\s+)?(?:images?|pictures?|versions?)\b/i)?.[1]?.toLowerCase() ||
+              "two"
+          ] || 1
+        : /\b(different versions|different images|multiple versions|variations|variants)\b/i.test(normalized)
+          ? 4
+          : 1;
+  const comboMatch = normalized.match(clientComboPattern);
+  const imageClause = comboMatch ? normalized.slice(0, comboMatch.index).trim() : normalized;
+  const imagePrompt = isImageRequest
+    ? imageClause
+        .replace(
+          clientImageTriggerPrefixPattern,
+          ""
+        )
+        .replace(/\b(images?|pictures?|photos?|posters?|illustrations?|graphics?|art(?:work)?|visuals?)\b/gi, "")
+        .replace(/\b(?:of|for|showing)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .replace(/^[,:-]+\s*/, "")
+        .replace(/[.?!]+$/g, "")
+        .trim()
+    : "";
+  const followupDetail = comboMatch?.[2]?.trim().replace(/[.?!]+$/g, "") || null;
+  const lead = comboMatch?.[1]?.toLowerCase() || "";
+  const textPrompt =
+    !followupDetail
+      ? null
+      : lead.includes("tell")
+        ? `Tell me about ${followupDetail}`
+        : lead.includes("explain")
+          ? `Explain ${followupDetail}`
+          : lead.includes("describe")
+            ? `Describe ${followupDetail}`
+            : lead.includes("write")
+              ? `Write about ${followupDetail}`
+              : lead.includes("give")
+                ? `Give me ${followupDetail}`
+                : followupDetail;
+
+  return {
+    isImageRequest,
+    imagePrompt,
+    textPrompt,
+    count: Math.min(4, Math.max(1, count)),
+    isImageOnly: Boolean(isImageRequest && imagePrompt && !textPrompt),
+    isImageAndText: Boolean(isImageRequest && imagePrompt && textPrompt)
+  };
+}
+
+function buildPendingImageExecution(prompt: string): ChatToolExecution | null {
+  const imageIntent = parseClientImageIntent(prompt);
+
+  if (!imageIntent.isImageRequest || !imageIntent.imagePrompt) {
+    return null;
+  }
+
+  return {
+    id: `image-exec-${Date.now()}`,
+    name: "image_generation",
+    uiLabel: "Image generation",
+    status: "running",
+    connected: true,
+    source: "workspace",
+    summary: "Generating your image...",
+    payload: {
+      prompt: imageIntent.imagePrompt,
+      count: imageIntent.count,
+      textPrompt: imageIntent.textPrompt,
+      isImageOnly: imageIntent.isImageOnly,
+      isImageAndText: imageIntent.isImageAndText,
+      images: [],
+      loading: true,
+      modelLabel: "DALL-E 3"
+    }
+  };
 }
 
 function truncateSidebarSessionTitle(title: string) {
