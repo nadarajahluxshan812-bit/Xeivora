@@ -348,35 +348,41 @@ export const resourceCards = [
 
 export const pricingPlans = [
   {
-    name: "Free",
+    name: "Starter",
     monthly: 0,
     yearlyMonthlyEquivalent: 0,
     description: "For individuals getting started with AI.",
-    cta: "Get Started",
+    cta: "Get started free",
     features: ["Basic AI models", "Limited messages", "Standard memory", "Community support"]
   },
   {
-    name: "Plus",
-    monthly: 19,
-    yearlyMonthlyEquivalent: 15,
-    description: "For personal use with more power and flexibility.",
-    cta: "Get Started",
-    features: ["Advanced AI models", "More messages", "Extended memory", "Priority support"]
-  },
-  {
     name: "Pro",
-    monthly: 49,
-    yearlyMonthlyEquivalent: 39,
-    description: "For professionals who need the best performance.",
+    monthly: 19,
+    yearlyMonthlyEquivalent: 19,
+    description: "For personal use with more power and flexibility.",
     cta: "Get Started",
     highlight: true,
     badge: "Most Popular",
     features: [
-      "All AI models",
       "Unlimited messages",
-      "Advanced memory",
-      "Priority support",
-      "Early access to new features"
+      "All AI models — Claude, GPT-4o, Gemini",
+      "Full context preservation",
+      "Persistent memory",
+      "File uploads",
+      "Auto model switching"
+    ]
+  },
+  {
+    name: "Starter Credits",
+    monthly: 4.99,
+    yearlyMonthlyEquivalent: 4.99,
+    description: "Pay as you go with one-time credits that never expire.",
+    cta: "Buy credits",
+    features: [
+      "500 AI interactions",
+      "All models included",
+      "Never expires",
+      "Great for occasional high-power runs"
     ]
   },
   {

@@ -15,6 +15,7 @@ import {
   WorkspaceSectionTitle,
   WorkspaceToggle
 } from "@/components/workspace/workspace-page-ui";
+import ManageSubscription from "@/components/payments/ManageSubscription";
 import type { AuthUser } from "@/lib/auth-types";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,13 @@ type WorkspaceSettings = {
   modelPreferenceOrder?: string[];
 };
 
+type BillingStatus = {
+  plan: string;
+  credits: number;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripeSubscriptionStatus: string | null;
+};
 const sections = [
   { key: "profile", label: "Profile" },
   { key: "workspace", label: "Workspace" },
@@ -45,6 +53,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
   const [user, setUser] = useState<AuthUser>(initialUser);
   const [settings, setSettings] = useState<WorkspaceSettings | null>(null);
   const [providerStatus, setProviderStatus] = useState<Record<string, unknown> | null>(null);
+  const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
   const [nameDraft, setNameDraft] = useState(initialUser.name);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -54,10 +63,12 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
   useEffect(() => {
     void Promise.all([
       fetch("/api/settings", { cache: "no-store" }).then((response) => response.json()),
-      fetch("/api/status/providers", { cache: "no-store" }).then((response) => response.json())
-    ]).then(([nextSettings, nextProviders]) => {
+      fetch("/api/status/providers", { cache: "no-store" }).then((response) => response.json()),
+      fetch("/api/stripe/billing", { cache: "no-store" }).then((response) => response.json())
+    ]).then(([nextSettings, nextProviders, nextBilling]) => {
       setSettings(nextSettings);
       setProviderStatus(nextProviders);
+      setBillingStatus(nextBilling);
     });
   }, []);
 
@@ -250,6 +261,22 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
                     <div className="mt-2 text-sm text-white">{value}</div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-6 rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] px-4 py-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">Billing</div>
+                    <div className="mt-2 text-sm text-white">
+                      {billingStatus?.stripeSubscriptionStatus
+                        ? `Subscription ${billingStatus.stripeSubscriptionStatus}`
+                        : "Starter workspace"}
+                    </div>
+                    <div className="mt-2 text-sm text-[rgba(255,255,255,0.5)]">
+                      Credits available: {billingStatus?.credits ?? 0}
+                    </div>
+                  </div>
+                  {billingStatus?.stripeCustomerId ? <ManageSubscription /> : null}
+                </div>
               </div>
             </WorkspaceCard>
 

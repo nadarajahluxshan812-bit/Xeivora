@@ -35,6 +35,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { OrbitLogo } from "@/components/orbit-logo";
+import UpgradeButton from "@/components/payments/UpgradeButton";
 import type {
   MarketingIconKey,
   MarketingPricingPlan,
@@ -310,6 +311,8 @@ export function PricingCard({
   billing: "monthly" | "yearly";
 }) {
   const price = billing === "monthly" ? plan.monthly : plan.yearlyMonthlyEquivalent;
+  const isCreditsPlan = plan.name === "Starter Credits";
+  const isStripeProPlan = plan.name === "Pro";
 
   return (
     <article
@@ -332,8 +335,8 @@ export function PricingCard({
       <div className="mt-8">
         {typeof price === "number" ? (
           <div className="flex items-end gap-2">
-            <span className="text-[3rem] font-semibold leading-none tracking-[-0.05em] text-white">${price}</span>
-            <span className="pb-1 text-sm text-white/54">/month</span>
+            <span className="text-[3rem] font-semibold leading-none tracking-[-0.05em] text-white">£{price}</span>
+            <span className="pb-1 text-sm text-white/54">{isCreditsPlan ? "one-time" : "/month"}</span>
           </div>
         ) : (
           <div className="text-[2.65rem] font-semibold tracking-[-0.05em] text-white">Custom</div>
@@ -349,17 +352,23 @@ export function PricingCard({
         ))}
       </div>
 
-      <Link
-        className={cn(
-          "mt-9 inline-flex h-12 w-full items-center justify-center rounded-xl text-sm font-semibold transition",
-          plan.highlight
-            ? "bg-gradient-to-r from-[#5b34f7] via-[#7c3aed] to-[#cf63ff] text-white hover:brightness-110"
-            : "border border-white/[0.1] bg-transparent text-white/88 hover:bg-white/[0.05]"
-        )}
-        href={plan.name === "Enterprise" ? "/contact" : "/chat"}
-      >
-        {plan.cta}
-      </Link>
+      {isStripeProPlan ? (
+        <UpgradeButton label={plan.cta} planKey="pro" />
+      ) : isCreditsPlan ? (
+        <UpgradeButton label={plan.cta} planKey="starter_credits" variant="secondary" />
+      ) : (
+        <Link
+          className={cn(
+            "mt-9 inline-flex h-12 w-full items-center justify-center rounded-xl text-sm font-semibold transition",
+            plan.highlight
+              ? "bg-gradient-to-r from-[#5b34f7] via-[#7c3aed] to-[#cf63ff] text-white hover:brightness-110"
+              : "border border-white/[0.1] bg-transparent text-white/88 hover:bg-white/[0.05]"
+          )}
+          href={plan.name === "Enterprise" ? "/contact" : "/chat"}
+        >
+          {plan.cta}
+        </Link>
+      )}
     </article>
   );
 }
