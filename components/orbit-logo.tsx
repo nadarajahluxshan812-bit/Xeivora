@@ -22,40 +22,40 @@ export function XeivoraGlyph({ className = "", size = 40 }: XeivoraGlyphProps) {
       className={className}
       height={size}
       role="img"
-      viewBox="0 0 100 100"
+      viewBox="0 0 200 200"
       width={size}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g transform="translate(50 50)">
-        <circle cx="0" cy="0" fill="none" r="36" stroke="rgba(var(--site-accent-rgb),0.06)" strokeWidth="0.5" />
-        <ellipse cx="0" cy="0" fill="none" rx="32" ry="9" stroke="rgba(var(--site-accent-rgb),0.88)" strokeWidth="1.85" transform="rotate(0)" />
-        <ellipse
-          cx="0"
-          cy="0"
-          fill="none"
-          rx="32"
-          ry="9"
-          stroke="rgba(var(--site-accent-rgb),0.34)"
-          strokeWidth="1.05"
-          transform="rotate(60)"
-        />
-        <ellipse
-          cx="0"
-          cy="0"
-          fill="none"
-          rx="32"
-          ry="9"
-          stroke="rgba(var(--site-accent-rgb),0.18)"
-          strokeWidth="0.72"
-          transform="rotate(120)"
-        />
-        <circle cx="0" cy="0" fill="rgba(var(--site-accent-rgb),0.11)" r="8" />
-        <circle cx="0" cy="0" fill="var(--site-accent)" r="5" />
-        <circle cx="0" cy="0" fill="rgba(var(--site-accent-rgb),0.22)" r="2" />
-        <circle cx="30" cy="0" fill="var(--site-accent)" opacity="0.88" r="2.35" />
-        <circle cx="-15" cy="26" fill="var(--site-accent)" opacity="0.42" r="1.9" />
-        <circle cx="-15" cy="-26" fill="var(--site-accent)" opacity="0.24" r="1.45" />
-      </g>
+      <ellipse cx="100" cy="100" fill="none" opacity="0.2" rx="88" ry="88" stroke="#c96442" strokeWidth="0.8" />
+      <ellipse cx="100" cy="100" fill="none" rx="80" ry="28" stroke="#c96442" strokeWidth="2.8" />
+      <ellipse
+        cx="100"
+        cy="100"
+        fill="none"
+        opacity="0.75"
+        rx="80"
+        ry="28"
+        stroke="#c96442"
+        strokeWidth="1.6"
+        transform="rotate(60 100 100)"
+      />
+      <ellipse
+        cx="100"
+        cy="100"
+        fill="none"
+        opacity="0.75"
+        rx="80"
+        ry="28"
+        stroke="#c96442"
+        strokeWidth="1.6"
+        transform="rotate(120 100 100)"
+      />
+      <circle cx="180" cy="100" fill="#c96442" r="5.5" />
+      <circle cx="61" cy="161" fill="#c96442" opacity="0.75" r="4" />
+      <circle cx="61" cy="39" fill="#c96442" opacity="0.75" r="4" />
+      <circle cx="100" cy="100" fill="#c96442" opacity="0.15" r="11" />
+      <circle cx="100" cy="100" fill="#c96442" opacity="0.4" r="7" />
+      <circle cx="100" cy="100" fill="#c96442" r="4" />
     </svg>
   );
 }
@@ -77,7 +77,7 @@ export function OrbitLogo({
       {!compact ? (
         <div className="min-w-0">
           <div className={cn("text-[15px] font-medium tracking-tight text-[color:var(--site-text)]", nameClassName)}>
-            Xei<span className="italic text-[color:var(--site-accent)]">vora</span>
+            Xei<span className="italic text-[#c96442]">vora</span>
           </div>
           {showTagline ? (
             <div className={cn("text-xs text-[color:var(--site-subtle)]", taglineClassName)}>Unified AI Intelligence</div>
