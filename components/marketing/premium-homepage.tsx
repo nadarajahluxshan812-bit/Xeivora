@@ -196,7 +196,7 @@ const footerLinks = [
   { label: "Twitter", href: "#" }
 ] as const;
 
-export function PremiumHomepage() {
+export function PremiumHomepage({ initialSection }: { initialSection?: "pricing" }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -209,6 +209,23 @@ export function PremiumHomepage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!initialSection) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const section = document.getElementById(initialSection);
+      if (!section) {
+        return;
+      }
+
+      section.scrollIntoView({ behavior: "auto", block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialSection]);
 
   return (
     <div className="xv-marketing-home relative min-h-screen" style={{ backgroundColor: bg, color: cream }}>

@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 type SyncState = "idle" | "syncing" | "success" | "error" | "cancelled";
 
-export function PricingStatusBanner() {
+export function PricingStatusBanner({ floating = false }: { floating?: boolean }) {
   const searchParams = useSearchParams();
   const payment = searchParams.get("payment");
   const sessionId = searchParams.get("session_id");
@@ -78,7 +79,14 @@ export function PricingStatusBanner() {
   }
 
   return (
-    <div className={`mx-auto mb-8 max-w-[1180px] rounded-[16px] border px-5 py-4 text-sm ${tone}`}>
+    <div
+      className={cn(
+        `rounded-[16px] border px-5 py-4 text-sm ${tone}`,
+        floating
+          ? "fixed left-1/2 top-24 z-[80] w-[min(92vw,820px)] -translate-x-1/2 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+          : "mx-auto mb-8 max-w-[1180px]"
+      )}
+    >
       {message}
     </div>
   );

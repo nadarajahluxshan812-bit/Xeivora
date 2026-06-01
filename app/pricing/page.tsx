@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 
-import { PricingMarketingPage } from "@/components/marketing/marketing-pages";
+import { PremiumHomepage } from "@/components/marketing/premium-homepage";
 import { PricingStatusBanner } from "@/components/payments/PricingStatusBanner";
 
 export default function PricingPage() {
   return (
     <>
       <Suspense fallback={null}>
-        <PricingStatusBanner />
+        <PricingStatusBanner floating />
       </Suspense>
-      <PricingMarketingPage />
+      <PremiumHomepage initialSection="pricing" />
     </>
   );
 }
