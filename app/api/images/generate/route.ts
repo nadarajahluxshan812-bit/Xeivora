@@ -1,40 +1,10 @@
 import { NextResponse } from "next/server";
 
 const { enforceRateLimit } = require("@/lib/server/rate-limit");
+const { generateImages } = require("@/lib/server/image-generation");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-async function generateWithOpenAI(prompt: string) {
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: "gpt-image-1",
-      prompt,
-      size: "1024x1024",
-      quality: "medium"
-    })
-  });
-
-  if (!response.ok) {
-    const payload = await response.text();
-    throw new Error(payload || "Image generation failed.");
-  }
-
-  const payload = (await response.json()) as {
-    data?: Array<{ b64_json?: string; revised_prompt?: string }>;
-  };
-
-  return (payload.data || []).map((item, index) => ({
-    id: `img-${index}`,
-    revisedPrompt: item.revised_prompt || prompt,
-    url: item.b64_json ? `data:image/png;base64,${item.b64_json}` : null
-  }));
-}
 
 export async function POST(request: Request) {
   const rateLimit = enforceRateLimit(request, {
@@ -66,17 +36,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const images = await generateWithOpenAI(prompt);
-    return NextResponse.json({
-      connected: true,
-      images
-    });
+    const result = await generateImages({ prompt });
+    return NextResponse.json(result);
   } catch {
     return NextResponse.json(
       {
         connected: false,
         images: [],
-        message: "Xeivora could not generate the image right now. The provider fallback architecture is ready."
+        message: "Xeivora could not generate the image right now. The provider fallback architecture is ready.",
+        provider: "openai",
+        model: null
       },
       { status: 200 }
     );

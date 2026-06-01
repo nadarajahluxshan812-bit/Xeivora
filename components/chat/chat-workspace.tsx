@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -3621,38 +3622,75 @@ function ChatComposer({
 function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] }) {
   return (
     <div className="mb-3 space-y-2">
-      {executions.map((execution) => (
-        <div
-          className={cn(
-            "rounded-[14px] border px-3 py-2.5",
-            execution.status === "error"
-              ? "border-[rgba(239,68,68,0.28)] bg-[rgba(239,68,68,0.08)]"
-              : execution.connected
-                ? "border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)]"
-                : "border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]"
-          )}
-          key={execution.id}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-[12px] font-medium text-[var(--xv-chat-text)]">{execution.uiLabel}</div>
-              <div className="mt-0.5 text-[12px] text-[var(--xv-chat-muted)]">{execution.summary}</div>
+      {executions.map((execution) => {
+        const previewImages = getExecutionImages(execution);
+
+        return (
+          <div
+            className={cn(
+              "rounded-[14px] border px-3 py-2.5",
+              execution.status === "error"
+                ? "border-[rgba(239,68,68,0.28)] bg-[rgba(239,68,68,0.08)]"
+                : execution.connected
+                  ? "border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)]"
+                  : "border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]"
+            )}
+            key={execution.id}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[12px] font-medium text-[var(--xv-chat-text)]">{execution.uiLabel}</div>
+                <div className="mt-0.5 text-[12px] text-[var(--xv-chat-muted)]">{execution.summary}</div>
+              </div>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em]",
+                  execution.status === "error"
+                    ? "border-[rgba(239,68,68,0.28)] text-[#ef4444]"
+                    : execution.connected
+                      ? "border-[var(--xv-chat-border-strong)] text-[var(--xv-chat-accent)]"
+                      : "border-[var(--xv-chat-border)] text-[var(--xv-chat-muted)]"
+                )}
+              >
+                {formatToolStatus(execution)}
+              </span>
             </div>
-            <span
-              className={cn(
-                "shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em]",
-                execution.status === "error"
-                  ? "border-[rgba(239,68,68,0.28)] text-[#ef4444]"
-                  : execution.connected
-                    ? "border-[var(--xv-chat-border-strong)] text-[var(--xv-chat-accent)]"
-                    : "border-[var(--xv-chat-border)] text-[var(--xv-chat-muted)]"
-              )}
-            >
-              {formatToolStatus(execution)}
-            </span>
+
+            {previewImages.length ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {previewImages.map((image) => (
+                  <div
+                    className="overflow-hidden rounded-[14px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]"
+                    key={image.id}
+                  >
+                    <Image
+                      alt={image.revisedPrompt || "Generated Xeivora image"}
+                      className="aspect-square w-full bg-[var(--xv-chat-surface-soft)] object-cover"
+                      height={768}
+                      src={image.url}
+                      unoptimized
+                      width={768}
+                    />
+                    <div className="flex items-center justify-between gap-3 px-3 py-2">
+                      <div className="min-w-0 text-[11px] text-[var(--xv-chat-muted)]">
+                        <div className="truncate">{image.revisedPrompt || "Generated image"}</div>
+                      </div>
+                      <a
+                        className="shrink-0 text-[11px] font-medium text-[var(--xv-chat-accent)] transition hover:opacity-80"
+                        download={`${image.id}.png`}
+                        href={image.url}
+                        target="_blank"
+                      >
+                        Open
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -4112,6 +4150,32 @@ function formatToolStatus(execution: ChatToolExecution) {
   }
 
   return execution.source === "mcp" ? "MCP" : "Ready";
+}
+
+function getExecutionImages(execution: ChatToolExecution) {
+  const rawImages = execution.payload?.images;
+  if (!Array.isArray(rawImages)) {
+    return [];
+  }
+
+  return rawImages
+    .map((image, index) => {
+      if (!image || typeof image !== "object") {
+        return null;
+      }
+
+      const candidate = image as { id?: unknown; url?: unknown; revisedPrompt?: unknown };
+      if (typeof candidate.url !== "string" || !candidate.url) {
+        return null;
+      }
+
+      return {
+        id: typeof candidate.id === "string" && candidate.id ? candidate.id : `generated-image-${index + 1}`,
+        url: candidate.url,
+        revisedPrompt: typeof candidate.revisedPrompt === "string" ? candidate.revisedPrompt : ""
+      };
+    })
+    .filter(Boolean) as Array<{ id: string; url: string; revisedPrompt: string }>;
 }
 
 function truncateSidebarSessionTitle(title: string) {
