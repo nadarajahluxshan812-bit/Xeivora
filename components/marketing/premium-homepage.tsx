@@ -454,53 +454,55 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
               </div>
             </Reveal>
 
-            <Reveal delay={110}>
-              <div className="pointer-events-none absolute right-[4%] top-[42%] z-0 hidden -translate-y-1/2 lg:block xl:right-[6%] xl:top-[45%]">
-                <HeroOrbitField />
-              </div>
-            </Reveal>
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,720px)_minmax(280px,1fr)] lg:items-start lg:gap-10 xl:grid-cols-[minmax(0,760px)_minmax(320px,1fr)]">
+              <div className="relative z-10 max-w-[860px]">
+                <Reveal delay={70}>
+                  <div>
+                    <p className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.3em]">
+                      Continuity · Memory · Momentum
+                    </p>
+                    <h1
+                      className="font-[Georgia,'Times New Roman',serif] text-[3.9rem] leading-[0.88] tracking-[-0.06em] sm:text-[5.4rem] lg:text-[7.1rem]"
+                      style={{ color: cream }}
+                    >
+                      <span className="block">One</span>
+                      <span className="block italic" style={{ color: coral }}>
+                        continuous
+                      </span>
+                      <span className="xv-outline-text block">workspace.</span>
+                    </h1>
+                  </div>
+                </Reveal>
 
-            <div className="relative z-10 max-w-[860px]">
-              <Reveal delay={70}>
-                <div>
-                  <p className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.3em]">
-                    Continuity · Memory · Momentum
+                <Reveal delay={120}>
+                  <p className="xv-home-muted mt-8 max-w-[620px] text-balance text-[18px] font-light leading-[1.9]">
+                    Switch between Claude, GPT-4o, Gemini without losing a single byte of context, memory, or momentum.
                   </p>
-                  <h1
-                    className="font-[Georgia,'Times New Roman',serif] text-[3.9rem] leading-[0.88] tracking-[-0.06em] sm:text-[5.4rem] lg:text-[7.1rem]"
-                    style={{ color: cream }}
-                  >
-                    <span className="block">One</span>
-                    <span className="block italic" style={{ color: coral }}>
-                      continuous
-                    </span>
-                    <span className="xv-outline-text block">workspace.</span>
-                  </h1>
-                </div>
-              </Reveal>
+                </Reveal>
 
-              <Reveal delay={120}>
-                <p className="xv-home-muted mt-8 max-w-[620px] text-balance text-[18px] font-light leading-[1.9]">
-                  Switch between Claude, GPT-4o, Gemini without losing a single byte of context, memory, or momentum.
-                </p>
-              </Reveal>
+                <Reveal delay={170}>
+                  <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
+                    <Link
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white transition hover:-translate-y-0.5"
+                      href="/chat"
+                      style={{ backgroundColor: coral, boxShadow: "0 16px 48px var(--site-accent-glow)" }}
+                    >
+                      Enter Xeivora
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      className="xv-home-border xv-home-ghost xv-home-text inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:border-[color:var(--site-border-strong)]"
+                      href="#how-it-works"
+                    >
+                      See how it works
+                    </Link>
+                  </div>
+                </Reveal>
+              </div>
 
-              <Reveal delay={170}>
-                <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
-                  <Link
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white transition hover:-translate-y-0.5"
-                    href="/chat"
-                    style={{ backgroundColor: coral, boxShadow: "0 16px 48px var(--site-accent-glow)" }}
-                  >
-                    Enter Xeivora
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <Link
-                    className="xv-home-border xv-home-ghost xv-home-text inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:border-[color:var(--site-border-strong)]"
-                    href="#how-it-works"
-                  >
-                    See how it works
-                  </Link>
+              <Reveal delay={110}>
+                <div className="pointer-events-none hidden lg:flex lg:min-h-[420px] lg:items-start lg:justify-center lg:pt-2 xl:min-h-[460px] xl:pt-5">
+                  <HeroOrbitField />
                 </div>
               </Reveal>
             </div>

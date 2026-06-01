@@ -59,6 +59,7 @@ import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
 import { OrbitLogo, XeivoraGlyph } from "@/components/orbit-logo";
+import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { useXeivoraTheme } from "@/components/theme/theme-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -2891,6 +2892,11 @@ function ChatTopbar({
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggleButton
+            className="h-8 w-8 border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)] hover:bg-[var(--xv-chat-ghost-bg)]"
+            compact
+          />
+
           <div className="relative">
             <button
               className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-text)]"
