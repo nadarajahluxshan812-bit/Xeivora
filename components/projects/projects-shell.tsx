@@ -1,19 +1,26 @@
 "use client";
 
-import { FileText, FolderKanban, Plus, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-
+import { motion } from "framer-motion";
 import {
-  WorkspaceButton,
-  WorkspaceCard,
-  WorkspaceEmptyState,
-  WorkspacePageHero,
-  WorkspacePageShell,
-  WorkspaceSearchInput,
-  WorkspaceSectionTitle
-} from "@/components/workspace/workspace-page-ui";
+  ArrowRight,
+  BrainCircuit,
+  FileText,
+  FolderKanban,
+  GitBranch,
+  MessageSquareText,
+  Plus,
+  Search,
+  Upload
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
+
+import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
+import { WorkspacePageShell } from "@/components/workspace/workspace-page-ui";
 import type { AuthUser } from "@/lib/auth-types";
 import type { UploadedFileSummary, WorkspaceProject } from "@/lib/chat-types";
+import { cn } from "@/lib/utils";
 
 type ToolLog = {
   id: string;
@@ -23,7 +30,11 @@ type ToolLog = {
   createdAt: string;
 };
 
+const pageCardClassName =
+  "rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-5 py-5 transition-colors duration-150 hover:border-[color:var(--site-border-strong)] md:px-6";
+
 export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
+  const router = useRouter();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
   const [files, setFiles] = useState<UploadedFileSummary[]>([]);
   const [toolLogs, setToolLogs] = useState<ToolLog[]>([]);
@@ -35,16 +46,57 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
       fetch("/api/files", { cache: "no-store" }).then((response) => response.json()),
       fetch("/api/tool-logs", { cache: "no-store" }).then((response) => response.json())
     ]).then(([nextProjects, nextFiles, nextLogs]) => {
-      setProjects(nextProjects || []);
-      setFiles(nextFiles || []);
-      setToolLogs((nextLogs || []).slice(0, 6));
+      setProjects(Array.isArray(nextProjects) ? nextProjects : []);
+      setFiles(Array.isArray(nextFiles) ? nextFiles : []);
+      setToolLogs(Array.isArray(nextLogs) ? nextLogs : []);
     });
   }, []);
 
   const filteredProjects = useMemo(() => {
-    const lower = query.toLowerCase();
+    const lower = query.trim().toLowerCase();
+    if (!lower) {
+      return projects;
+    }
+
     return projects.filter((project) => `${project.name} ${project.description}`.toLowerCase().includes(lower));
   }, [projects, query]);
+
+  const sortedFiles = useMemo(
+    () =>
+      [...files].sort(
+        (left, right) => new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime()
+      ),
+    [files]
+  );
+
+  const stats = useMemo(
+    () => [
+      {
+        label: "Projects",
+        value: projects.length,
+        icon: FolderKanban
+      },
+      {
+        label: "Conversations",
+        value: projects.reduce((sum, project) => sum + Number(project.chatCount || 0), 0),
+        icon: MessageSquareText
+      },
+      {
+        label: "Files",
+        value: files.length,
+        icon: FileText
+      },
+      {
+        label: "Memories",
+        value: projects.reduce((sum, project) => sum + Number(project.memoryCount || 0), 0),
+        icon: BrainCircuit
+      }
+    ],
+    [projects, files]
+  );
+
+  const activitySeries = useMemo(() => buildActivitySeries(toolLogs), [toolLogs]);
+  const activityFeed = useMemo(() => buildActivityFeed(toolLogs), [toolLogs]);
 
   async function handleCreateProject() {
     const name = window.prompt("Project name", "New Xeivora project");
@@ -57,7 +109,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        description: "Workspace for chats, files, memories, and orchestrated tasks.",
+        description: "Workspace for chats, files, memory, and orchestration traces.",
         color: "#c96442"
       })
     });
@@ -68,152 +120,461 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
   return (
     <WorkspacePageShell statusLabel="Projects" viewer={viewer}>
-      <div className="space-y-10">
-        <WorkspacePageHero
-          actions={
-            <WorkspaceButton onClick={() => void handleCreateProject()}>
+      <div className="space-y-6 md:space-y-7">
+        <motion.header
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          initial={{ opacity: 0, y: 12 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
+          <div className="text-[12px] font-medium tracking-[0.04em] text-[var(--site-subtle)]">Dashboard / Projects</div>
+
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <button
+              className="inline-flex items-center gap-2 rounded-[8px] bg-[var(--site-accent)] px-4 py-2.5 text-[13px] font-medium text-[var(--site-inverse)] transition duration-150 hover:scale-[1.02] hover:bg-[var(--site-accent-strong)]"
+              onClick={() => void handleCreateProject()}
+              type="button"
+            >
               <Plus className="h-4 w-4" />
               New project
-            </WorkspaceButton>
-          }
-          description="Create persistent workspaces for chats, files, memory, and orchestration traces so Xeivora can maintain continuity around every initiative."
-          eyebrow="Projects workspace"
-          title="Organize work around durable context"
-        />
+            </button>
+            <ThemeToggleButton compact />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[13px] font-medium text-[var(--site-accent)]">
+              {getInitials(viewer?.name || "Xeivora")}
+            </div>
+          </div>
+        </motion.header>
 
-        <WorkspaceSearchInput onChange={setQuery} placeholder="Search projects" value={query} />
+        <motion.section
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
+          initial={{ opacity: 0, y: 14 }}
+          transition={{ duration: 0.38, ease: "easeOut", delay: 0.05 }}
+        >
+          <div className="max-w-[560px]">
+            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[color:var(--site-accent)] opacity-80">
+              Projects workspace
+            </div>
+            <h1 className="mt-3 font-[Georgia,'Times New Roman',serif] text-[32px] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--site-text)] md:text-[36px]">
+              <span className="block">Organize work around</span>
+              <span className="block">durable context.</span>
+            </h1>
+            <p className="mt-4 max-w-[480px] text-[13px] font-light leading-6 text-[var(--site-subtle)]">
+              Create persistent workspaces for chats, files, memory, and orchestration traces.
+            </p>
+          </div>
 
-        <div className="grid gap-10 xl:grid-cols-[1.15fr_.85fr]">
-          <div className="space-y-10">
-            <WorkspaceCard>
-              <WorkspaceSectionTitle>Project registry</WorkspaceSectionTitle>
-              {filteredProjects.length ? (
-                <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredProjects.map((project) => (
-                    <article
-                      className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[color:var(--site-border-strong)]"
-                      key={project.id}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div
-                            className="flex h-11 w-11 items-center justify-center rounded-[8px]"
-                            style={{ backgroundColor: `${project.color}22`, color: project.color }}
-                          >
-                            <FolderKanban className="h-5 w-5" />
+          <button
+            className="inline-flex items-center gap-2 rounded-[8px] bg-[var(--site-accent)] px-5 py-2.5 text-[13px] font-medium text-[var(--site-inverse)] transition duration-150 hover:scale-[1.02] hover:bg-[var(--site-accent-strong)]"
+            onClick={() => void handleCreateProject()}
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+            New project
+          </button>
+        </motion.section>
+
+        <motion.label
+          animate={{ opacity: 1, y: 0 }}
+          className="flex h-11 items-center gap-3 rounded-[10px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-4 transition-colors duration-150 focus-within:border-[var(--site-accent)]"
+          initial={{ opacity: 0, y: 14 }}
+          transition={{ duration: 0.38, ease: "easeOut", delay: 0.1 }}
+        >
+          <Search className="h-4 w-4 text-[var(--site-accent)]" />
+          <input
+            className="w-full bg-transparent text-[13px] font-light text-[var(--site-text)] outline-none placeholder:text-[var(--site-subtle)]"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search projects..."
+            value={query}
+          />
+        </motion.label>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat, index) => (
+            <FadeCard delay={0.14 + index * 0.05} key={stat.label}>
+              <div className={pageCardClassName}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <AnimatedNumber value={stat.value} />
+                    <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--site-subtle)]">
+                      {stat.label}
+                    </div>
+                  </div>
+                  <div className="text-[var(--site-accent)] opacity-40">
+                    <stat.icon className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+            </FadeCard>
+          ))}
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
+          <FadeCard delay={0.36}>
+            <section className={pageCardClassName}>
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-[14px] font-medium text-[var(--site-text)]">Project registry</h2>
+                <button
+                  className="text-[13px] font-medium text-[var(--site-accent)] transition hover:opacity-80"
+                  onClick={() => setQuery("")}
+                  type="button"
+                >
+                  View all →
+                </button>
+              </div>
+
+              <div className="mt-5">
+                {filteredProjects.length ? (
+                  <div className="divide-y divide-[color:var(--site-border)]">
+                    {filteredProjects.map((project) => (
+                      <button
+                        className="group flex w-full items-start gap-4 rounded-[10px] px-2 py-4 text-left transition duration-150 hover:bg-[var(--site-ghost-bg)]"
+                        key={project.id}
+                        type="button"
+                      >
+                        <div
+                          className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[14px] font-medium text-white"
+                          style={{ backgroundColor: project.color || "var(--site-accent)" }}
+                        >
+                          {(project.name || "X").charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="truncate text-[13px] font-medium text-[var(--site-text)]">{project.name}</div>
+                            <StatusBadge status={project.status} />
+                            <span className="rounded-full bg-[var(--site-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--site-accent)]">
+                              {project.chatCount} chats
+                            </span>
                           </div>
-                          <div className="min-w-0">
-                            <div className="truncate text-base font-medium text-[var(--site-text)]">{project.name}</div>
-                            <div className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[var(--site-subtle)]">
-                              {project.status}
-                            </div>
+                          <p className="mt-2 line-clamp-2 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
+                            {project.description || "Workspace for durable context, live memory, and orchestrated tasks."}
+                          </p>
+                          <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] font-light text-[var(--site-subtle)]">
+                            <span>
+                              Chats <strong className="font-medium text-[var(--site-text)]">{project.chatCount}</strong>
+                            </span>
+                            <span>
+                              Files <strong className="font-medium text-[var(--site-text)]">{project.fileCount}</strong>
+                            </span>
+                            <span>
+                              Memory <strong className="font-medium text-[var(--site-text)]">{project.memoryCount}</strong>
+                            </span>
                           </div>
                         </div>
-                        <span className="text-xs text-[var(--site-subtle)]">{project.chatCount} chats</span>
-                      </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[10px] border border-dashed border-[color:var(--site-border)] px-5 py-10 text-center text-[13px] font-light text-[var(--site-subtle)]">
+                    No matching projects yet.
+                  </div>
+                )}
+              </div>
+            </section>
+          </FadeCard>
 
-                      <p className="mt-4 text-sm leading-7 text-[var(--site-subtle)]">{project.description}</p>
+          <FadeCard delay={0.41}>
+            <section className={pageCardClassName}>
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-[14px] font-medium text-[var(--site-text)]">Recent files</h2>
+                <button
+                  className="text-[13px] font-medium text-[var(--site-accent)] transition hover:opacity-80"
+                  onClick={() => router.push("/chat")}
+                  type="button"
+                >
+                  View all →
+                </button>
+              </div>
 
-                      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-[color:var(--site-border)] pt-4">
-                        <Metric label="Chats" value={`${project.chatCount}`} />
-                        <Metric label="Files" value={`${project.fileCount}`} />
-                        <Metric label="Memory" value={`${project.memoryCount}`} />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-6">
-                  <WorkspaceEmptyState
-                    action={
-                      <WorkspaceButton onClick={() => void handleCreateProject()}>
-                        <Plus className="h-4 w-4" />
-                        {projects.length ? "Create another project" : "Create project"}
-                      </WorkspaceButton>
-                    }
-                    description={
-                      projects.length
-                        ? "Try a different search term or create another project to expand your workspace."
-                        : "Create your first project to organise chats, files, and memory"
-                    }
-                    title={projects.length ? "No matching projects" : "No projects yet"}
-                  />
-                </div>
-              )}
-            </WorkspaceCard>
-
-            <WorkspaceCard>
-              <WorkspaceSectionTitle>Workspace activity</WorkspaceSectionTitle>
-              <div className="mt-6 space-y-3">
-                {toolLogs.length ? (
-                  toolLogs.map((log) => (
+              <div className="mt-5 space-y-2">
+                {sortedFiles.length ? (
+                  sortedFiles.slice(0, 7).map((file) => (
                     <div
-                      className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4"
-                      key={log.id}
+                      className="flex items-start gap-3 rounded-[10px] px-2 py-3 transition duration-150 hover:bg-[var(--site-ghost-bg)]"
+                      key={file.id}
                     >
-                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[var(--site-subtle)]">
-                        <Sparkles className="h-3.5 w-3.5 text-[var(--site-accent)]" />
-                        <span>{log.tool}</span>
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
+                        <FileText className="h-4 w-4" />
                       </div>
-                      <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">{log.summary}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-medium text-[var(--site-text)]">{file.name}</div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[var(--site-accent-soft)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--site-accent)]">
+                            {file.kind}
+                          </span>
+                          <span className="text-[11px] font-light text-[var(--site-subtle)]">{formatRelativeTime(file.updatedAt || file.createdAt)}</span>
+                        </div>
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <WorkspaceEmptyState
-                    description="Execution traces, file analysis jobs, and orchestration actions will appear here once your workspace starts running."
-                    title="No activity yet"
-                  />
+                  <div className="rounded-[10px] border border-dashed border-[color:var(--site-border)] px-5 py-10 text-center text-[13px] font-light text-[var(--site-subtle)]">
+                    No files stored yet.
+                  </div>
                 )}
               </div>
-            </WorkspaceCard>
-          </div>
+            </section>
+          </FadeCard>
+        </div>
 
-          <WorkspaceCard>
-            <WorkspaceSectionTitle>Recent files</WorkspaceSectionTitle>
-            <div className="mt-6 space-y-3">
-              {files.length ? (
-                files.slice(0, 8).map((file) => (
-                  <div
-                    className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4 transition-colors hover:border-[color:var(--site-border-strong)]"
-                    key={file.id}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
-                          <FileText className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-[var(--site-text)]">{file.name}</div>
-                          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-[var(--site-subtle)]">
-                            {file.kind}
-                          </div>
-                        </div>
-                      </div>
+        <FadeCard delay={0.46}>
+          <section className={pageCardClassName}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-[14px] font-medium text-[var(--site-text)]">Workspace activity</h2>
+              <button
+                className="inline-flex items-center rounded-full border border-[color:var(--site-border)] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--site-subtle)]"
+                type="button"
+              >
+                Last 7 days ▾
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <div className="grid h-[140px] grid-cols-7 items-end gap-3 rounded-[10px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4">
+                {activitySeries.map((point) => (
+                  <div className="flex h-full flex-col justify-end gap-2" key={point.label}>
+                    <div className="flex-1 rounded-full bg-[color:var(--site-ghost-bg)] p-[1px]">
+                      <div
+                        className="w-full rounded-full bg-[var(--site-accent)] transition-all duration-500"
+                        style={{ height: `${point.height}%`, minHeight: point.count ? "8px" : "2px", opacity: 0.92 }}
+                      />
                     </div>
-                    <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">
-                      {file.summary || file.previewText || "Ready for analysis."}
-                    </p>
+                    <div className="text-center text-[11px] font-light text-[var(--site-subtle)]">{point.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-0">
+              {activityFeed.length ? (
+                activityFeed.map((item, index) => (
+                  <div
+                    className="flex items-center gap-3 border-t border-[color:var(--site-border)] py-3 first:border-t-0 first:pt-0 last:pb-0"
+                    key={`${item.title}-${item.timestamp}-${index}`}
+                  >
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--site-accent)]" />
+                    <div className="min-w-0 flex-1 text-[13px] font-light text-[var(--site-text)]">{item.title}</div>
+                    <div className="shrink-0 text-[11px] font-light text-[var(--site-subtle)]">{item.timestamp}</div>
                   </div>
                 ))
               ) : (
-                <WorkspaceEmptyState
-                  description="Uploaded files, parsed documents, and extracted insights will show up here once you attach them to a project."
-                  title="No files yet"
-                />
+                <div className="text-[13px] font-light text-[var(--site-subtle)]">No recent workspace activity yet.</div>
               )}
             </div>
-          </WorkspaceCard>
+          </section>
+        </FadeCard>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            {
+              title: "New Chat",
+              description: "Start a conversation",
+              icon: MessageSquareText,
+              onClick: () => router.push("/chat")
+            },
+            {
+              title: "Upload File",
+              description: "Add to workspace",
+              icon: Upload,
+              onClick: () => router.push("/chat")
+            },
+            {
+              title: "New Workflow",
+              description: "Automate tasks",
+              icon: GitBranch,
+              onClick: () => router.push("/workflows")
+            },
+            {
+              title: "Add Memory",
+              description: "Save context",
+              icon: BrainCircuit,
+              onClick: () => router.push("/memory")
+            }
+          ].map((action, index) => (
+            <FadeCard delay={0.5 + index * 0.05} key={action.title}>
+              <button
+                className={cn(
+                  pageCardClassName,
+                  "flex w-full items-center gap-4 text-left hover:bg-[var(--site-ghost-bg)]"
+                )}
+                onClick={action.onClick}
+                type="button"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
+                  <action.icon className="h-4.5 w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-medium text-[var(--site-text)]">{action.title}</div>
+                  <div className="mt-1 text-[12px] font-light text-[var(--site-subtle)]">{action.description}</div>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--site-accent)]" />
+              </button>
+            </FadeCard>
+          ))}
         </div>
       </div>
     </WorkspacePageShell>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function FadeCard({ children, delay }: { children: ReactNode; delay: number }) {
   return (
-    <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-3 py-3">
-      <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-subtle)]">{label}</div>
-      <div className="mt-2 text-sm font-medium text-[var(--site-text)]">{value}</div>
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.32, ease: "easeOut", delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const duration = 600;
+    const startedAt = performance.now();
+
+    function tick(now: number) {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.round(value * eased));
+
+      if (progress < 1) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    }
+
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [value]);
+
+  return (
+    <div className="font-[Georgia,'Times New Roman',serif] text-[28px] font-normal leading-none tracking-[-0.03em] text-[var(--site-accent)]">
+      {displayValue}
     </div>
   );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const normalized = `${status || "active"}`.toLowerCase();
+  const tone =
+    normalized === "paused"
+      ? {
+          bg: "rgba(245, 158, 11, 0.12)",
+          border: "rgba(245, 158, 11, 0.24)",
+          text: "#d97706",
+          label: "PAUSED"
+        }
+      : normalized === "archived"
+        ? {
+            bg: "rgba(148, 163, 184, 0.12)",
+            border: "rgba(148, 163, 184, 0.24)",
+            text: "var(--site-subtle)",
+            label: "ARCHIVED"
+          }
+        : {
+            bg: "rgba(34, 197, 94, 0.12)",
+            border: "rgba(34, 197, 94, 0.24)",
+            text: "#16a34a",
+            label: "ACTIVE"
+          };
+
+  return (
+    <span
+      className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]"
+      style={{ backgroundColor: tone.bg, borderColor: tone.border, color: tone.text }}
+    >
+      {tone.label}
+    </span>
+  );
+}
+
+function buildActivitySeries(toolLogs: ToolLog[]) {
+  const formatter = new Intl.DateTimeFormat("en-GB", { weekday: "short" });
+  const now = new Date();
+  const buckets = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(now);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(now.getDate() - (6 - index));
+    return {
+      date,
+      key: date.toISOString().slice(0, 10),
+      label: formatter.format(date),
+      count: 0
+    };
+  });
+
+  const counts = new Map(buckets.map((bucket) => [bucket.key, 0]));
+  toolLogs.forEach((log) => {
+    const key = new Date(log.createdAt).toISOString().slice(0, 10);
+    if (counts.has(key)) {
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+  });
+
+  const max = Math.max(...Array.from(counts.values()), 1);
+  return buckets.map((bucket) => {
+    const count = counts.get(bucket.key) || 0;
+    return {
+      label: bucket.label,
+      count,
+      height: count ? Math.max((count / max) * 100, 18) : 10
+    };
+  });
+}
+
+function buildActivityFeed(toolLogs: ToolLog[]) {
+  return toolLogs
+    .slice()
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 5)
+    .map((log) => ({
+      title: normalizeActivityTitle(log.summary, log.tool),
+      timestamp: formatRelativeTime(log.createdAt)
+    }));
+}
+
+function normalizeActivityTitle(summary: string, tool: string) {
+  const clean = `${summary || ""}`.trim();
+  if (clean) {
+    return clean;
+  }
+
+  const map: Record<string, string> = {
+    file_analysis: "File uploaded",
+    save_memory: "Memory added",
+    create_project: "New project created"
+  };
+
+  return map[tool] || "New workspace action";
+}
+
+function formatRelativeTime(value: string) {
+  const diff = Date.now() - new Date(value).getTime();
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diff < hour) {
+    return `${Math.max(1, Math.round(diff / minute))} min ago`;
+  }
+
+  if (diff < day) {
+    return `${Math.max(1, Math.round(diff / hour))} hours ago`;
+  }
+
+  return `${Math.max(1, Math.round(diff / day))} days ago`;
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
 }
