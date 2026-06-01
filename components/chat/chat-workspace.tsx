@@ -1346,7 +1346,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
           <div className="min-h-0 flex-1 pt-[50px]">
             <div className={cn("flex h-full min-h-0", showDesktopPreview ? "xl:grid xl:grid-cols-[minmax(0,1fr)_380px]" : "")}>
-              <div className="min-h-0 min-w-0">
+              <div className="min-h-0 min-w-0 flex-1">
                 {hasMessages ? (
                   <ChatThreadView
                     activeDesktopFilePath={activeFile}
