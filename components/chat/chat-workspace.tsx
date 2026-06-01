@@ -3269,6 +3269,10 @@ function ChatThreadView({
               const isLatestAssistant = lastAssistantMessage?.id === message.id;
               const assistantModelLabel = getAssistantModelLabel(message.modelKey, message.provider);
               const toolExecutions = toolExecutionsByMessageId[message.id] || [];
+              const showDocumentWriterLogoOnly =
+                !message.content.trim() &&
+                toolExecutions.length === 1 &&
+                toolExecutions[0]?.name === "document_writer";
               const feedback = feedbackByMessageId[message.id];
               const canApplyAssistantCode =
                 isDesktop && desktopFolderOpen && Boolean(activeDesktopFilePath) && Boolean(extractPrimaryCodeBlock(message.content));
@@ -3287,6 +3291,29 @@ function ChatThreadView({
                         <div className="rounded-[18px_18px_4px_18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[18px] py-3 text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
                           {message.content}
                         </div>
+                      </div>
+                    </motion.article>
+                  </MessageErrorBoundary>
+                );
+              }
+
+              if (showDocumentWriterLogoOnly) {
+                return (
+                  <MessageErrorBoundary key={message.id}>
+                    <motion.article
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex gap-3"
+                      initial={{ opacity: 0, y: 14 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                    >
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          className="flex items-center justify-center"
+                          transition={{ duration: 7, ease: "linear", repeat: Infinity }}
+                        >
+                          <XeivoraGlyph size={42} />
+                        </motion.div>
                       </div>
                     </motion.article>
                   </MessageErrorBoundary>
