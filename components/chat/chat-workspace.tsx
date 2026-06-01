@@ -43,6 +43,7 @@ import {
   Square,
   Star,
   Sun,
+  Target,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -91,6 +92,7 @@ const navItems: SidebarItem[] = [
   { label: "Memory", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows" },
   { label: "Agents", icon: Bot, href: "/agents" },
+  { label: "Simulate", icon: Target, href: "/simulate" },
   { label: "Integrations", icon: PlugZap, href: "/integrations" },
   { label: "Settings", icon: Settings2, href: "/settings" }
 ];

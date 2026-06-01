@@ -17,6 +17,7 @@ import {
   Plus,
   Search,
   Settings2,
+  Target,
   Trash2,
   Workflow
 } from "lucide-react";
@@ -27,13 +28,30 @@ import type { AuthUser } from "@/lib/auth-types";
 import type { ChatBootstrap, ChatSessionSummary, IntegrationConnectionSummary } from "@/lib/chat-types";
 import { cn } from "@/lib/utils";
 
-type WorkspaceSidebarProps = {
+export type WorkspaceSidebarRecentItem = {
+  active?: boolean;
+  href?: string;
+  id: string;
+  meta?: string | null;
+  onSelect?: () => void;
+  title: string;
+};
+
+export type WorkspaceSidebarRecentSection = {
+  emptyLabel?: string;
+  items: WorkspaceSidebarRecentItem[];
+  label: string;
+};
+
+export type WorkspaceSidebarProps = {
   activeSessionId?: string | null;
   collapsed?: boolean;
   onNewChat?: () => void;
   onSelectSession?: (sessionId: string) => void;
   onToggleCollapse?: () => void;
+  recentSections?: WorkspaceSidebarRecentSection[];
   searchQuery?: string;
+  searchPlaceholder?: string;
   sessions?: ChatSessionSummary[];
   statusLabel?: string;
   onSearchChange?: (value: string) => void;
@@ -46,6 +64,7 @@ const navItems = [
   { label: "Memory", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows" },
   { label: "Agents", icon: Bot, href: "/agents" },
+  { label: "Simulate", icon: Target, href: "/simulate" },
   { label: "Integrations", icon: PlugZap, href: "/integrations" },
   { label: "Settings", icon: Settings2, href: "/settings" }
 ] as const;
@@ -101,7 +120,9 @@ export function WorkspaceSidebar({
   activeSessionId = null,
   onNewChat,
   onSelectSession,
+  recentSections,
   searchQuery = "",
+  searchPlaceholder = "Search chats",
   sessions = [],
   statusLabel = "Protected",
   onSearchChange,
@@ -115,7 +136,7 @@ export function WorkspaceSidebar({
   const [sessionMenuOpenId, setSessionMenuOpenId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sessions.length) {
+    if (sessions.length && !recentSections?.length) {
       return;
     }
 
@@ -132,7 +153,7 @@ export function WorkspaceSidebar({
       .catch(() => {
         // The sidebar should stay usable even if recents cannot load.
       });
-  }, [sessions.length]);
+  }, [recentSections?.length, sessions.length]);
 
   useEffect(() => {
     setQuery(searchQuery);
@@ -171,6 +192,22 @@ export function WorkspaceSidebar({
     );
   }, [availableSessions, query]);
   const groupedSessions = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
+  const filteredRecentSections = useMemo(() => {
+    if (!recentSections?.length) {
+      return [];
+    }
+
+    const lower = query.toLowerCase();
+
+    return recentSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) =>
+          `${item.title} ${item.meta || ""}`.toLowerCase().includes(lower)
+        )
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [query, recentSections]);
   const connectedIntegrations = useMemo(
     () => integrations.filter((integration) => integration.connected),
     [integrations]
@@ -325,7 +362,7 @@ export function WorkspaceSidebar({
                 setQuery(event.target.value);
                 onSearchChange?.(event.target.value);
               }}
-              placeholder="Search chats"
+              placeholder={searchPlaceholder}
               value={query}
             />
           </label>
@@ -336,7 +373,39 @@ export function WorkspaceSidebar({
 
           <div className="h-full overflow-y-auto pr-1">
             <div className="space-y-3 pb-4">
-              {groupedSessions.length ? (
+              {filteredRecentSections.length ? (
+                filteredRecentSections.map((section) => (
+                  <div className="space-y-1" key={section.label}>
+                    <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                      {section.label}
+                    </h3>
+                    {section.items.map((item) => (
+                      <button
+                        className={cn(
+                          "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 text-left text-[12px] font-normal transition",
+                          item.active
+                            ? "bg-[#1a1410] text-[#f0ead8]"
+                            : "text-[rgba(240,234,216,0.7)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                        )}
+                        key={item.id}
+                        onClick={() => {
+                          if (item.onSelect) {
+                            item.onSelect();
+                            return;
+                          }
+
+                          if (item.href) {
+                            router.push(item.href);
+                          }
+                        }}
+                        type="button"
+                      >
+                        <span className="truncate">{item.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              ) : groupedSessions.length ? (
                 groupedSessions.map(([group, items]) => (
                   <div className="space-y-1" key={group}>
                     <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
@@ -359,7 +428,9 @@ export function WorkspaceSidebar({
                   </div>
                 ))
               ) : (
-                <div className="px-2 pt-2 text-[13px] text-[rgba(240,234,216,0.7)]">No recent chats yet.</div>
+                <div className="px-2 pt-2 text-[13px] text-[rgba(240,234,216,0.7)]">
+                  {recentSections?.length ? recentSections[0]?.emptyLabel || "No recent items yet." : "No recent chats yet."}
+                </div>
               )}
             </div>
           </div>

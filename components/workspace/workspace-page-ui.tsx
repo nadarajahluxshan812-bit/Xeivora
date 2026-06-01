@@ -8,7 +8,7 @@ import type {
 } from "react";
 import { Search } from "lucide-react";
 
-import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
+import { WorkspaceSidebar, type WorkspaceSidebarProps } from "@/components/workspace/workspace-sidebar";
 import type { AuthUser } from "@/lib/auth-types";
 import { cn } from "@/lib/utils";
 
@@ -17,17 +17,19 @@ const cardClassName =
 
 export function WorkspacePageShell({
   children,
+  sidebarProps,
   statusLabel = "Workspace",
   viewer = null
 }: {
   children: ReactNode;
+  sidebarProps?: Partial<WorkspaceSidebarProps>;
   statusLabel?: string;
   viewer?: AuthUser | null;
 }) {
   return (
     <main className="min-h-screen bg-[#0e0b08] text-[#f0ead8]">
       <div className="mx-auto grid min-h-screen max-w-[1680px] gap-0 md:grid-cols-[232px_minmax(0,1fr)]">
-        <WorkspaceSidebar statusLabel={statusLabel} viewer={viewer} />
+        <WorkspaceSidebar statusLabel={statusLabel} viewer={viewer} {...sidebarProps} />
         <section className="min-w-0 px-5 py-8 md:px-8 md:py-9 xl:px-10">{children}</section>
       </div>
     </main>
