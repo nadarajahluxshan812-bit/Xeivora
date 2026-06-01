@@ -270,6 +270,45 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
           }
         }
 
+        @keyframes xv-hero-orbit-spin {
+          0% {
+            transform: rotate(0deg) scale(1);
+          }
+
+          50% {
+            transform: rotate(180deg) scale(1.015);
+          }
+
+          100% {
+            transform: rotate(360deg) scale(1);
+          }
+        }
+
+        @keyframes xv-hero-orbit-spin-reverse {
+          0% {
+            transform: rotate(0deg) scale(1);
+          }
+
+          50% {
+            transform: rotate(-180deg) scale(0.985);
+          }
+
+          100% {
+            transform: rotate(-360deg) scale(1);
+          }
+        }
+
+        @keyframes xv-hero-orbit-float {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0);
+          }
+
+          50% {
+            transform: translate3d(0, -10px, 0);
+          }
+        }
+
         .xv-marketing-home {
           background: var(--site-bg);
           color: var(--site-text);
@@ -371,6 +410,21 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         .xv-home-ghost:hover {
           background: var(--site-ghost-hover);
         }
+
+        .xv-hero-orbit-field {
+          animation: xv-hero-orbit-float 10s ease-in-out infinite;
+          will-change: transform;
+        }
+
+        .xv-hero-orbit-spin {
+          animation: xv-hero-orbit-spin 22s linear infinite;
+          will-change: transform;
+        }
+
+        .xv-hero-orbit-spin-reverse {
+          animation: xv-hero-orbit-spin-reverse 28s linear infinite;
+          will-change: transform;
+        }
       `}</style>
       <ParticleCanvas />
       <CursorFollower />
@@ -401,20 +455,25 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             </Reveal>
 
             <Reveal delay={70}>
-              <div className="max-w-[860px]">
-                <p className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.3em]">
-                  Continuity · Memory · Momentum
-                </p>
-                <h1
-                  className="font-[Georgia,'Times New Roman',serif] text-[3.9rem] leading-[0.88] tracking-[-0.06em] sm:text-[5.4rem] lg:text-[7.1rem]"
-                  style={{ color: cream }}
-                >
-                  <span className="block">One</span>
-                  <span className="block italic" style={{ color: coral }}>
-                    continuous
-                  </span>
-                  <span className="xv-outline-text block">workspace.</span>
-                </h1>
+              <div className="relative isolate max-w-[860px]">
+                <div className="pointer-events-none absolute left-[28%] top-[56%] z-0 -translate-x-1/2 -translate-y-1/2 sm:left-[31%] lg:left-[34%]">
+                  <HeroOrbitField />
+                </div>
+                <div className="relative z-10">
+                  <p className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.3em]">
+                    Continuity · Memory · Momentum
+                  </p>
+                  <h1
+                    className="font-[Georgia,'Times New Roman',serif] text-[3.9rem] leading-[0.88] tracking-[-0.06em] sm:text-[5.4rem] lg:text-[7.1rem]"
+                    style={{ color: cream }}
+                  >
+                    <span className="block">One</span>
+                    <span className="block italic" style={{ color: coral }}>
+                      continuous
+                    </span>
+                    <span className="xv-outline-text block">workspace.</span>
+                  </h1>
+                </div>
               </div>
             </Reveal>
 
@@ -956,6 +1015,82 @@ function ParticleCanvas() {
 
 type HomepageTheme = "dark" | "light";
 
+function HeroOrbitField() {
+  const { resolvedTheme } = useXeivoraTheme();
+  const palette = getHeroOrbitPalette(resolvedTheme);
+
+  return (
+    <div
+      className="xv-hero-orbit-field relative h-[260px] w-[260px] sm:h-[340px] sm:w-[340px] lg:h-[440px] lg:w-[440px]"
+      style={{ opacity: palette.opacity }}
+    >
+      <div
+        className="absolute inset-[20%] rounded-full blur-3xl"
+        style={{
+          background: `radial-gradient(circle, ${rgbaString(palette.glowRgb, palette.glowCoreAlpha)} 0%, ${rgbaString(palette.glowRgb, palette.glowOuterAlpha)} 46%, transparent 78%)`
+        }}
+      />
+      <div
+        className="xv-hero-orbit-spin absolute left-[4%] top-[20%] h-[58%] w-[92%] rounded-[999px] border"
+        style={{
+          borderColor: rgbaString(palette.accentRgb, palette.outerRingAlpha),
+          boxShadow: `0 0 40px ${rgbaString(palette.accentRgb, palette.outerRingGlowAlpha)}`
+        }}
+      >
+        <span
+          className="absolute -left-1 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+          style={{ backgroundColor: rgbaString(palette.accentRgb, palette.dotAlpha), boxShadow: `0 0 18px ${rgbaString(palette.accentRgb, palette.dotGlowAlpha)}` }}
+        />
+        <span
+          className="absolute -right-1 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+          style={{ backgroundColor: rgbaString(palette.neutralRgb, palette.dotAlpha * 0.92), boxShadow: `0 0 14px ${rgbaString(palette.neutralRgb, palette.dotGlowAlpha * 0.72)}` }}
+        />
+      </div>
+      <div
+        className="xv-hero-orbit-spin-reverse absolute left-[14%] top-[8%] h-[80%] w-[72%] rounded-[999px] border"
+        style={{ borderColor: rgbaString(palette.lineRgb, palette.innerRingAlpha) }}
+      >
+        <span
+          className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ backgroundColor: rgbaString(palette.accentRgb, palette.dotAlpha), boxShadow: `0 0 14px ${rgbaString(palette.accentRgb, palette.dotGlowAlpha)}` }}
+        />
+        <span
+          className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 translate-y-1/2 rounded-full"
+          style={{ backgroundColor: rgbaString(palette.neutralRgb, palette.dotAlpha * 0.9), boxShadow: `0 0 12px ${rgbaString(palette.neutralRgb, palette.dotGlowAlpha * 0.68)}` }}
+        />
+      </div>
+      <div
+        className="absolute inset-[31%] rounded-full border"
+        style={{ borderColor: rgbaString(palette.centerRingRgb, palette.centerRingAlpha) }}
+      />
+      <div
+        className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border"
+        style={{
+          borderColor: rgbaString(palette.accentRgb, palette.coreBorderAlpha),
+          background: `radial-gradient(circle, ${rgbaString(palette.glowRgb, palette.coreFillAlpha)} 0%, ${rgbaString(palette.glowRgb, palette.coreOuterFillAlpha)} 70%, transparent 100%)`,
+          boxShadow: `0 0 26px ${rgbaString(palette.accentRgb, palette.outerRingGlowAlpha)}`
+        }}
+      />
+      <span
+        className="absolute left-[28%] top-[27%] h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: rgbaString(palette.accentRgb, palette.sparkAlpha), boxShadow: `0 0 12px ${rgbaString(palette.accentRgb, palette.sparkGlowAlpha)}` }}
+      />
+      <span
+        className="absolute right-[21%] top-[31%] h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: rgbaString(palette.neutralRgb, palette.sparkAlpha * 0.86), boxShadow: `0 0 10px ${rgbaString(palette.neutralRgb, palette.sparkGlowAlpha * 0.7)}` }}
+      />
+      <span
+        className="absolute bottom-[24%] left-[32%] h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: rgbaString(palette.neutralRgb, palette.sparkAlpha * 0.86), boxShadow: `0 0 10px ${rgbaString(palette.neutralRgb, palette.sparkGlowAlpha * 0.7)}` }}
+      />
+      <span
+        className="absolute bottom-[28%] right-[26%] h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: rgbaString(palette.accentRgb, palette.sparkAlpha), boxShadow: `0 0 12px ${rgbaString(palette.accentRgb, palette.sparkGlowAlpha)}` }}
+      />
+    </div>
+  );
+}
+
 type ParticlePalette = {
   accentRgb: readonly [number, number, number];
   neutralRgb: readonly [number, number, number];
@@ -965,6 +1100,28 @@ type ParticlePalette = {
   lineAlpha: number;
   glowAlpha: number;
   glowBlur: number;
+};
+
+type HeroOrbitPalette = {
+  accentRgb: readonly [number, number, number];
+  neutralRgb: readonly [number, number, number];
+  lineRgb: readonly [number, number, number];
+  centerRingRgb: readonly [number, number, number];
+  glowRgb: readonly [number, number, number];
+  opacity: number;
+  outerRingAlpha: number;
+  innerRingAlpha: number;
+  centerRingAlpha: number;
+  coreBorderAlpha: number;
+  coreFillAlpha: number;
+  coreOuterFillAlpha: number;
+  glowCoreAlpha: number;
+  glowOuterAlpha: number;
+  outerRingGlowAlpha: number;
+  dotAlpha: number;
+  dotGlowAlpha: number;
+  sparkAlpha: number;
+  sparkGlowAlpha: number;
 };
 
 function resolveHomepageTheme(): HomepageTheme {
@@ -1009,6 +1166,54 @@ function getParticlePalette(theme: HomepageTheme): ParticlePalette {
     lineAlpha: 0.15,
     glowAlpha: 0.1,
     glowBlur: 10
+  };
+}
+
+function getHeroOrbitPalette(theme: HomepageTheme): HeroOrbitPalette {
+  if (theme === "light") {
+    return {
+      accentRgb: [191, 95, 63],
+      neutralRgb: [58, 44, 37],
+      lineRgb: [201, 100, 66],
+      centerRingRgb: [125, 86, 69],
+      glowRgb: [201, 100, 66],
+      opacity: 0.92,
+      outerRingAlpha: 0.28,
+      innerRingAlpha: 0.18,
+      centerRingAlpha: 0.22,
+      coreBorderAlpha: 0.34,
+      coreFillAlpha: 0.26,
+      coreOuterFillAlpha: 0.08,
+      glowCoreAlpha: 0.2,
+      glowOuterAlpha: 0.1,
+      outerRingGlowAlpha: 0.14,
+      dotAlpha: 0.9,
+      dotGlowAlpha: 0.22,
+      sparkAlpha: 0.7,
+      sparkGlowAlpha: 0.18
+    };
+  }
+
+  return {
+    accentRgb: [201, 100, 66],
+    neutralRgb: [240, 234, 216],
+    lineRgb: [201, 100, 66],
+    centerRingRgb: [145, 87, 63],
+    glowRgb: [201, 100, 66],
+    opacity: 0.78,
+    outerRingAlpha: 0.22,
+    innerRingAlpha: 0.14,
+    centerRingAlpha: 0.18,
+    coreBorderAlpha: 0.28,
+    coreFillAlpha: 0.18,
+    coreOuterFillAlpha: 0.06,
+    glowCoreAlpha: 0.15,
+    glowOuterAlpha: 0.08,
+    outerRingGlowAlpha: 0.1,
+    dotAlpha: 0.82,
+    dotGlowAlpha: 0.16,
+    sparkAlpha: 0.58,
+    sparkGlowAlpha: 0.12
   };
 }
 
