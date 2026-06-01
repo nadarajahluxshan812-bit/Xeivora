@@ -23,6 +23,7 @@ import type { ReactNode } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import UpgradeButton from "@/components/payments/UpgradeButton";
 import { OrbitLogo } from "@/components/orbit-logo";
+import { useXeivoraTheme } from "@/components/theme/theme-provider";
 import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { cn } from "@/lib/utils";
 
@@ -822,6 +823,12 @@ function RevealSection({
 
 function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const paletteRef = useRef(getParticlePalette("dark"));
+  const { resolvedTheme } = useXeivoraTheme();
+
+  useEffect(() => {
+    paletteRef.current = getParticlePalette(resolvedTheme);
+  }, [resolvedTheme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -846,10 +853,15 @@ function ParticleCanvas() {
       x: Math.random(),
       y: Math.random(),
       radius: Math.random() * 1.8 + 0.4,
-      alpha: Math.random() * 0.26 + 0.08,
+      alpha: Math.random() * 0.5 + 0.55,
+      tone: Math.random() > 0.5 ? "accent" : "neutral",
       speedX: (Math.random() - 0.5) * 0.00035,
       speedY: (Math.random() - 0.5) * 0.00028
     }));
+
+    function updateParticleColors() {
+      paletteRef.current = getParticlePalette(resolveHomepageTheme());
+    }
 
     function resize() {
       width = canvasElement.clientWidth;
@@ -861,6 +873,7 @@ function ParticleCanvas() {
     }
 
     function draw() {
+      const palette = paletteRef.current;
       drawingContext.clearRect(0, 0, width, height);
 
       particles.forEach((particle, index) => {
@@ -876,11 +889,17 @@ function ParticleCanvas() {
 
         const px = particle.x * width;
         const py = particle.y * height;
+        const isAccent = particle.tone === "accent";
+        const fillRgb = isAccent ? palette.accentRgb : palette.neutralRgb;
+        const alphaBase = isAccent ? palette.accentAlpha : palette.neutralAlpha;
 
         drawingContext.beginPath();
-        drawingContext.fillStyle = `rgba(201, 100, 66, ${particle.alpha})`;
+        drawingContext.shadowBlur = isAccent ? palette.glowBlur : 0;
+        drawingContext.shadowColor = rgbaString(palette.accentRgb, palette.glowAlpha * particle.alpha);
+        drawingContext.fillStyle = rgbaString(fillRgb, alphaBase * particle.alpha);
         drawingContext.arc(px, py, particle.radius, 0, Math.PI * 2);
         drawingContext.fill();
+        drawingContext.shadowBlur = 0;
 
         for (let nextIndex = index + 1; nextIndex < particles.length; nextIndex += 1) {
           const next = particles[nextIndex];
@@ -889,8 +908,9 @@ function ParticleCanvas() {
           const distance = Math.hypot(px - nx, py - ny);
 
           if (distance < 120) {
+            const lineStrength = 1 - distance / 120;
             drawingContext.beginPath();
-            drawingContext.strokeStyle = `rgba(240, 234, 216, ${0.06 - distance / 2400})`;
+            drawingContext.strokeStyle = rgbaString(palette.lineRgb, palette.lineAlpha * lineStrength);
             drawingContext.lineWidth = 0.6;
             drawingContext.moveTo(px, py);
             drawingContext.lineTo(nx, ny);
@@ -902,17 +922,98 @@ function ParticleCanvas() {
       raf = window.requestAnimationFrame(draw);
     }
 
+    updateParticleColors();
     resize();
     draw();
 
+    const observer = new MutationObserver(() => {
+      updateParticleColors();
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"]
+    });
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    media.addEventListener("change", updateParticleColors);
     window.addEventListener("resize", resize);
     return () => {
+      observer.disconnect();
+      media.removeEventListener("change", updateParticleColors);
       window.removeEventListener("resize", resize);
       window.cancelAnimationFrame(raf);
     };
   }, []);
 
-  return <canvas className="pointer-events-none fixed inset-0 z-0 opacity-70" ref={canvasRef} />;
+  return (
+    <canvas
+      className="pointer-events-none fixed inset-0 z-0"
+      ref={canvasRef}
+      style={{ opacity: resolvedTheme === "light" ? 0.98 : 0.7 }}
+    />
+  );
+}
+
+type HomepageTheme = "dark" | "light";
+
+type ParticlePalette = {
+  accentRgb: readonly [number, number, number];
+  neutralRgb: readonly [number, number, number];
+  lineRgb: readonly [number, number, number];
+  accentAlpha: number;
+  neutralAlpha: number;
+  lineAlpha: number;
+  glowAlpha: number;
+  glowBlur: number;
+};
+
+function resolveHomepageTheme(): HomepageTheme {
+  if (typeof document !== "undefined") {
+    const datasetTheme = document.documentElement.dataset.theme;
+    if (datasetTheme === "light" || datasetTheme === "dark") {
+      return datasetTheme;
+    }
+
+    if (document.documentElement.classList.contains("dark")) {
+      return "dark";
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  return "dark";
+}
+
+function getParticlePalette(theme: HomepageTheme): ParticlePalette {
+  if (theme === "light") {
+    return {
+      accentRgb: [201, 100, 66],
+      neutralRgb: [14, 11, 8],
+      lineRgb: [201, 100, 66],
+      accentAlpha: 0.35,
+      neutralAlpha: 0.2,
+      lineAlpha: 0.25,
+      glowAlpha: 0.15,
+      glowBlur: 14
+    };
+  }
+
+  return {
+    accentRgb: [201, 100, 66],
+    neutralRgb: [255, 255, 255],
+    lineRgb: [201, 100, 66],
+    accentAlpha: 0.25,
+    neutralAlpha: 0.15,
+    lineAlpha: 0.15,
+    glowAlpha: 0.1,
+    glowBlur: 10
+  };
+}
+
+function rgbaString(rgb: readonly [number, number, number], alpha: number) {
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${Math.max(0, Math.min(1, alpha))})`;
 }
 
 function CursorFollower() {
