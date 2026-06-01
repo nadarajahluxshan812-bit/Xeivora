@@ -1,5 +1,7 @@
 "use client";
 
+import { Copy, Check } from "lucide-react";
+import { useState } from "react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import ReactMarkdown from "react-markdown";
@@ -26,6 +28,7 @@ function CodeBlock({ className, children, ...props }: CodeBlockProps) {
   const language = className?.replace("language-", "") || "text";
   const code = stringifyChildren(children).replace(/\n$/, "");
   const inline = !className;
+  const [copied, setCopied] = useState(false);
 
   if (inline) {
     return (
@@ -40,7 +43,25 @@ function CodeBlock({ className, children, ...props }: CodeBlockProps) {
 
   return (
     <pre className="my-3 overflow-x-auto rounded-lg bg-[#111111] p-4">
-      <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">{language}</div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">{language}</div>
+        <button
+          className="inline-flex items-center gap-1 rounded-md border border-[var(--xv-chat-border)] px-2 py-1 text-[10px] text-[var(--xv-chat-muted)] transition hover:border-[var(--xv-chat-border-strong)] hover:text-[var(--xv-chat-text)]"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(code);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1200);
+            } catch {
+              setCopied(false);
+            }
+          }}
+          type="button"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
+      </div>
       <code className="font-mono text-sm text-[#b8d29b]" {...props}>
         {code}
       </code>

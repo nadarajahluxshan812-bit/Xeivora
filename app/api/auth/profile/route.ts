@@ -24,6 +24,7 @@ export async function PATCH(request: Request) {
   const body = await request.json().catch(() => ({}));
   const user = await authStore.updateUserProfile(session.user.id, {
     name: body.name,
+    email: body.email,
     avatarUrl: body.avatarUrl,
     preferences: body.preferences
   });

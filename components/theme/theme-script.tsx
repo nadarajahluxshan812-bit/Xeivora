@@ -7,6 +7,8 @@ export function ThemeScript() {
         const theme =
           saved === "light" || saved === "dark"
             ? saved
+            : saved === "system"
+              ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
             : (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;

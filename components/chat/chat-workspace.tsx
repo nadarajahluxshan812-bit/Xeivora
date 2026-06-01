@@ -9,10 +9,12 @@ import {
   AudioLines,
   Bot,
   BrainCircuit,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Code2,
+  Command,
   Ellipsis,
   Folder,
   FolderOpen,
@@ -21,9 +23,13 @@ import {
   FolderPlus,
   GraduationCap,
   Heart,
+  Keyboard,
+  Laptop,
   LoaderCircle,
+  LogOut,
   MessageSquareText,
   Mic,
+  Moon,
   PanelLeft,
   Paperclip,
   Pencil,
@@ -36,6 +42,9 @@ import {
   Share2,
   Square,
   Star,
+  Sun,
+  ThumbsDown,
+  ThumbsUp,
   Trash2,
   Volume2,
   Workflow,
@@ -48,7 +57,7 @@ import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
 import { OrbitLogo, XeivoraGlyph } from "@/components/orbit-logo";
-import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
+import { useXeivoraTheme } from "@/components/theme/theme-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useElectron, type DesktopFileNode } from "@/hooks/useElectron";
@@ -125,6 +134,81 @@ const welcomeSuggestions: SuggestionCard[] = [
   }
 ];
 
+const modelPickerOptions = [
+  {
+    id: "auto",
+    modelKey: "orbit-auto" as ModelKey,
+    label: "Auto (Xeivora chooses)",
+    shortLabel: "Xeivora",
+    description: "Best overall routing for continuity and speed",
+    dotColor: coralAccent,
+    tier: "balanced"
+  },
+  {
+    id: "claude-sonnet",
+    modelKey: "claude" as ModelKey,
+    label: "Claude Sonnet",
+    shortLabel: "Claude Sonnet",
+    description: "Best for complex reasoning",
+    dotColor: "#f59e0b",
+    tier: "balanced"
+  },
+  {
+    id: "claude-opus",
+    modelKey: "claude" as ModelKey,
+    label: "Claude Opus",
+    shortLabel: "Claude Opus",
+    description: "Most powerful for long-form thinking",
+    dotColor: "#ef4444",
+    tier: "powerful"
+  },
+  {
+    id: "gpt-4o",
+    modelKey: "gpt-4o" as ModelKey,
+    label: "GPT-4o",
+    shortLabel: "GPT-4o",
+    description: "Best for coding and general work",
+    dotColor: "#16a34a",
+    tier: "fast"
+  },
+  {
+    id: "gpt-4o-mini",
+    modelKey: "gpt-4o" as ModelKey,
+    label: "GPT-4o Mini",
+    shortLabel: "GPT-4o Mini",
+    description: "Fastest for everyday tasks",
+    dotColor: "#16a34a",
+    tier: "fast"
+  },
+  {
+    id: "gemini-2.5-pro",
+    modelKey: "gemini" as ModelKey,
+    label: "Gemini 2.5 Pro",
+    shortLabel: "Gemini Pro",
+    description: "Strong for research and synthesis",
+    dotColor: "#f59e0b",
+    tier: "balanced"
+  },
+  {
+    id: "gemini-2.5-flash",
+    modelKey: "gemini" as ModelKey,
+    label: "Gemini 2.5 Flash",
+    shortLabel: "Gemini Flash",
+    description: "Fast for quick answers",
+    dotColor: "#16a34a",
+    tier: "fast"
+  },
+  {
+    id: "deepseek-r1",
+    modelKey: "orbit-auto" as ModelKey,
+    label: "DeepSeek R1",
+    shortLabel: "DeepSeek R1",
+    description: "Reasoning-first fallback mode",
+    dotColor: "#ef4444",
+    tier: "powerful"
+  }
+] as const;
+
 type SidebarItem = {
   href: string;
   icon: LucideIcon;
@@ -137,6 +221,9 @@ type SuggestionCard = {
   label: string;
   prompt: string;
 };
+
+type ModelPickerOption = (typeof modelPickerOptions)[number];
+type ModelPickerId = ModelPickerOption["id"];
 
 type ContinuityState = StreamContinuityPayload;
 type VoiceState = "idle" | "listening" | "processing";
@@ -184,6 +271,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { resolvedTheme, toggleTheme } = useXeivoraTheme();
   const {
     activeFile,
     activeFileContent,
@@ -227,7 +315,15 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingSessionTitle, setEditingSessionTitle] = useState("");
   const [projectMenuSessionId, setProjectMenuSessionId] = useState<string | null>(null);
+  const [deleteConfirmSessionId, setDeleteConfirmSessionId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedModelPreset, setSelectedModelPreset] = useState<ModelPickerId>("auto");
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [messageFeedback, setMessageFeedback] = useState<Record<string, "good" | "bad">>({});
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("simple_chat");
   const [autoSwitchNotice, setAutoSwitchNotice] = useState<ModelSwitch | null>(null);
@@ -266,6 +362,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const messages = activeSession?.messages ?? [];
   const hasMessages = messages.length > 0;
   const viewerName = viewer?.name || "Nadarajah Luxshan";
+  const viewerEmail = viewer?.email || "luxshan@xeivora.com";
   const filteredSessions = useMemo(() => sessions, [sessions]);
   const groupedSessions = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
   const connectedIntegrations = useMemo(
@@ -300,6 +397,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     return Object.values(providerStatus).filter((provider) => provider?.available).length;
   }, [providerStatus]);
   const topbarModel = getTopbarModelMeta(
+    selectedModelPreset,
     continuityStatus.currentProvider === "simulation" ? selectedModel : providerToModelKey(continuityStatus.currentProvider),
     continuityStatus.currentModel
   );
@@ -308,6 +406,18 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       ? activeSession.title
       : "New chat";
   const showDesktopPreview = isDesktop && Boolean(activeFile);
+  const searchResults = useMemo(() => {
+    const term = searchQuery.trim().toLowerCase();
+    if (!term) {
+      return sessions.slice(0, 12);
+    }
+
+    return sessions.filter((session) =>
+      [session.title, session.preview]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term))
+    );
+  }, [searchQuery, sessions]);
 
   useEffect(() => {
     setModelPulseActive(true);
@@ -374,7 +484,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   }, [prompt]);
 
   useEffect(() => {
-    if (!sessionMenuOpenId && !statusOpen && !projectMenuSessionId) {
+    if (!sessionMenuOpenId && !statusOpen && !projectMenuSessionId && !profileMenuOpen && !modelMenuOpen) {
       return;
     }
 
@@ -382,6 +492,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setSessionMenuOpenId(null);
       setStatusOpen(false);
       setProjectMenuSessionId(null);
+      setProfileMenuOpen(false);
+      setModelMenuOpen(false);
     }
 
     function handleEscape(event: KeyboardEvent) {
@@ -389,6 +501,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         setSessionMenuOpenId(null);
         setStatusOpen(false);
         setProjectMenuSessionId(null);
+        setProfileMenuOpen(false);
+        setModelMenuOpen(false);
       }
     }
 
@@ -399,7 +513,46 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       window.removeEventListener("click", handleClose);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [projectMenuSessionId, sessionMenuOpenId, statusOpen]);
+  }, [modelMenuOpen, profileMenuOpen, projectMenuSessionId, sessionMenuOpenId, statusOpen]);
+
+  useEffect(() => {
+    function handleShortcuts(event: KeyboardEvent) {
+      const isModifier = event.metaKey || event.ctrlKey;
+
+      if (isModifier && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+        setSearchQuery("");
+        setSessionMenuOpenId(null);
+        setProjectMenuSessionId(null);
+        setProfileMenuOpen(false);
+        setModelMenuOpen(false);
+      }
+
+      if (isModifier && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        void handleNewChat();
+      }
+
+      if (isModifier && event.key === ",") {
+        event.preventDefault();
+        router.push("/settings");
+      }
+
+      if (isModifier && event.key === "/") {
+        event.preventDefault();
+        setShortcutsOpen(true);
+      }
+
+      if (event.key === "Escape") {
+        setShortcutsOpen(false);
+        setSearchOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleShortcuts);
+    return () => window.removeEventListener("keydown", handleShortcuts);
+  }, [router, searchOpen]);
 
   async function bootstrapWorkspace() {
     const response = await fetch("/api/chat/bootstrap", { cache: "no-store" });
@@ -413,6 +566,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setSessions(bootstrap.sessions);
       setProviderStatus(bootstrap.providerStatus);
       setSelectedModel(bootstrap.defaultModel);
+      setSelectedModelPreset(modelKeyToPresetId(bootstrap.defaultModel));
       setProjects(bootstrap.projects);
       setIntegrations(bootstrap.integrations || []);
       setEnabledIntegrationProviders(
@@ -440,6 +594,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setActiveSession(session);
       setSessionFiles(session.attachedFiles ?? []);
       setSelectedModel(session.modelPreference);
+      setSelectedModelPreset(modelKeyToPresetId(session.modelPreference));
       setSelectedProjectId(session.projectId ?? null);
       setRouteLabel(toXeivoraLabel(session.routeLabel));
       setOrchestrationSteps([]);
@@ -476,6 +631,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setProviderStatus(payload.providerStatus);
       setActiveSession(payload.session);
       setSessionFiles(payload.session.attachedFiles ?? []);
+      setSelectedModelPreset(modelKeyToPresetId(payload.session.modelPreference));
       setSelectedProjectId(payload.session.projectId ?? null);
       setRouteLabel("Xeivora is ready");
       setOrchestrationSteps([]);
@@ -1007,6 +1163,35 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     }
   }
 
+  async function handleShareSpecificSession(sessionId: string) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/chat?session=${sessionId}`);
+      setShareFeedback("Link copied");
+      window.setTimeout(() => setShareFeedback(null), 1600);
+      setSessionMenuOpenId(null);
+    } catch {
+      setShareFeedback("Unable to copy");
+      window.setTimeout(() => setShareFeedback(null), 1600);
+    }
+  }
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
+
+  function handleSelectModelPreset(presetId: ModelPickerId) {
+    const option = modelPickerOptions.find((entry) => entry.id === presetId) || modelPickerOptions[0];
+    setSelectedModelPreset(option.id);
+    setSelectedModel(option.modelKey);
+    setModelMenuOpen(false);
+  }
+
   async function handleSend(regenerate = false, overrideInput?: string) {
     if (isStreaming) {
       return;
@@ -1182,6 +1367,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             setSessions(typedEvent.payload.sessions);
             setRouteLabel(toXeivoraLabel(typedEvent.payload.session.routeLabel));
             setSelectedModel(typedEvent.payload.session.modelPreference);
+            setSelectedModelPreset((current) =>
+              current === "auto" ? modelKeyToPresetId(typedEvent.payload.session.modelPreference) : current
+            );
           });
         }
 
@@ -1250,13 +1438,23 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
             onRenameSession={beginInlineRename}
             onSelectSession={(sessionId) => void loadSession(sessionId)}
+            onShareSession={(sessionId) => void handleShareSpecificSession(sessionId)}
             onToggleCollapse={() => setMobileSidebarOpen(false)}
             onToggleProjectMenu={setProjectMenuSessionId}
             onToggleSessionMenu={setSessionMenuOpenId}
+            onToggleProfileMenu={setProfileMenuOpen}
+            onToggleSearch={() => {
+              setSearchOpen(true);
+              setSearchQuery("");
+            }}
+            onLogout={() => void handleLogout()}
+            onOpenShortcuts={() => setShortcutsOpen(true)}
             openProjectMenuId={projectMenuSessionId}
+            openProfileMenu={profileMenuOpen}
             openSessionMenuId={sessionMenuOpenId}
             pathname={pathname}
             projects={projects}
+            resolvedTheme={resolvedTheme}
             sessionGroups={groupedSessions}
             viewer={viewer}
             editingSessionId={editingSessionId}
@@ -1267,6 +1465,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               setEditingSessionId(null);
               setEditingSessionTitle("");
             }}
+            onThemeToggle={toggleTheme}
           />
         </aside>
 
@@ -1294,13 +1493,23 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
               onRenameSession={beginInlineRename}
               onSelectSession={(sessionId) => void loadSession(sessionId)}
+              onShareSession={(sessionId) => void handleShareSpecificSession(sessionId)}
               onToggleCollapse={() => setMobileSidebarOpen(false)}
               onToggleProjectMenu={setProjectMenuSessionId}
               onToggleSessionMenu={setSessionMenuOpenId}
+              onToggleProfileMenu={setProfileMenuOpen}
+              onToggleSearch={() => {
+                setSearchOpen(true);
+                setSearchQuery("");
+              }}
+              onLogout={() => void handleLogout()}
+              onOpenShortcuts={() => setShortcutsOpen(true)}
               openProjectMenuId={projectMenuSessionId}
+              openProfileMenu={profileMenuOpen}
               openSessionMenuId={sessionMenuOpenId}
               pathname={pathname}
               projects={projects}
+              resolvedTheme={resolvedTheme}
               sessionGroups={groupedSessions}
               viewer={viewer}
               editingSessionId={editingSessionId}
@@ -1311,6 +1520,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 setEditingSessionId(null);
                 setEditingSessionTitle("");
               }}
+              onThemeToggle={toggleTheme}
             />
           </SheetContent>
         </Sheet>
@@ -1331,10 +1541,15 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             fallbackSummary={fallbackSummary}
             model={topbarModel}
             modelPulseActive={modelPulseActive}
+            modelMenuOpen={modelMenuOpen}
+            modelOptions={modelPickerOptions}
             onShare={() => void handleShareSession()}
+            onSelectModel={(presetId) => handleSelectModelPreset(presetId)}
             onToggleStatus={() => setStatusOpen((value) => !value)}
+            onToggleModelMenu={() => setModelMenuOpen((value) => !value)}
             orchestrationSteps={orchestrationSteps}
             routeLabel={routeLabel}
+            selectedModelPreset={selectedModelPreset}
             shareFeedback={shareFeedback}
             shareReady={Boolean(activeSession)}
             statusOpen={statusOpen}
@@ -1380,6 +1595,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                       setCopiedResponseId(message.id);
                       setTimeout(() => setCopiedResponseId(null), 1200);
                     }}
+                    onFeedback={(messageId, value) =>
+                      setMessageFeedback((current) => ({ ...current, [messageId]: value }))
+                    }
                     onFilesSelected={(files) => void handleUploadFiles(files)}
                     onPromptChange={setPrompt}
                     onRegenerate={() => void handleSend(true)}
@@ -1394,6 +1612,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     thinking={thinking}
                     toolExecutionsByMessageId={toolExecutionsByMessageId}
                     voiceState={voiceState}
+                    feedbackByMessageId={messageFeedback}
                   />
                 ) : (
                   <ChatHomeView
@@ -1475,6 +1694,22 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 saveState={desktopSaveState}
               />
             ) : null}
+
+            {searchOpen ? (
+              <SearchCommandModal
+                onClose={() => setSearchOpen(false)}
+                onOpenSession={(sessionId) => {
+                  setSearchOpen(false);
+                  setSearchQuery("");
+                  void loadSession(sessionId);
+                }}
+                query={searchQuery}
+                results={searchResults}
+                setQuery={setSearchQuery}
+              />
+            ) : null}
+
+            {shortcutsOpen ? <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} /> : null}
           </div>
         </main>
       </div>
@@ -1505,17 +1740,25 @@ type SidebarContentProps = {
   onEditingSessionCancel: () => void;
   onEditingSessionSubmit: (sessionId: string) => void;
   onEditingSessionTitleChange: (value: string) => void;
+  onLogout: () => void;
   onNewChat: () => void;
+  onOpenShortcuts: () => void;
   onPinSession: (sessionId: string, pinned: boolean) => void;
   onRenameSession: (sessionId: string) => void;
   onSelectSession: (sessionId: string) => void;
+  onShareSession: (sessionId: string) => void;
+  onThemeToggle: () => void;
   onToggleCollapse: () => void;
   onToggleProjectMenu: (sessionId: string | null) => void;
+  onToggleProfileMenu: (open: boolean) => void;
+  onToggleSearch: () => void;
   onToggleSessionMenu: (sessionId: string | null) => void;
   openProjectMenuId: string | null;
+  openProfileMenu: boolean;
   openSessionMenuId: string | null;
   pathname: string;
   projects: WorkspaceProject[];
+  resolvedTheme: "dark" | "light";
   sessionGroups: Array<[string, ChatSessionSummary[]]>;
   viewer?: AuthUser | null;
 };
@@ -1543,22 +1786,32 @@ function SidebarContent({
   onEditingSessionCancel,
   onEditingSessionSubmit,
   onEditingSessionTitleChange,
+  onLogout,
   onNewChat,
+  onOpenShortcuts,
   onPinSession,
   onRenameSession,
   onSelectSession,
+  onShareSession,
+  onThemeToggle,
   onToggleCollapse,
   onToggleProjectMenu,
+  onToggleProfileMenu,
+  onToggleSearch,
   onToggleSessionMenu,
   openProjectMenuId,
+  openProfileMenu,
   openSessionMenuId,
   pathname,
   projects,
+  resolvedTheme,
   sessionGroups,
   viewer = null
 }: SidebarContentProps) {
+  const router = useRouter();
   const profileName = viewer?.name || workspaceName;
   const profilePlan = viewer?.plan || "Pro";
+  const profileEmail = viewer?.email || "luxshan@xeivora.com";
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
@@ -1572,7 +1825,6 @@ function SidebarContent({
         </Link>
 
         <div className="flex items-center gap-2">
-          <ThemeToggleButton compact />
           <button
             aria-label="Start new chat"
             className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
@@ -1637,6 +1889,14 @@ function SidebarContent({
                 <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--xv-chat-muted)]">
                   Recents
                 </p>
+                <button
+                  aria-label="Search chats"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-[8px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                  onClick={onToggleSearch}
+                  type="button"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                </button>
               </div>
 
               <ScrollArea className="h-full pr-1">
@@ -1668,6 +1928,7 @@ function SidebarContent({
                               onSelectSession(session.id);
                               onDismiss?.();
                             }}
+                            onShare={() => onShareSession(session.id)}
                             projects={projects}
                             session={session}
                           />
@@ -1704,7 +1965,15 @@ function SidebarContent({
               </div>
             ) : null}
 
-            <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[var(--xv-chat-ghost-bg)]">
+            <div className="relative">
+              <button
+                className="flex w-full items-center gap-2 rounded-[10px] px-1.5 py-1.5 text-left transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleProfileMenu(!openProfileMenu);
+                }}
+                type="button"
+              >
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[10px] font-medium text-white">
                 {getInitials(profileName)}
               </div>
@@ -1712,13 +1981,72 @@ function SidebarContent({
                 <p className="truncate text-[12.5px] font-medium text-[var(--xv-chat-text)]">{profileName}</p>
                 <p className="text-[10.5px] text-[var(--xv-chat-muted)]">{profilePlan}</p>
               </div>
-              <button
-                aria-label="Profile options"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
-                type="button"
+              <span
+                aria-hidden="true"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)]"
               >
                 <Ellipsis className="h-4 w-4" />
+              </span>
               </button>
+
+              <AnimatePresence>
+                {openProfileMenu ? (
+                  <motion.div
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className="absolute bottom-[calc(100%+8px)] left-0 right-0 z-[999] rounded-[14px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-2 shadow-[var(--xv-chat-shadow)]"
+                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                    onClick={(event) => event.stopPropagation()}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                  >
+                    <div className="flex items-center gap-3 rounded-[10px] px-2 py-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[11px] font-medium text-white">
+                        {getInitials(profileName)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-[var(--xv-chat-text)]">{profileName}</p>
+                        <p className="truncate text-[11px] text-[var(--xv-chat-muted)]">{profileEmail}</p>
+                      </div>
+                      <span className="ml-auto rounded-full border border-[var(--xv-chat-border-strong)] px-2 py-0.5 text-[10px] text-[var(--xv-chat-accent)]">
+                        {profilePlan}
+                      </span>
+                    </div>
+                    <div className="my-2 h-px bg-[var(--xv-chat-border)]" />
+                    <ProfileMenuButton
+                      icon={resolvedTheme === "dark" ? Sun : Moon}
+                      label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+                      onClick={onThemeToggle}
+                    />
+                    <ProfileMenuButton
+                      icon={Settings2}
+                      label="Settings"
+                      onClick={() => {
+                        onToggleProfileMenu(false);
+                        onDismiss?.();
+                        router.push("/settings");
+                      }}
+                    />
+                    <ProfileMenuButton
+                      icon={PlugZap}
+                      label="Integrations"
+                      onClick={() => {
+                        onToggleProfileMenu(false);
+                        onDismiss?.();
+                        router.push("/integrations");
+                      }}
+                    />
+                    <ProfileMenuButton
+                      icon={Keyboard}
+                      label="Keyboard shortcuts"
+                      onClick={() => {
+                        onToggleProfileMenu(false);
+                        onOpenShortcuts();
+                      }}
+                    />
+                    <div className="my-2 h-px bg-[var(--xv-chat-border)]" />
+                    <ProfileMenuButton destructive icon={LogOut} label="Log out" onClick={onLogout} />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           </div>
         </>
@@ -1795,6 +2123,7 @@ function RecentSessionRow({
   onPin,
   onRename,
   onSelect,
+  onShare,
   projects,
   session
 }: {
@@ -1813,9 +2142,18 @@ function RecentSessionRow({
   onPin: () => void;
   onRename: () => void;
   onSelect: () => void;
+  onShare: () => void;
   projects: WorkspaceProject[];
   session: ChatSessionSummary;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      setConfirmDelete(false);
+    }
+  }, [menuOpen]);
+
   return (
     <div className="group relative">
       {editing ? (
@@ -1870,9 +2208,9 @@ function RecentSessionRow({
             aria-label={`Open options for ${session.title}`}
             className={cn(
               "z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] border border-transparent transition",
-              active || menuOpen || menuProjectOpen
-                ? "bg-[var(--xv-chat-ghost-bg-hover)] text-[var(--xv-chat-text)]"
-                : "bg-transparent text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+              menuOpen || menuProjectOpen
+                ? "bg-[var(--xv-chat-ghost-bg-hover)] text-[var(--xv-chat-text)] opacity-100"
+                : "bg-transparent text-[var(--xv-chat-muted)] opacity-0 hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)] group-hover:opacity-100"
             )}
             onClick={(event) => {
               event.preventDefault();
@@ -1895,17 +2233,42 @@ function RecentSessionRow({
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
           >
-            <SessionMenuButton icon={Star} label={session.pinned ? "Unstar" : "Star"} onClick={onPin} />
-            <SessionMenuButton icon={Pencil} label="Rename" onClick={onRename} />
-            <SessionMenuButton
-              icon={FolderPlus}
-              label="Add to project"
-              onClick={() => {
-                onOpenChange(false);
-                onProjectMenuOpenChange(true);
-              }}
-            />
-            <SessionMenuButton destructive icon={Trash2} label="Delete" onClick={onDelete} />
+            {!confirmDelete ? (
+              <>
+                <SessionMenuButton icon={Pencil} label="Rename" onClick={onRename} />
+                <SessionMenuButton icon={Star} label={session.pinned ? "Pin to top" : "Pin to top"} onClick={onPin} />
+                <SessionMenuButton
+                  icon={FolderPlus}
+                  label="Move to project"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onProjectMenuOpenChange(true);
+                  }}
+                />
+                <SessionMenuButton icon={Share2} label="Share chat" onClick={onShare} />
+                <SessionMenuButton destructive icon={Trash2} label="Delete" onClick={() => setConfirmDelete(true)} />
+              </>
+            ) : (
+              <div className="space-y-2 px-2 py-2">
+                <p className="text-[12px] text-[var(--xv-chat-text)]">Delete this chat?</p>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 rounded-[6px] border border-[var(--xv-chat-border)] px-2 py-1.5 text-[12px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                    onClick={() => setConfirmDelete(false)}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 rounded-[6px] border border-[rgba(239,68,68,0.28)] px-2 py-1.5 text-[12px] text-[#ef4444] transition hover:bg-[rgba(239,68,68,0.12)]"
+                    onClick={onDelete}
+                    type="button"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -2477,10 +2840,15 @@ function ChatTopbar({
   fallbackSummary,
   model,
   modelPulseActive,
+  modelMenuOpen,
+  modelOptions,
   onShare,
+  onSelectModel,
   onToggleStatus,
+  onToggleModelMenu,
   orchestrationSteps,
   routeLabel,
+  selectedModelPreset,
   shareFeedback,
   shareReady,
   statusOpen,
@@ -2494,10 +2862,15 @@ function ChatTopbar({
   fallbackSummary: string;
   model: ModelPillData;
   modelPulseActive: boolean;
+  modelMenuOpen: boolean;
+  modelOptions: readonly ModelPickerOption[];
   onShare: () => void;
+  onSelectModel: (presetId: ModelPickerId) => void;
   onToggleStatus: () => void;
+  onToggleModelMenu: () => void;
   orchestrationSteps: OrchestrationStep[];
   routeLabel: string;
+  selectedModelPreset: ModelPickerId;
   shareFeedback: string | null;
   shareReady: boolean;
   statusOpen: boolean;
@@ -2515,7 +2888,68 @@ function ChatTopbar({
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <ModelPill model={model} pulse={modelPulseActive} />
+          <div className="relative">
+            <button
+              className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-text)]"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleModelMenu();
+              }}
+              type="button"
+            >
+              <ModelPill model={model} pulse={modelPulseActive} />
+            </button>
+
+            <AnimatePresence>
+              {modelMenuOpen ? (
+                <motion.div
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute right-0 top-[calc(100%+10px)] z-30 w-[320px] rounded-[18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-3 shadow-[var(--xv-chat-shadow)]"
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  onClick={(event) => event.stopPropagation()}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                >
+                  <p className="px-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
+                    Active Model
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {modelOptions.map((option) => {
+                      const selected = option.id === selectedModelPreset;
+                      return (
+                        <button
+                          className={cn(
+                            "flex w-full items-start gap-3 rounded-[12px] px-3 py-2 text-left transition",
+                            selected ? "bg-[var(--xv-chat-inline-code-bg)]" : "hover:bg-[var(--xv-chat-ghost-bg)]"
+                          )}
+                          key={option.id}
+                          onClick={() => onSelectModel(option.id)}
+                          type="button"
+                        >
+                          <span className="mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: option.dotColor }} />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-2 text-[13px] font-medium text-[var(--xv-chat-text)]">
+                              <span>{option.label}</span>
+                              <span className="text-[11px] text-[var(--xv-chat-muted)]">
+                                {option.tier === "fast"
+                                  ? "Fast"
+                                  : option.tier === "balanced"
+                                    ? "Balanced"
+                                    : "Powerful"}
+                              </span>
+                            </span>
+                            <span className="mt-1 block text-[11px] leading-5 text-[var(--xv-chat-muted)]">
+                              {option.description}
+                            </span>
+                          </span>
+                          {selected ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--xv-chat-accent)]" /> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
 
           <button
             aria-label="Share chat"
@@ -2527,8 +2961,6 @@ function ChatTopbar({
           >
             <Share2 className="h-4 w-4" />
           </button>
-
-          <ThemeToggleButton compact />
 
           <div className="relative">
             <button
@@ -2756,6 +3188,7 @@ function ChatThreadView({
   desktopFolderOpen,
   desktopToolBar,
   error,
+  feedbackByMessageId,
   fileInputRef,
   isDesktop,
   isStreaming,
@@ -2765,6 +3198,7 @@ function ChatThreadView({
   messagesRef,
   onApplyAssistantCode,
   onCopyResponse,
+  onFeedback,
   onFilesSelected,
   onPromptChange,
   onRegenerate,
@@ -2796,6 +3230,7 @@ function ChatThreadView({
   messagesRef: RefObject<HTMLDivElement | null>;
   onApplyAssistantCode: (message: ChatMessage) => void;
   onCopyResponse: (message: ChatMessage) => Promise<void>;
+  onFeedback: (messageId: string, value: "good" | "bad") => void;
   onFilesSelected: (files: FileList | File[]) => void;
   onPromptChange: (value: string) => void;
   onRegenerate: () => void;
@@ -2810,6 +3245,7 @@ function ChatThreadView({
   thinking: boolean;
   toolExecutionsByMessageId: Record<string, ChatToolExecution[]>;
   voiceState: VoiceState;
+  feedbackByMessageId: Record<string, "good" | "bad">;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -2824,6 +3260,7 @@ function ChatThreadView({
               const isLatestAssistant = lastAssistantMessage?.id === message.id;
               const assistantModelLabel = getAssistantModelLabel(message.modelKey, message.provider);
               const toolExecutions = toolExecutionsByMessageId[message.id] || [];
+              const feedback = feedbackByMessageId[message.id];
               const canApplyAssistantCode =
                 isDesktop && desktopFolderOpen && Boolean(activeDesktopFilePath) && Boolean(extractPrimaryCodeBlock(message.content));
 
@@ -2882,6 +3319,32 @@ function ChatThreadView({
                             >
                               {copiedResponseId === message.id ? "Copied" : "Copy"}
                             </button>
+                            <button
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[12px] transition",
+                                feedback === "good"
+                                  ? "text-[var(--xv-chat-accent)]"
+                                  : "text-[var(--xv-chat-muted)] hover:text-[var(--xv-chat-text)]"
+                              )}
+                              onClick={() => onFeedback(message.id, "good")}
+                              type="button"
+                            >
+                              <ThumbsUp className="h-3.5 w-3.5" />
+                              <span>Good</span>
+                            </button>
+                            <button
+                              className={cn(
+                                "inline-flex items-center gap-1 text-[12px] transition",
+                                feedback === "bad"
+                                  ? "text-[#ef4444]"
+                                  : "text-[var(--xv-chat-muted)] hover:text-[var(--xv-chat-text)]"
+                              )}
+                              onClick={() => onFeedback(message.id, "bad")}
+                              type="button"
+                            >
+                              <ThumbsDown className="h-3.5 w-3.5" />
+                              <span>Bad</span>
+                            </button>
                             {isLatestAssistant ? (
                               <>
                                 <button
@@ -2900,6 +3363,9 @@ function ChatThreadView({
                                 </button>
                               </>
                             ) : null}
+                            <span className="rounded-full border border-[var(--xv-chat-border)] px-2 py-0.5 text-[10px] text-[var(--xv-chat-muted)]">
+                              {assistantModelLabel}
+                            </span>
                             {canApplyAssistantCode ? (
                               <button
                                 className="text-[12px] text-[var(--xv-chat-accent)] transition hover:text-[var(--xv-chat-text)]"
@@ -3191,7 +3657,7 @@ function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] })
 
 function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boolean }) {
   return (
-    <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-text)]">
+    <>
       <span className="relative inline-flex h-2.5 w-2.5">
         {pulse ? (
           <motion.span
@@ -3205,7 +3671,7 @@ function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boo
       </span>
       <span>{model.label}</span>
       <ChevronDown className="h-3.5 w-3.5 text-[var(--xv-chat-muted)]" />
-    </div>
+    </>
   );
 }
 
@@ -3257,6 +3723,152 @@ function StatusRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-start justify-between gap-4">
       <span className="text-[var(--xv-chat-muted)]">{label}</span>
       <span className="max-w-[160px] text-right text-[var(--xv-chat-text)]">{value}</span>
+    </div>
+  );
+}
+
+function ProfileMenuButton({
+  destructive = false,
+  icon: Icon,
+  label,
+  onClick
+}: {
+  destructive?: boolean;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={cn(
+        "flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[13px] transition",
+        destructive
+          ? "text-[#ef4444] hover:bg-[rgba(239,68,68,0.12)]"
+          : "text-[var(--xv-chat-text)] hover:bg-[var(--xv-chat-ghost-bg)]"
+      )}
+      onClick={onClick}
+      type="button"
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function KeyboardShortcutsModal({ onClose }: { onClose: () => void }) {
+  const shortcuts = [
+    ["⌘ K", "Search chats"],
+    ["⌘ N", "New chat"],
+    ["⌘ ,", "Settings"],
+    ["⌘ /", "Show shortcuts"],
+    ["Esc", "Close / cancel"],
+    ["Enter", "Send message"],
+    ["Shift+Enter", "New line"]
+  ];
+
+  return (
+    <ModalShell onClose={onClose} title="Keyboard shortcuts">
+      <div className="space-y-2">
+        {shortcuts.map(([keys, label]) => (
+          <div className="flex items-center justify-between gap-4 rounded-[12px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-4 py-3" key={keys}>
+            <span className="text-[14px] text-[var(--xv-chat-text)]">{label}</span>
+            <span className="rounded-[8px] border border-[var(--xv-chat-border-strong)] px-2 py-1 font-mono text-[12px] text-[var(--xv-chat-muted)]">
+              {keys}
+            </span>
+          </div>
+        ))}
+      </div>
+    </ModalShell>
+  );
+}
+
+function SearchCommandModal({
+  onClose,
+  onOpenSession,
+  query,
+  results,
+  setQuery
+}: {
+  onClose: () => void;
+  onOpenSession: (sessionId: string) => void;
+  query: string;
+  results: ChatSessionSummary[];
+  setQuery: (value: string) => void;
+}) {
+  return (
+    <ModalShell onClose={onClose} title="Search chats">
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 rounded-[14px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-4 py-3">
+          <Search className="h-4 w-4 text-[var(--xv-chat-muted)]" />
+          <input
+            autoFocus
+            className="w-full bg-transparent text-[14px] text-[var(--xv-chat-text)] outline-none placeholder:text-[var(--xv-chat-muted)]"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search chats"
+            value={query}
+          />
+        </div>
+
+        <div className="max-h-[420px] space-y-1 overflow-y-auto">
+          {results.length ? (
+            results.map((session) => (
+              <button
+                className="flex w-full items-start gap-3 rounded-[12px] border border-transparent px-3 py-3 text-left transition hover:border-[var(--xv-chat-border)] hover:bg-[var(--xv-chat-ghost-bg)]"
+                key={session.id}
+                onClick={() => onOpenSession(session.id)}
+                type="button"
+              >
+                <Command className="mt-0.5 h-4 w-4 shrink-0 text-[var(--xv-chat-accent)]" />
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-medium text-[var(--xv-chat-text)]">{session.title}</p>
+                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[var(--xv-chat-muted)]">
+                    {session.preview || "Open this conversation"}
+                  </p>
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className="rounded-[12px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-4 py-4 text-[13px] text-[var(--xv-chat-muted)]">
+              No matching chats.
+            </div>
+          )}
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function ModalShell({
+  children,
+  onClose,
+  title
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  title: string;
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center bg-[rgba(14,11,8,0.72)] px-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[560px] rounded-[22px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-sidebar)] p-5 shadow-[var(--xv-chat-shadow)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h3 className="text-[18px] font-medium text-[var(--xv-chat-text)]">{title}</h3>
+          <button
+            aria-label={`Close ${title}`}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
@@ -3373,15 +3985,40 @@ type ModelPillData = {
   label: string;
 };
 
-function getTopbarModelMeta(modelKey: ModelKey, resolvedModel?: string | null): ModelPillData {
+function getTopbarModelMeta(
+  presetId: ModelPickerId,
+  modelKey: ModelKey,
+  resolvedModel?: string | null
+): ModelPillData {
+  const preset = modelPickerOptions.find((option) => option.id === presetId);
+  if (preset && preset.id !== "auto") {
+    return { dotColor: preset.dotColor, label: preset.shortLabel };
+  }
+
   const map: Record<ModelKey, ModelPillData> = {
-    claude: { dotColor: coralAccent, label: resolvedModel || "Claude" },
-    "gpt-4o": { dotColor: "#16a34a", label: resolvedModel || "GPT-4o" },
-    gemini: { dotColor: "#2563eb", label: resolvedModel || "Gemini" },
-    "orbit-auto": { dotColor: coralAccent, label: resolvedModel || "Xeivora" }
+    claude: { dotColor: coralAccent, label: resolvedModel || "Xeivora" },
+    "gpt-4o": { dotColor: "#16a34a", label: resolvedModel || "Xeivora" },
+    gemini: { dotColor: "#2563eb", label: resolvedModel || "Xeivora" },
+    "orbit-auto": { dotColor: coralAccent, label: "Xeivora" }
   };
 
   return map[modelKey];
+}
+
+function modelKeyToPresetId(modelKey: ModelKey): ModelPickerId {
+  if (modelKey === "claude") {
+    return "claude-sonnet";
+  }
+
+  if (modelKey === "gpt-4o") {
+    return "gpt-4o";
+  }
+
+  if (modelKey === "gemini") {
+    return "gemini-2.5-pro";
+  }
+
+  return "auto";
 }
 
 function providerToModelKey(provider: ProviderKey): ModelKey {
