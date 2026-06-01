@@ -1,17 +1,44 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type SyncState = "idle" | "syncing" | "success" | "error" | "cancelled";
 
 export function PricingStatusBanner({ floating = false }: { floating?: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const payment = searchParams.get("payment");
   const sessionId = searchParams.get("session_id");
   const [syncState, setSyncState] = useState<SyncState>(payment === "cancelled" ? "cancelled" : "idle");
   const [message, setMessage] = useState<string | null>(payment === "cancelled" ? "Checkout cancelled." : null);
+
+  useEffect(() => {
+    if (payment !== "cancelled") {
+      return;
+    }
+
+    setSyncState("cancelled");
+    setMessage("Checkout cancelled.");
+
+    const timeout = window.setTimeout(() => {
+      setSyncState("idle");
+      setMessage(null);
+
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("payment");
+      params.delete("session_id");
+
+      const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.replace(nextUrl, { scroll: false });
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [pathname, payment, router, searchParams]);
 
   useEffect(() => {
     if (payment !== "success" || !sessionId) {
