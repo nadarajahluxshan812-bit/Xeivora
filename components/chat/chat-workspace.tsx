@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -11,8 +11,11 @@ import {
   BrainCircuit,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   Code2,
   Ellipsis,
+  Folder,
+  FolderOpen,
   FileText,
   FolderKanban,
   FolderPlus,
@@ -25,8 +28,10 @@ import {
   Paperclip,
   Pencil,
   Plane,
+  PlugZap,
   Plus,
   Search,
+  Save,
   Settings2,
   Share2,
   Square,
@@ -37,7 +42,7 @@ import {
   X
 } from "lucide-react";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, RefObject } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 
 import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
@@ -45,6 +50,7 @@ import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
 import { OrbitLogo, XeivoraGlyph } from "@/components/orbit-logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useElectron, type DesktopFileNode } from "@/hooks/useElectron";
 import type { AuthUser } from "@/lib/auth-types";
 import type {
   ChatBootstrap,
@@ -52,6 +58,8 @@ import type {
   ChatSession,
   ChatSessionSummary,
   ChatToolExecution,
+  IntegrationConnectionSummary,
+  IntegrationProvider,
   ModelSwitch,
   ModelKey,
   OrchestrationStep,
@@ -73,6 +81,7 @@ const navItems: SidebarItem[] = [
   { label: "Memory", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows" },
   { label: "Agents", icon: Bot, href: "/agents" },
+  { label: "Integrations", icon: PlugZap, href: "/integrations" },
   { label: "Settings", icon: Settings2, href: "/settings" }
 ];
 
@@ -131,6 +140,21 @@ type SuggestionCard = {
 type ContinuityState = StreamContinuityPayload;
 type VoiceState = "idle" | "listening" | "processing";
 type WorkflowMode = "simple_chat" | "continuity" | "coding_continuity";
+type DesktopSaveState = "idle" | "saving" | "saved" | "error";
+type DesktopApplyDraft = {
+  currentContent: string;
+  messageId: string;
+  nextContent: string;
+  targetPath: string;
+};
+type DesktopCommandResult = {
+  command: string;
+  error?: string | null;
+  exitCode?: number;
+  stderr?: string;
+  stdout?: string;
+  success: boolean;
+};
 
 const chatTheme = {
   "--xeivora-coral": coralAccent,
@@ -157,9 +181,30 @@ const chatTheme = {
 
 export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    activeFile,
+    activeFileContent,
+    completeFirstLaunch,
+    fileTree,
+    fileTreeLoading,
+    firstLaunchComplete,
+    folderLabel,
+    isDesktop,
+    openFileInEditor,
+    openFolder,
+    openFolderPath,
+    readFileForAI,
+    runCommand,
+    saveFile,
+    setActiveFile,
+    setActiveFileContent
+  } = useElectron();
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
+  const [integrations, setIntegrations] = useState<IntegrationConnectionSummary[]>([]);
+  const [enabledIntegrationProviders, setEnabledIntegrationProviders] = useState<IntegrationProvider[]>([]);
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
   const [sessionFiles, setSessionFiles] = useState<UploadedFileSummary[]>([]);
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
@@ -187,6 +232,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [autoSwitchNotice, setAutoSwitchNotice] = useState<ModelSwitch | null>(null);
   const [modelPulseActive, setModelPulseActive] = useState(false);
   const [toolExecutionsByMessageId, setToolExecutionsByMessageId] = useState<Record<string, ChatToolExecution[]>>({});
+  const [desktopExpandedFolders, setDesktopExpandedFolders] = useState<Record<string, boolean>>({});
+  const [desktopSaveState, setDesktopSaveState] = useState<DesktopSaveState>("idle");
+  const [desktopApplyDraft, setDesktopApplyDraft] = useState<DesktopApplyDraft | null>(null);
+  const [desktopCommandOpen, setDesktopCommandOpen] = useState(false);
+  const [desktopCommandInput, setDesktopCommandInput] = useState("");
+  const [desktopCommandRunning, setDesktopCommandRunning] = useState(false);
+  const [desktopCommandResult, setDesktopCommandResult] = useState<DesktopCommandResult | null>(null);
   const [continuityStatus, setContinuityStatus] = useState<ContinuityState>({
     currentProvider: "simulation",
     currentModel: null,
@@ -215,6 +267,10 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const viewerName = viewer?.name || "Nadarajah Luxshan";
   const filteredSessions = useMemo(() => sessions, [sessions]);
   const groupedSessions = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
+  const connectedIntegrations = useMemo(
+    () => integrations.filter((integration) => integration.connected),
+    [integrations]
+  );
   const lastAssistantMessage = useMemo(
     () => messages.filter((message) => message.role === "assistant").slice(-1)[0] || null,
     [messages]
@@ -250,12 +306,40 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     activeSession?.title && activeSession.title.trim() !== "New Xeivora chat"
       ? activeSession.title
       : "New chat";
+  const showDesktopPreview = isDesktop && Boolean(activeFile);
 
   useEffect(() => {
     setModelPulseActive(true);
     const timeout = window.setTimeout(() => setModelPulseActive(false), 900);
     return () => window.clearTimeout(timeout);
   }, [topbarModel.label, topbarModel.dotColor]);
+
+  useEffect(() => {
+    if (openFolderPath) {
+      setDesktopExpandedFolders((current) => ({
+        ...current,
+        [openFolderPath]: true
+      }));
+    }
+  }, [openFolderPath]);
+
+  useEffect(() => {
+    if (!isDesktop || typeof window === "undefined" || !window.xeivora) {
+      return undefined;
+    }
+
+    const removeNewChatListener = window.xeivora.onNewChat(() => {
+      void handleNewChat();
+    });
+    const removeNavigateListener = window.xeivora.onNavigate((href: string) => {
+      router.push(href);
+    });
+
+    return () => {
+      removeNewChatListener?.();
+      removeNavigateListener?.();
+    };
+  }, [isDesktop, router]);
 
   useEffect(() => {
     void bootstrapWorkspace().catch((nextError) => {
@@ -329,7 +413,19 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setProviderStatus(bootstrap.providerStatus);
       setSelectedModel(bootstrap.defaultModel);
       setProjects(bootstrap.projects);
+      setIntegrations(bootstrap.integrations || []);
+      setEnabledIntegrationProviders(
+        (bootstrap.integrations || [])
+          .filter((integration) => integration.connected)
+          .map((integration) => integration.provider)
+      );
     });
+  }
+
+  function handleToggleIntegration(provider: IntegrationProvider) {
+    setEnabledIntegrationProviders((current) =>
+      current.includes(provider) ? current.filter((entry) => entry !== provider) : [...current, provider]
+    );
   }
 
   async function loadSession(sessionId: string) {
@@ -733,6 +829,168 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     setRouteLabel("Generation stopped");
   }
 
+  function toggleDesktopFolder(path: string) {
+    setDesktopExpandedFolders((current) => ({
+      ...current,
+      [path]: !current[path]
+    }));
+  }
+
+  async function handleSaveActiveDesktopFile() {
+    if (!activeFile) {
+      return;
+    }
+
+    setDesktopSaveState("saving");
+    const saved = await saveFile(activeFile, activeFileContent);
+    setDesktopSaveState(saved ? "saved" : "error");
+    window.setTimeout(() => setDesktopSaveState("idle"), 1800);
+  }
+
+  async function handleApplyDesktopChanges() {
+    if (!desktopApplyDraft) {
+      return;
+    }
+
+    setDesktopSaveState("saving");
+    const saved = await saveFile(desktopApplyDraft.targetPath, desktopApplyDraft.nextContent);
+    setDesktopSaveState(saved ? "saved" : "error");
+
+    if (saved) {
+      setActiveFile(desktopApplyDraft.targetPath);
+      setActiveFileContent(desktopApplyDraft.nextContent);
+      setDesktopApplyDraft(null);
+    }
+
+    window.setTimeout(() => setDesktopSaveState("idle"), 1800);
+  }
+
+  async function handleDesktopListFilesPrompt() {
+    if (!isDesktop || !openFolderPath) {
+      setError("Open a folder in the Xeivora desktop app first.");
+      return;
+    }
+
+    const promptValue = "List the important files in this opened folder and tell me where I should work next.";
+    setPrompt(promptValue);
+    await handleSend(false, promptValue);
+  }
+
+  async function handleDesktopReadActiveFilePrompt() {
+    if (!isDesktop || !activeFile) {
+      setError("Open a file from the desktop file explorer first.");
+      return;
+    }
+
+    const fileName = activeFile.split(/[\\/]/).pop() || "this file";
+    const promptValue = `Review the currently open file ${fileName} and suggest the best next changes.`;
+    setPrompt(promptValue);
+    await handleSend(false, promptValue);
+  }
+
+  async function handleRunDesktopCommand() {
+    if (!desktopCommandInput.trim()) {
+      return;
+    }
+
+    setDesktopCommandRunning(true);
+    setDesktopCommandResult(null);
+
+    try {
+      const result = await runCommand(desktopCommandInput.trim());
+      setDesktopCommandResult({
+        command: desktopCommandInput.trim(),
+        error: result?.error || null,
+        exitCode: typeof result?.exitCode === "number" ? result.exitCode : 0,
+        stderr: result?.stderr || "",
+        stdout: result?.stdout || "",
+        success: Boolean(result?.success)
+      });
+    } finally {
+      setDesktopCommandRunning(false);
+    }
+  }
+
+  async function handleSendDesktopCommandResultToChat() {
+    if (!desktopCommandResult) {
+      return;
+    }
+
+    const commandPrompt = [
+      `I ran this local command in Xeivora desktop: ${desktopCommandResult.command}`,
+      desktopCommandResult.stdout ? `STDOUT:\n${desktopCommandResult.stdout}` : null,
+      desktopCommandResult.stderr ? `STDERR:\n${desktopCommandResult.stderr}` : null,
+      `Exit code: ${desktopCommandResult.exitCode ?? 0}`,
+      "Explain the result and tell me the best next step."
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    setDesktopCommandOpen(false);
+    setPrompt(commandPrompt);
+    await handleSend(false, commandPrompt);
+  }
+
+  function handleOpenDesktopCommandModal() {
+    if (!isDesktop || !openFolderPath) {
+      setError("Open a folder in the Xeivora desktop app first.");
+      return;
+    }
+
+    setDesktopCommandOpen(true);
+  }
+
+  function handlePrepareAssistantApply(message: ChatMessage) {
+    if (!activeFile) {
+      setError("Open a file in the desktop sidebar first so Xeivora knows where to apply the change.");
+      return;
+    }
+
+    const codeBlock = extractPrimaryCodeBlock(message.content);
+    if (!codeBlock) {
+      setError("This response does not contain a code block Xeivora can apply.");
+      return;
+    }
+
+    setDesktopApplyDraft({
+      messageId: message.id,
+      targetPath: activeFile,
+      currentContent: activeFileContent,
+      nextContent: normalizeCodeForApply(codeBlock.code)
+    });
+  }
+
+  async function buildDesktopContext(input: string) {
+    if (!isDesktop || !openFolderPath) {
+      return null;
+    }
+
+    const prompt = `${input}`.trim();
+    const matchedFile = await findMentionedDesktopFile({
+      activeFilePath: activeFile,
+      activeFileContent,
+      fileTree,
+      prompt,
+      readFileForAI
+    });
+
+    if (!matchedFile && !activeFile) {
+      return [
+        `The user is working in the Xeivora desktop app.`,
+        `Open folder: ${openFolderPath}`,
+        summarizeDesktopFileTree(fileTree),
+        `Only reference local file context if it is included below. Do not claim you changed local files or ran commands unless the user explicitly confirms that step.`
+      ].join("\n");
+    }
+
+    return formatDesktopContext({
+      activeFileContent,
+      activeFilePath: activeFile,
+      matchedFile,
+      openFolderPath
+    });
+  }
+
   async function handleShareSession() {
     if (!activeSession || typeof window === "undefined") {
       return;
@@ -767,6 +1025,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
     try {
       const session = activeSession ?? (await createSession());
+      const desktopContext = await buildDesktopContext(input);
       const assistantDraftId = `draft-${Date.now()}`;
 
       startTransition(() => {
@@ -814,7 +1073,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       const response = await fetch(`/api/chat/sessions/${session.id}/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, modelKey: selectedModel, regenerate }),
+        body: JSON.stringify({
+          input,
+          modelKey: selectedModel,
+          regenerate,
+          desktopContext,
+          enabledIntegrationProviders
+        }),
         signal: abortController.signal
       });
 
@@ -966,8 +1231,19 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
             collapsed={false}
+            connectedIntegrations={connectedIntegrations}
+            desktopExpandedFolders={desktopExpandedFolders}
+            desktopFileTree={fileTree}
+            desktopFolderLabel={folderLabel}
+            desktopFolderOpen={Boolean(openFolderPath)}
+            desktopLoading={fileTreeLoading}
+            desktopOpenFilePath={activeFile}
+            isDesktop={isDesktop}
             onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
             onDismiss={() => setMobileSidebarOpen(false)}
+            onDesktopFileOpen={(filePath) => void openFileInEditor(filePath)}
+            onDesktopFolderOpen={() => void openFolder()}
+            onDesktopFolderToggle={toggleDesktopFolder}
             onNewChat={() => void handleNewChat()}
             onAssignProject={(sessionId, projectId) => void handleAssignSessionProject(sessionId, projectId)}
             onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
@@ -998,9 +1274,20 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             <SidebarContent
               activeSessionId={activeSession?.id ?? null}
               collapsed={false}
+              connectedIntegrations={connectedIntegrations}
+              desktopExpandedFolders={desktopExpandedFolders}
+              desktopFileTree={fileTree}
+              desktopFolderLabel={folderLabel}
+              desktopFolderOpen={Boolean(openFolderPath)}
+              desktopLoading={fileTreeLoading}
+              desktopOpenFilePath={activeFile}
+              isDesktop={isDesktop}
               mobile
               onDeleteSession={(sessionId) => void handleDeleteSession(sessionId)}
               onDismiss={() => setMobileSidebarOpen(false)}
+              onDesktopFileOpen={(filePath) => void openFileInEditor(filePath)}
+              onDesktopFolderOpen={() => void openFolder()}
+              onDesktopFolderToggle={toggleDesktopFolder}
               onNewChat={() => void handleNewChat()}
               onAssignProject={(sessionId, projectId) => void handleAssignSessionProject(sessionId, projectId)}
               onPinSession={(sessionId, pinned) => void handlePinSession(sessionId, pinned)}
@@ -1057,61 +1344,136 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           />
 
           <div className="min-h-0 flex-1 pt-[50px]">
-            {hasMessages ? (
-              <ChatThreadView
-                autoSwitchNotice={autoSwitchNotice}
-                composerRef={composerRef}
-                copiedResponseId={copiedResponseId}
-                error={error}
-                fileInputRef={fileInputRef}
-                isStreaming={isStreaming}
-                isUploadingFiles={isUploadingFiles}
-                lastAssistantMessage={lastAssistantMessage}
-                messages={messages}
-                messagesRef={messagesRef}
-                onCopyResponse={async (message) => {
-                  await navigator.clipboard.writeText(message.content);
-                  setCopiedResponseId(message.id);
-                  setTimeout(() => setCopiedResponseId(null), 1200);
+            <div className={cn("flex h-full min-h-0", showDesktopPreview ? "xl:grid xl:grid-cols-[minmax(0,1fr)_380px]" : "")}>
+              <div className="min-h-0 min-w-0">
+                {hasMessages ? (
+                  <ChatThreadView
+                    activeDesktopFilePath={activeFile}
+                    autoSwitchNotice={autoSwitchNotice}
+                    composerRef={composerRef}
+                    copiedResponseId={copiedResponseId}
+                    desktopFolderOpen={Boolean(openFolderPath)}
+                    desktopToolBar={
+                      isDesktop ? (
+                        <DesktopToolBar
+                          activeFilePath={activeFile}
+                          folderOpen={Boolean(openFolderPath)}
+                          onListFiles={() => void handleDesktopListFilesPrompt()}
+                          onOpenFolder={() => void openFolder()}
+                          onReadActiveFile={() => void handleDesktopReadActiveFilePrompt()}
+                          onRunCommand={handleOpenDesktopCommandModal}
+                        />
+                      ) : null
+                    }
+                    error={error}
+                    fileInputRef={fileInputRef}
+                    isStreaming={isStreaming}
+                    isDesktop={isDesktop}
+                    isUploadingFiles={isUploadingFiles}
+                    lastAssistantMessage={lastAssistantMessage}
+                    messages={messages}
+                    messagesRef={messagesRef}
+                    onApplyAssistantCode={(message) => handlePrepareAssistantApply(message)}
+                    onCopyResponse={async (message) => {
+                      await navigator.clipboard.writeText(message.content);
+                      setCopiedResponseId(message.id);
+                      setTimeout(() => setCopiedResponseId(null), 1200);
+                    }}
+                    onFilesSelected={(files) => void handleUploadFiles(files)}
+                    onPromptChange={setPrompt}
+                    onRegenerate={() => void handleSend(true)}
+                    onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
+                    onRetry={() => void handleSend(true)}
+                    onSend={() => void handleSend(false)}
+                    onStartVoiceCapture={() => void startVoiceCapture()}
+                    onStop={stopGenerating}
+                    onStopVoiceCapture={stopVoiceCapture}
+                    prompt={prompt}
+                    sessionFiles={sessionFiles}
+                    thinking={thinking}
+                    toolExecutionsByMessageId={toolExecutionsByMessageId}
+                    voiceState={voiceState}
+                  />
+                ) : (
+                  <ChatHomeView
+                    composerRef={composerRef}
+                    desktopToolBar={
+                      isDesktop ? (
+                        <DesktopToolBar
+                          activeFilePath={activeFile}
+                          folderOpen={Boolean(openFolderPath)}
+                          onListFiles={() => void handleDesktopListFilesPrompt()}
+                          onOpenFolder={() => void openFolder()}
+                          onReadActiveFile={() => void handleDesktopReadActiveFilePrompt()}
+                          onRunCommand={handleOpenDesktopCommandModal}
+                        />
+                      ) : null
+                    }
+                    error={error}
+                    fileInputRef={fileInputRef}
+                    connectedIntegrations={connectedIntegrations}
+                    enabledIntegrationProviders={enabledIntegrationProviders}
+                    isDesktop={isDesktop}
+                    isStreaming={isStreaming}
+                    isUploadingFiles={isUploadingFiles}
+                    onFilesSelected={(files) => void handleUploadFiles(files)}
+                    onPromptChange={setPrompt}
+                    onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
+                    onSend={() => void handleSend(false)}
+                    onStartVoiceCapture={() => void startVoiceCapture()}
+                    onStop={stopGenerating}
+                    onStopVoiceCapture={stopVoiceCapture}
+                    onToggleIntegration={handleToggleIntegration}
+                    onSuggestion={(value) => {
+                      setPrompt(value);
+                      void handleSend(false, value);
+                    }}
+                    prompt={prompt}
+                    sessionFiles={sessionFiles}
+                    voiceState={voiceState}
+                  />
+                )}
+              </div>
+
+              {showDesktopPreview ? (
+                <DesktopFilePreviewPanel
+                  content={activeFileContent}
+                  filePath={activeFile}
+                  onChange={setActiveFileContent}
+                  onClose={() => setActiveFile(null)}
+                  onSave={() => void handleSaveActiveDesktopFile()}
+                  saveState={desktopSaveState}
+                />
+              ) : null}
+            </div>
+
+            {isDesktop && !firstLaunchComplete ? (
+              <DesktopWelcomeOverlay onComplete={() => void completeFirstLaunch()} onOpenFolder={() => void openFolder()} />
+            ) : null}
+
+            {desktopCommandOpen ? (
+              <DesktopCommandModal
+                command={desktopCommandInput}
+                onChange={setDesktopCommandInput}
+                onClose={() => {
+                  setDesktopCommandOpen(false);
+                  setDesktopCommandResult(null);
                 }}
-                onFilesSelected={(files) => void handleUploadFiles(files)}
-                onPromptChange={setPrompt}
-                onRegenerate={() => void handleSend(true)}
-                onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
-                onRetry={() => void handleSend(true)}
-                onSend={() => void handleSend(false)}
-                onStartVoiceCapture={() => void startVoiceCapture()}
-                onStop={stopGenerating}
-                onStopVoiceCapture={stopVoiceCapture}
-                prompt={prompt}
-                sessionFiles={sessionFiles}
-                thinking={thinking}
-                toolExecutionsByMessageId={toolExecutionsByMessageId}
-                voiceState={voiceState}
+                onRun={() => void handleRunDesktopCommand()}
+                onSendToChat={() => void handleSendDesktopCommandResultToChat()}
+                result={desktopCommandResult}
+                running={desktopCommandRunning}
               />
-            ) : (
-              <ChatHomeView
-                composerRef={composerRef}
-                error={error}
-                fileInputRef={fileInputRef}
-                isStreaming={isStreaming}
-                isUploadingFiles={isUploadingFiles}
-                onFilesSelected={(files) => void handleUploadFiles(files)}
-                onPromptChange={setPrompt}
-                onRemoveFile={(fileId) => void handleRemoveFile(fileId)}
-                onSend={() => void handleSend(false)}
-                onStartVoiceCapture={() => void startVoiceCapture()}
-                onStop={stopGenerating}
-                onStopVoiceCapture={stopVoiceCapture}
-                onSuggestion={(value) => {
-                  setPrompt(value);
-                  void handleSend(false, value);
-                }}
-                prompt={prompt}
-                sessionFiles={sessionFiles}
-                voiceState={voiceState}
+            ) : null}
+
+            {desktopApplyDraft ? (
+              <DesktopApplyDiffModal
+                draft={desktopApplyDraft}
+                onApply={() => void handleApplyDesktopChanges()}
+                onClose={() => setDesktopApplyDraft(null)}
+                saveState={desktopSaveState}
               />
-            )}
+            ) : null}
           </div>
         </main>
       </div>
@@ -1122,11 +1484,22 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 type SidebarContentProps = {
   activeSessionId: string | null;
   collapsed: boolean;
+  connectedIntegrations: IntegrationConnectionSummary[];
+  desktopExpandedFolders: Record<string, boolean>;
+  desktopFileTree: DesktopFileNode[];
+  desktopFolderLabel: string | null;
+  desktopFolderOpen: boolean;
+  desktopLoading: boolean;
+  desktopOpenFilePath: string | null;
   editingSessionId: string | null;
   editingSessionTitle: string;
+  isDesktop: boolean;
   mobile?: boolean;
   onAssignProject: (sessionId: string, projectId: string | null) => void;
   onDeleteSession: (sessionId: string) => void;
+  onDesktopFileOpen: (filePath: string) => void;
+  onDesktopFolderOpen: () => void;
+  onDesktopFolderToggle: (path: string) => void;
   onDismiss?: () => void;
   onEditingSessionCancel: () => void;
   onEditingSessionSubmit: (sessionId: string) => void;
@@ -1149,11 +1522,22 @@ type SidebarContentProps = {
 function SidebarContent({
   activeSessionId,
   collapsed,
+  connectedIntegrations,
+  desktopExpandedFolders,
+  desktopFileTree,
+  desktopFolderLabel,
+  desktopFolderOpen,
+  desktopLoading,
+  desktopOpenFilePath,
   editingSessionId,
   editingSessionTitle,
+  isDesktop,
   mobile = false,
   onAssignProject,
   onDeleteSession,
+  onDesktopFileOpen,
+  onDesktopFolderOpen,
+  onDesktopFolderToggle,
   onDismiss,
   onEditingSessionCancel,
   onEditingSessionSubmit,
@@ -1229,55 +1613,95 @@ function SidebarContent({
           </nav>
 
           <div className="mt-2 min-h-0 flex-1 overflow-hidden">
-            <div className="mb-1 flex items-center justify-between px-2">
-              <p className="text-[11px] font-normal tracking-[0.01em] text-[rgba(240,234,216,0.35)]">
-                Recents
-              </p>
-            </div>
+            <div className="flex h-full min-h-0 flex-col">
+              {isDesktop ? (
+                <DesktopFileExplorerSection
+                  activeFilePath={desktopOpenFilePath}
+                  expandedFolders={desktopExpandedFolders}
+                  fileTree={desktopFileTree}
+                  folderLabel={desktopFolderLabel}
+                  folderOpen={desktopFolderOpen}
+                  loading={desktopLoading}
+                  onFileOpen={(filePath) => {
+                    onDesktopFileOpen(filePath);
+                    onDismiss?.();
+                  }}
+                  onFolderOpen={onDesktopFolderOpen}
+                  onFolderToggle={onDesktopFolderToggle}
+                />
+              ) : null}
 
-            <ScrollArea className="h-full pr-1">
-              <div className="space-y-3 pb-4">
-                {sessionGroups.length ? (
-                  sessionGroups.map(([group, items]) => (
-                    <div className="space-y-1" key={group}>
-                      <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
-                        {group}
-                      </h3>
-                      {items.map((session) => (
-                        <RecentSessionRow
-                          active={activeSessionId === session.id}
-                          editing={editingSessionId === session.id}
-                          editingTitle={editingSessionTitle}
-                          key={session.id}
-                          menuProjectOpen={openProjectMenuId === session.id}
-                          menuOpen={openSessionMenuId === session.id}
-                          onAssignProject={(projectId) => onAssignProject(session.id, projectId)}
-                          onDelete={() => onDeleteSession(session.id)}
-                          onEditingCancel={onEditingSessionCancel}
-                          onEditingSubmit={() => onEditingSessionSubmit(session.id)}
-                          onEditingTitleChange={onEditingSessionTitleChange}
-                          onOpenChange={(nextOpen) => onToggleSessionMenu(nextOpen ? session.id : null)}
-                          onProjectMenuOpenChange={(nextOpen) => onToggleProjectMenu(nextOpen ? session.id : null)}
-                          onPin={() => onPinSession(session.id, !session.pinned)}
-                          onRename={() => onRenameSession(session.id)}
-                          onSelect={() => {
-                            onSelectSession(session.id);
-                            onDismiss?.();
-                          }}
-                          projects={projects}
-                          session={session}
-                        />
-                      ))}
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-2 pt-2 text-[13px] text-[var(--xv-chat-muted)]">No recent chats yet.</div>
-                )}
+              <div className="mb-1 flex items-center justify-between px-2">
+                <p className="text-[11px] font-normal tracking-[0.01em] text-[rgba(240,234,216,0.35)]">
+                  Recents
+                </p>
               </div>
-            </ScrollArea>
+
+              <ScrollArea className="h-full pr-1">
+                <div className="space-y-3 pb-4">
+                  {sessionGroups.length ? (
+                    sessionGroups.map(([group, items]) => (
+                      <div className="space-y-1" key={group}>
+                        <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                          {group}
+                        </h3>
+                        {items.map((session) => (
+                          <RecentSessionRow
+                            active={activeSessionId === session.id}
+                            editing={editingSessionId === session.id}
+                            editingTitle={editingSessionTitle}
+                            key={session.id}
+                            menuProjectOpen={openProjectMenuId === session.id}
+                            menuOpen={openSessionMenuId === session.id}
+                            onAssignProject={(projectId) => onAssignProject(session.id, projectId)}
+                            onDelete={() => onDeleteSession(session.id)}
+                            onEditingCancel={onEditingSessionCancel}
+                            onEditingSubmit={() => onEditingSessionSubmit(session.id)}
+                            onEditingTitleChange={onEditingSessionTitleChange}
+                            onOpenChange={(nextOpen) => onToggleSessionMenu(nextOpen ? session.id : null)}
+                            onProjectMenuOpenChange={(nextOpen) => onToggleProjectMenu(nextOpen ? session.id : null)}
+                            onPin={() => onPinSession(session.id, !session.pinned)}
+                            onRename={() => onRenameSession(session.id)}
+                            onSelect={() => {
+                              onSelectSession(session.id);
+                              onDismiss?.();
+                            }}
+                            projects={projects}
+                            session={session}
+                          />
+                        ))}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-2 pt-2 text-[13px] text-[var(--xv-chat-muted)]">No recent chats yet.</div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
 
           <div className="mt-auto border-t border-[rgba(201,100,66,0.1)] px-1 pt-2">
+            {connectedIntegrations.length ? (
+              <div className="mb-2 px-1.5">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                  Connected apps
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {connectedIntegrations.map((integration) => (
+                    <Link
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[rgba(201,100,66,0.15)] bg-[var(--xv-chat-surface)] px-2 text-[10px] font-medium text-[rgba(240,234,216,0.75)] transition hover:border-[rgba(201,100,66,0.28)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+                      href="/integrations"
+                      key={integration.provider}
+                      onClick={() => onDismiss?.()}
+                      title={integration.label}
+                    >
+                      {integration.label.slice(0, 2).toUpperCase()}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[rgba(201,100,66,0.08)]">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[10px] font-medium text-white">
                 {getInitials(profileName)}
@@ -1551,6 +1975,499 @@ function SessionMenuButton({
   );
 }
 
+function DesktopFileExplorerSection({
+  activeFilePath,
+  expandedFolders,
+  fileTree,
+  folderLabel,
+  folderOpen,
+  loading,
+  onFileOpen,
+  onFolderOpen,
+  onFolderToggle
+}: {
+  activeFilePath: string | null;
+  expandedFolders: Record<string, boolean>;
+  fileTree: DesktopFileNode[];
+  folderLabel: string | null;
+  folderOpen: boolean;
+  loading: boolean;
+  onFileOpen: (filePath: string) => void;
+  onFolderOpen: () => void;
+  onFolderToggle: (path: string) => void;
+}) {
+  return (
+    <div className="mb-3 border-b border-t border-[rgba(201,100,66,0.1)] py-3">
+      <div className="mb-2 flex items-center justify-between px-2">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">Files</p>
+        <button
+          className="inline-flex h-7 items-center gap-1.5 rounded-[8px] border border-[rgba(201,100,66,0.28)] px-2.5 font-mono text-[11px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+          onClick={onFolderOpen}
+          type="button"
+        >
+          <FolderOpen className="h-3.5 w-3.5 text-[rgba(201,100,66,0.72)]" />
+          <span>{folderOpen ? "Change folder" : "Open folder"}</span>
+        </button>
+      </div>
+
+      {folderOpen ? (
+        <div className="space-y-2">
+          <div className="px-2 text-[11px] text-[rgba(240,234,216,0.52)]">
+            {folderLabel || "Project folder"}
+          </div>
+
+          <ScrollArea className="max-h-[300px] pr-1">
+            <div className="space-y-0.5 px-1">
+              {loading ? (
+                <div className="px-2 py-2 text-[12px] text-[var(--xv-chat-muted)]">Loading files...</div>
+              ) : fileTree.length ? (
+                fileTree.map((node) => (
+                  <DesktopFileTreeNode
+                    activeFilePath={activeFilePath}
+                    expandedFolders={expandedFolders}
+                    key={node.path}
+                    level={0}
+                    node={node}
+                    onFileOpen={onFileOpen}
+                    onFolderToggle={onFolderToggle}
+                  />
+                ))
+              ) : (
+                <div className="px-2 py-2 text-[12px] text-[var(--xv-chat-muted)]">No visible files in this folder yet.</div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+      ) : (
+        <div className="px-2 text-[12px] text-[var(--xv-chat-muted)]">
+          Open a folder in the desktop app to browse local files safely inside Xeivora.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DesktopFileTreeNode({
+  activeFilePath,
+  expandedFolders,
+  level,
+  node,
+  onFileOpen,
+  onFolderToggle
+}: {
+  activeFilePath: string | null;
+  expandedFolders: Record<string, boolean>;
+  level: number;
+  node: DesktopFileNode;
+  onFileOpen: (filePath: string) => void;
+  onFolderToggle: (path: string) => void;
+}) {
+  const expanded = expandedFolders[node.path] ?? level < 1;
+  const isActive = activeFilePath === node.path;
+
+  if (node.isDirectory) {
+    return (
+      <div>
+        <button
+          className="flex w-full items-center gap-1 rounded-[6px] px-2 py-1 text-left transition hover:bg-[rgba(201,100,66,0.08)]"
+          onClick={() => onFolderToggle(node.path)}
+          style={{ paddingLeft: `${8 + level * 12}px` }}
+          type="button"
+        >
+          {expanded ? (
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
+          )}
+          <Folder className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
+          <span className="truncate text-[12px] text-[rgba(240,234,216,0.78)]">{node.name}</span>
+        </button>
+
+        {expanded && node.children?.length ? (
+          <div className="space-y-0.5">
+            {node.children.map((child: DesktopFileNode) => (
+              <DesktopFileTreeNode
+                activeFilePath={activeFilePath}
+                expandedFolders={expandedFolders}
+                key={child.path}
+                level={level + 1}
+                node={child}
+                onFileOpen={onFileOpen}
+                onFolderToggle={onFolderToggle}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className={cn(
+        "flex w-full items-center gap-2 rounded-[6px] py-1.5 text-left transition",
+        isActive
+          ? "border-l-2 border-[var(--xv-chat-accent)] bg-[rgba(201,100,66,0.15)]"
+          : "hover:bg-[rgba(201,100,66,0.08)]"
+      )}
+      onClick={() => onFileOpen(node.path)}
+      style={{ paddingLeft: `${18 + level * 12}px`, paddingRight: "8px" }}
+      type="button"
+    >
+      <FileText className="h-3.5 w-3.5 shrink-0 text-[rgba(255,255,255,0.42)]" />
+      <span className="truncate text-[12px] text-[rgba(240,234,216,0.66)]">{node.name}</span>
+    </button>
+  );
+}
+
+function DesktopFilePreviewPanel({
+  content,
+  filePath,
+  onChange,
+  onClose,
+  onSave,
+  saveState
+}: {
+  content: string;
+  filePath: string | null;
+  onChange: (value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+  saveState: "idle" | "saving" | "saved" | "error";
+}) {
+  if (!filePath) {
+    return null;
+  }
+
+  return (
+    <aside className="hidden h-full min-h-0 border-l border-[rgba(201,100,66,0.12)] bg-[#120e0a] xl:flex xl:flex-col">
+      <div className="flex items-center gap-2 border-b border-[rgba(201,100,66,0.12)] px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-3 py-1">
+            <FileText className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
+            <span className="truncate text-[12px] text-[#f0ead8]">{filePath.split(/[\\/]/).pop()}</span>
+          </div>
+          <p className="mt-1 truncate text-[11px] text-[rgba(240,234,216,0.4)]">{filePath}</p>
+        </div>
+
+        <button
+          className="inline-flex h-8 items-center gap-2 rounded-[10px] border border-[rgba(201,100,66,0.2)] px-3 text-[12px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+          onClick={onSave}
+          type="button"
+        >
+          <Save className="h-3.5 w-3.5" />
+          <span>{desktopSaveLabel(saveState)}</span>
+        </button>
+
+        <button
+          aria-label="Close file preview"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+          onClick={onClose}
+          type="button"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <textarea
+        className="h-full min-h-0 w-full resize-none bg-transparent px-4 py-4 font-mono text-[12px] leading-6 text-[#f0ead8] outline-none"
+        onChange={(event) => onChange(event.target.value)}
+        spellCheck={false}
+        value={content}
+      />
+    </aside>
+  );
+}
+
+function DesktopWelcomeOverlay({
+  onComplete,
+  onOpenFolder
+}: {
+  onComplete: () => void;
+  onOpenFolder: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(14,11,8,0.82)] px-6 backdrop-blur-sm">
+      <div className="w-full max-w-[560px] rounded-[26px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+        <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-4 py-2">
+          <XeivoraGlyph size={20} />
+          <span className="text-[12px] font-medium tracking-[0.12em] text-[rgba(240,234,216,0.78)]">XEIVORA DESKTOP</span>
+        </div>
+
+        <h2 className="text-[32px] font-semibold tracking-[-0.03em] text-[#f0ead8]">Welcome to Xeivora</h2>
+        <p className="mt-3 max-w-[44ch] text-[15px] leading-7 text-[rgba(240,234,216,0.64)]">
+          Your AI operating system is ready. Sign in, open a project folder when you want desktop context, and keep your workflows continuous.
+        </p>
+
+        <div className="mt-6 space-y-3 rounded-[20px] border border-[rgba(201,100,66,0.14)] bg-[#1a1410] p-5">
+          {[
+            "1. Sign in to your Xeivora account",
+            "2. Open a project folder (optional)",
+            "3. Start chatting"
+          ].map((step) => (
+            <div className="flex items-start gap-3 text-[14px] text-[#f0ead8]" key={step}>
+              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--xv-chat-accent)]" />
+              <span>{step}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-4 text-[13px] leading-6 text-[rgba(240,234,216,0.52)]">
+          Xeivora accesses files only in folders you explicitly open. Your code stays private to this desktop session.
+        </p>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--xv-chat-accent)] px-5 text-[14px] font-medium text-white transition hover:bg-[#b45836]"
+            onClick={onComplete}
+            type="button"
+          >
+            <span>Get started</span>
+            <ArrowUp className="h-4 w-4 -rotate-45" />
+          </button>
+          <button
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-[rgba(201,100,66,0.2)] px-5 text-[14px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+            onClick={onOpenFolder}
+            type="button"
+          >
+            <FolderOpen className="h-4 w-4 text-[rgba(201,100,66,0.72)]" />
+            <span>Open project folder</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopToolBar({
+  activeFilePath,
+  folderOpen,
+  onListFiles,
+  onOpenFolder,
+  onReadActiveFile,
+  onRunCommand
+}: {
+  activeFilePath: string | null;
+  folderOpen: boolean;
+  onListFiles: () => void;
+  onOpenFolder: () => void;
+  onReadActiveFile: () => void;
+  onRunCommand: () => void;
+}) {
+  const activeFileLabel = activeFilePath?.split(/[\\/]/).pop() || "No file open";
+
+  return (
+    <div className="rounded-[16px] border border-[rgba(201,100,66,0.14)] bg-[rgba(201,100,66,0.04)] px-3 py-2.5">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.45)]">
+          Desktop xvr tools
+        </p>
+        <span className="truncate text-[11px] text-[rgba(240,234,216,0.45)]">
+          {folderOpen ? activeFileLabel : "Open a folder to enable local tools"}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <DesktopToolButton icon={FolderOpen} label={folderOpen ? "Change folder" : "Open folder"} onClick={onOpenFolder} />
+        <DesktopToolButton disabled={!folderOpen} icon={Search} label="xvr_list_files" onClick={onListFiles} />
+        <DesktopToolButton disabled={!activeFilePath} icon={FileText} label="xvr_read_file" onClick={onReadActiveFile} />
+        <DesktopToolButton disabled={!folderOpen} icon={Code2} label="xvr_run_command" onClick={onRunCommand} />
+      </div>
+    </div>
+  );
+}
+
+function DesktopToolButton({
+  disabled = false,
+  icon: Icon,
+  label,
+  onClick
+}: {
+  disabled?: boolean;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className="inline-flex h-8 items-center gap-2 rounded-full border border-[rgba(201,100,66,0.2)] bg-[#120e0a] px-3 font-mono text-[11px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)] disabled:cursor-not-allowed disabled:opacity-45"
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      <Icon className="h-3.5 w-3.5 text-[rgba(201,100,66,0.74)]" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function DesktopCommandModal({
+  command,
+  onChange,
+  onClose,
+  onRun,
+  onSendToChat,
+  result,
+  running
+}: {
+  command: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+  onRun: () => void;
+  onSendToChat: () => void;
+  result: DesktopCommandResult | null;
+  running: boolean;
+}) {
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[rgba(14,11,8,0.76)] px-6 backdrop-blur-sm">
+      <div className="w-full max-w-[760px] rounded-[24px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.45)]">xvr_run_command</p>
+            <h3 className="mt-1 text-[20px] font-medium text-[#f0ead8]">Run a local command safely</h3>
+          </div>
+          <button
+            aria-label="Close command runner"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex gap-3">
+          <input
+            className="h-11 flex-1 rounded-[14px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 text-[14px] text-[#f0ead8] outline-none placeholder:text-[rgba(240,234,216,0.35)] focus:border-[#c96442]"
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="npm run lint"
+            value={command}
+          />
+          <button
+            className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-[var(--xv-chat-accent)] px-4 text-[14px] font-medium text-white transition hover:bg-[#b45836] disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={!command.trim() || running}
+            onClick={onRun}
+            type="button"
+          >
+            {running ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Code2 className="h-4 w-4" />}
+            <span>{running ? "Running..." : "Run command"}</span>
+          </button>
+        </div>
+
+        {result ? (
+          <div className="mt-4 rounded-[18px] border border-[rgba(201,100,66,0.16)] bg-[#1a1410] p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="font-mono text-[12px] text-[#f0ead8]">{result.command}</div>
+              <span
+                className={cn(
+                  "rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em]",
+                  result.success
+                    ? "border-[rgba(201,100,66,0.2)] text-[#c96442]"
+                    : "border-[rgba(239,68,68,0.28)] text-[#ef4444]"
+                )}
+              >
+                {result.success ? "Completed" : "Failed"}
+              </span>
+            </div>
+            <pre className="max-h-[320px] overflow-auto rounded-[14px] border border-[rgba(201,100,66,0.1)] bg-[#0e0b08] p-4 font-mono text-[12px] leading-6 text-[rgba(240,234,216,0.82)]">
+{formatDesktopCommandOutput(result)}
+            </pre>
+            <div className="mt-4 flex justify-end">
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[rgba(201,100,66,0.2)] px-4 text-[13px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+                onClick={onSendToChat}
+                type="button"
+              >
+                <MessageSquareText className="h-4 w-4 text-[rgba(201,100,66,0.72)]" />
+                <span>Send output to Xeivora</span>
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function DesktopApplyDiffModal({
+  draft,
+  onApply,
+  onClose,
+  saveState
+}: {
+  draft: DesktopApplyDraft;
+  onApply: () => void;
+  onClose: () => void;
+  saveState: DesktopSaveState;
+}) {
+  const targetName = draft.targetPath.split(/[\\/]/).pop() || draft.targetPath;
+  const diffLines = buildSimpleDiffLines(draft.currentContent, draft.nextContent);
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[rgba(14,11,8,0.76)] px-6 backdrop-blur-sm">
+      <div className="w-full max-w-[920px] rounded-[24px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.45)]">xvr_write_file</p>
+            <h3 className="mt-1 text-[20px] font-medium text-[#f0ead8]">Xeivora wants to modify {targetName}</h3>
+            <p className="mt-2 text-[13px] leading-6 text-[rgba(240,234,216,0.58)]">
+              Review the proposed diff below, then apply the change only if it looks right.
+            </p>
+          </div>
+          <button
+            aria-label="Close apply diff"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="overflow-hidden rounded-[18px] border border-[rgba(201,100,66,0.14)] bg-[#0e0b08]">
+          <div className="border-b border-[rgba(201,100,66,0.12)] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[rgba(240,234,216,0.45)]">
+            Proposed diff
+          </div>
+          <div className="max-h-[420px] overflow-auto px-4 py-4 font-mono text-[12px] leading-6 text-[rgba(240,234,216,0.86)]">
+            {diffLines.map((line, index) => (
+              <div
+                className={cn(
+                  line.startsWith("+")
+                    ? "text-[#8fd17a]"
+                    : line.startsWith("-")
+                      ? "text-[#f4a3a3]"
+                      : "text-[rgba(240,234,216,0.82)]"
+                )}
+                key={`${index}-${line}`}
+              >
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-[rgba(201,100,66,0.2)] px-4 text-[14px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+            onClick={onClose}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-[var(--xv-chat-accent)] px-4 text-[14px] font-medium text-white transition hover:bg-[#b45836] disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={saveState === "saving"}
+            onClick={onApply}
+            type="button"
+          >
+            {saveState === "saving" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span>{saveState === "saving" ? "Applying..." : "Apply changes"}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ChatTopbar({
   connectedProviders,
   continuityStatus,
@@ -1673,8 +2590,10 @@ function ChatTopbar({
 
 function ChatHomeView({
   composerRef,
+  desktopToolBar,
   error,
   fileInputRef,
+  isDesktop,
   isStreaming,
   isUploadingFiles,
   onFilesSelected,
@@ -1684,14 +2603,19 @@ function ChatHomeView({
   onStartVoiceCapture,
   onStop,
   onStopVoiceCapture,
+  connectedIntegrations,
+  enabledIntegrationProviders,
+  onToggleIntegration,
   onSuggestion,
   prompt,
   sessionFiles,
   voiceState
 }: {
   composerRef: RefObject<HTMLTextAreaElement | null>;
+  desktopToolBar?: ReactNode;
   error: string | null;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  isDesktop: boolean;
   isStreaming: boolean;
   isUploadingFiles: boolean;
   onFilesSelected: (files: FileList | File[]) => void;
@@ -1701,6 +2625,9 @@ function ChatHomeView({
   onStartVoiceCapture: () => void;
   onStop: () => void;
   onStopVoiceCapture: () => void;
+  connectedIntegrations: IntegrationConnectionSummary[];
+  enabledIntegrationProviders: IntegrationProvider[];
+  onToggleIntegration: (provider: IntegrationProvider) => void;
   onSuggestion: (value: string) => void;
   prompt: string;
   sessionFiles: UploadedFileSummary[];
@@ -1738,6 +2665,35 @@ function ChatHomeView({
             Gemini and more.
           </motion.p>
 
+          {connectedIntegrations.length ? (
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 flex max-w-[620px] flex-wrap items-center justify-center gap-2"
+              initial={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
+            >
+              {connectedIntegrations.map((integration) => {
+                const enabled = enabledIntegrationProviders.includes(integration.provider);
+
+                return (
+                  <button
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-[11px] font-medium transition",
+                      enabled
+                        ? "border-[rgba(201,100,66,0.28)] bg-[rgba(201,100,66,0.12)] text-[#f0ead8]"
+                        : "border-[rgba(201,100,66,0.15)] bg-[#1a1410] text-[rgba(240,234,216,0.55)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                    )}
+                    key={integration.provider}
+                    onClick={() => onToggleIntegration(integration.provider)}
+                    type="button"
+                  >
+                    {integration.label}
+                  </button>
+                );
+              })}
+            </motion.div>
+          ) : null}
+
           {error ? <ErrorBanner className="mt-6 w-full max-w-[660px]" message={error} /> : null}
 
           <div className="mt-6 grid w-full max-w-[520px] grid-cols-2 gap-2">
@@ -1764,8 +2720,12 @@ function ChatHomeView({
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[rgba(201,100,66,0.12)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
         <ChatComposer
           composerRef={composerRef}
+          connectedIntegrations={connectedIntegrations}
+          desktopToolBar={desktopToolBar}
+          enabledIntegrationProviders={enabledIntegrationProviders}
           fileInputRef={fileInputRef}
           files={sessionFiles}
+          isDesktop={isDesktop}
           isStreaming={isStreaming}
           isUploadingFiles={isUploadingFiles}
           onFilesSelected={onFilesSelected}
@@ -1775,6 +2735,7 @@ function ChatHomeView({
           onStartVoiceCapture={onStartVoiceCapture}
           onStop={onStop}
           onStopVoiceCapture={onStopVoiceCapture}
+          onToggleIntegration={onToggleIntegration}
           prompt={prompt}
           voiceState={voiceState}
         />
@@ -1784,16 +2745,21 @@ function ChatHomeView({
 }
 
 function ChatThreadView({
+  activeDesktopFilePath,
   autoSwitchNotice,
   composerRef,
   copiedResponseId,
+  desktopFolderOpen,
+  desktopToolBar,
   error,
   fileInputRef,
+  isDesktop,
   isStreaming,
   isUploadingFiles,
   lastAssistantMessage,
   messages,
   messagesRef,
+  onApplyAssistantCode,
   onCopyResponse,
   onFilesSelected,
   onPromptChange,
@@ -1810,16 +2776,21 @@ function ChatThreadView({
   toolExecutionsByMessageId,
   voiceState
 }: {
+  activeDesktopFilePath: string | null;
   autoSwitchNotice: ModelSwitch | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   copiedResponseId: string | null;
+  desktopFolderOpen: boolean;
+  desktopToolBar?: ReactNode;
   error: string | null;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  isDesktop: boolean;
   isStreaming: boolean;
   isUploadingFiles: boolean;
   lastAssistantMessage: ChatMessage | null;
   messages: ChatMessage[];
   messagesRef: RefObject<HTMLDivElement | null>;
+  onApplyAssistantCode: (message: ChatMessage) => void;
   onCopyResponse: (message: ChatMessage) => Promise<void>;
   onFilesSelected: (files: FileList | File[]) => void;
   onPromptChange: (value: string) => void;
@@ -1849,6 +2820,8 @@ function ChatThreadView({
               const isLatestAssistant = lastAssistantMessage?.id === message.id;
               const assistantModelLabel = getAssistantModelLabel(message.modelKey, message.provider);
               const toolExecutions = toolExecutionsByMessageId[message.id] || [];
+              const canApplyAssistantCode =
+                isDesktop && desktopFolderOpen && Boolean(activeDesktopFilePath) && Boolean(extractPrimaryCodeBlock(message.content));
 
               if (!isAssistant) {
                 return (
@@ -1923,6 +2896,15 @@ function ChatThreadView({
                                 </button>
                               </>
                             ) : null}
+                            {canApplyAssistantCode ? (
+                              <button
+                                className="text-[12px] text-[var(--xv-chat-accent)] transition hover:text-[#f0ead8]"
+                                onClick={() => onApplyAssistantCode(message)}
+                                type="button"
+                              >
+                                Apply to open file
+                              </button>
+                            ) : null}
                           </div>
                         ) : null}
                       </div>
@@ -1937,8 +2919,10 @@ function ChatThreadView({
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[rgba(201,100,66,0.12)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
         <ChatComposer
           composerRef={composerRef}
+          desktopToolBar={desktopToolBar}
           fileInputRef={fileInputRef}
           files={sessionFiles}
+          isDesktop={isDesktop}
           isStreaming={isStreaming}
           isUploadingFiles={isUploadingFiles}
           onFilesSelected={onFilesSelected}
@@ -1958,8 +2942,12 @@ function ChatThreadView({
 
 type ChatComposerProps = {
   composerRef: RefObject<HTMLTextAreaElement | null>;
+  connectedIntegrations?: IntegrationConnectionSummary[];
+  desktopToolBar?: ReactNode;
+  enabledIntegrationProviders?: IntegrationProvider[];
   fileInputRef: RefObject<HTMLInputElement | null>;
   files: UploadedFileSummary[];
+  isDesktop: boolean;
   isStreaming: boolean;
   isUploadingFiles: boolean;
   onFilesSelected: (files: FileList | File[]) => void;
@@ -1969,14 +2957,19 @@ type ChatComposerProps = {
   onStartVoiceCapture: () => void;
   onStop: () => void;
   onStopVoiceCapture: () => void;
+  onToggleIntegration?: (provider: IntegrationProvider) => void;
   prompt: string;
   voiceState: VoiceState;
 };
 
 function ChatComposer({
   composerRef,
+  connectedIntegrations = [],
+  desktopToolBar,
+  enabledIntegrationProviders = [],
   fileInputRef,
   files,
+  isDesktop,
   isStreaming,
   isUploadingFiles,
   onFilesSelected,
@@ -1986,11 +2979,37 @@ function ChatComposer({
   onStartVoiceCapture,
   onStop,
   onStopVoiceCapture,
+  onToggleIntegration,
   prompt,
   voiceState
 }: ChatComposerProps) {
   return (
     <div className="mx-auto w-full max-w-[760px] pl-0 md:pl-10">
+      {connectedIntegrations.length > 0 && onToggleIntegration ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2 px-2">
+          {connectedIntegrations.map((integration) => {
+            const enabled = enabledIntegrationProviders.includes(integration.provider);
+
+            return (
+              <button
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[11px] font-medium transition",
+                  enabled
+                    ? "border-[rgba(201,100,66,0.28)] bg-[rgba(201,100,66,0.12)] text-[#f0ead8]"
+                    : "border-[rgba(201,100,66,0.15)] bg-[#1a1410] text-[rgba(240,234,216,0.55)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                )}
+                key={integration.provider}
+                onClick={() => onToggleIntegration(integration.provider)}
+                type="button"
+              >
+                {integration.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {isDesktop && desktopToolBar ? <div className="mb-3">{desktopToolBar}</div> : null}
       <form
         className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] py-2 shadow-[var(--xv-chat-shadow)] focus-within:border-[#c96442]"
         onSubmit={(event) => {
@@ -2460,6 +3479,168 @@ function truncateSidebarSessionTitle(title: string) {
   }
 
   return `${words.slice(0, 3).join(" ")}...`;
+}
+
+function desktopSaveLabel(state: DesktopSaveState) {
+  if (state === "saving") {
+    return "Saving...";
+  }
+
+  if (state === "saved") {
+    return "Saved";
+  }
+
+  if (state === "error") {
+    return "Retry save";
+  }
+
+  return "Save";
+}
+
+function formatDesktopCommandOutput(result: DesktopCommandResult) {
+  return [
+    result.stdout ? `$ stdout\n${result.stdout.trimEnd()}` : null,
+    result.stderr ? `$ stderr\n${result.stderr.trimEnd()}` : null,
+    `exit code: ${result.exitCode ?? 0}`
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function flattenDesktopFiles(nodes: DesktopFileNode[]): DesktopFileNode[] {
+  return nodes.flatMap((node) => [node, ...(node.children?.length ? flattenDesktopFiles(node.children) : [])]);
+}
+
+function summarizeDesktopFileTree(nodes: DesktopFileNode[]) {
+  const files = flattenDesktopFiles(nodes)
+    .filter((node) => !node.isDirectory)
+    .slice(0, 18)
+    .map((node) => node.path);
+
+  if (!files.length) {
+    return "Opened folder summary: no visible files indexed yet.";
+  }
+
+  return `Opened folder summary:\n${files.map((file) => `- ${file}`).join("\n")}`;
+}
+
+async function findMentionedDesktopFile({
+  activeFileContent,
+  activeFilePath,
+  fileTree,
+  prompt,
+  readFileForAI
+}: {
+  activeFileContent: string;
+  activeFilePath: string | null;
+  fileTree: DesktopFileNode[];
+  prompt: string;
+  readFileForAI: (filePath: string) => Promise<string | null>;
+}) {
+  const normalizedPrompt = prompt.toLowerCase();
+  const allFiles = flattenDesktopFiles(fileTree).filter((node) => !node.isDirectory);
+  const matched = allFiles.find((node) => normalizedPrompt.includes(node.name.toLowerCase()));
+
+  if (!matched && activeFilePath) {
+    return {
+      path: activeFilePath,
+      content: activeFileContent,
+      matchedByPrompt: false
+    };
+  }
+
+  if (!matched) {
+    return null;
+  }
+
+  const content = matched.path === activeFilePath ? activeFileContent : await readFileForAI(matched.path);
+  return {
+    path: matched.path,
+    content: content || "",
+    matchedByPrompt: true
+  };
+}
+
+function formatDesktopContext({
+  activeFileContent,
+  activeFilePath,
+  matchedFile,
+  openFolderPath
+}: {
+  activeFileContent: string;
+  activeFilePath: string | null;
+  matchedFile: { content: string; matchedByPrompt: boolean; path: string } | null;
+  openFolderPath: string;
+}) {
+  const segments = [
+    "The user is chatting from the Xeivora desktop app.",
+    `Open folder: ${openFolderPath}`,
+    "Treat the file context below as real local workspace context.",
+    "Do not claim you changed local files or ran local commands unless the user explicitly confirms that action.",
+    "Desktop action candidates available to the user include reading files, saving edits, creating files, listing files, and running commands inside the opened folder."
+  ];
+
+  const effectivePath = matchedFile?.path || activeFilePath;
+  const effectiveContent = matchedFile?.content || activeFileContent;
+
+  if (effectivePath && effectiveContent) {
+    segments.push(
+      matchedFile?.matchedByPrompt
+        ? `The user mentioned this file directly: ${effectivePath}`
+        : `The user currently has this file open: ${effectivePath}`,
+      `File content:\n${effectiveContent.slice(0, 12000)}`
+    );
+  }
+
+  return segments.join("\n\n");
+}
+
+function extractPrimaryCodeBlock(content: string) {
+  const match = content.match(/```([\w.+-]*)\n([\s\S]*?)```/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    language: match[1] || "text",
+    code: match[2]
+  };
+}
+
+function normalizeCodeForApply(code: string) {
+  return `${code}`.replace(/\n$/, "");
+}
+
+function buildSimpleDiffLines(previousContent: string, nextContent: string) {
+  const previousLines = previousContent.split("\n");
+  const nextLines = nextContent.split("\n");
+  const length = Math.max(previousLines.length, nextLines.length);
+  const diff: string[] = [
+    "--- current",
+    "+++ proposed"
+  ];
+
+  for (let index = 0; index < length; index += 1) {
+    const previousLine = previousLines[index];
+    const nextLine = nextLines[index];
+
+    if (previousLine === nextLine) {
+      if (previousLine !== undefined) {
+        diff.push(`  ${previousLine}`);
+      }
+      continue;
+    }
+
+    if (previousLine !== undefined) {
+      diff.push(`- ${previousLine}`);
+    }
+
+    if (nextLine !== undefined) {
+      diff.push(`+ ${nextLine}`);
+    }
+  }
+
+  return diff;
 }
 
 async function consumeEventStream(

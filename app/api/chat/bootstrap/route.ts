@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { getViewer } from "@/lib/auth";
+import { listIntegrationSummaries } from "@/lib/integrations/oauth";
+
 const { getProviderStatus, listSessions } = require("@/lib/server/chat-store");
 const { listProjects } = require("@/lib/server/workspace-store");
 
@@ -8,12 +11,15 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    const viewer = await getViewer();
+
     return NextResponse.json(
       {
         defaultModel: "orbit-auto",
         providerStatus: getProviderStatus(),
         sessions: await listSessions(),
-        projects: await listProjects()
+        projects: await listProjects(),
+        integrations: viewer ? await listIntegrationSummaries(viewer.id) : []
       },
       {
         headers: {

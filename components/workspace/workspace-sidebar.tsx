@@ -13,6 +13,7 @@ import {
   MessageSquareText,
   Pencil,
   Pin,
+  PlugZap,
   Plus,
   Search,
   Settings2,
@@ -23,7 +24,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { OrbitLogo } from "@/components/orbit-logo";
 import type { AuthUser } from "@/lib/auth-types";
-import type { ChatBootstrap, ChatSessionSummary } from "@/lib/chat-types";
+import type { ChatBootstrap, ChatSessionSummary, IntegrationConnectionSummary } from "@/lib/chat-types";
 import { cn } from "@/lib/utils";
 
 type WorkspaceSidebarProps = {
@@ -45,6 +46,7 @@ const navItems = [
   { label: "Memory", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows" },
   { label: "Agents", icon: Bot, href: "/agents" },
+  { label: "Integrations", icon: PlugZap, href: "/integrations" },
   { label: "Settings", icon: Settings2, href: "/settings" }
 ] as const;
 
@@ -108,6 +110,7 @@ export function WorkspaceSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const [bootstrapSessions, setBootstrapSessions] = useState<ChatSessionSummary[]>([]);
+  const [integrations, setIntegrations] = useState<IntegrationConnectionSummary[]>([]);
   const [query, setQuery] = useState(searchQuery);
   const [sessionMenuOpenId, setSessionMenuOpenId] = useState<string | null>(null);
 
@@ -124,6 +127,7 @@ export function WorkspaceSidebar({
         }
 
         setBootstrapSessions(payload.sessions);
+        setIntegrations(payload.integrations || []);
       })
       .catch(() => {
         // The sidebar should stay usable even if recents cannot load.
@@ -167,6 +171,10 @@ export function WorkspaceSidebar({
     );
   }, [availableSessions, query]);
   const groupedSessions = useMemo(() => groupSessions(filteredSessions), [filteredSessions]);
+  const connectedIntegrations = useMemo(
+    () => integrations.filter((integration) => integration.connected),
+    [integrations]
+  );
   const profileName = viewer?.name || "Xeivora User";
   const profilePlan = viewer?.plan || statusLabel;
 
@@ -183,6 +191,7 @@ export function WorkspaceSidebar({
 
       const payload = (await response.json()) as ChatBootstrap;
       setBootstrapSessions(payload.sessions || []);
+      setIntegrations(payload.integrations || []);
     } catch {
       // Ignore refresh issues inside the sidebar.
     }
@@ -357,6 +366,26 @@ export function WorkspaceSidebar({
         </div>
 
         <div className="mt-auto border-t border-[rgba(201,100,66,0.1)] px-1 pt-2">
+          {connectedIntegrations.length ? (
+            <div className="mb-2 px-1.5">
+              <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                Connected apps
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {connectedIntegrations.map((integration) => (
+                  <Link
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-2 text-[10px] font-medium text-[rgba(240,234,216,0.75)] transition hover:border-[rgba(201,100,66,0.28)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                    href="/integrations"
+                    key={integration.provider}
+                    title={integration.label}
+                  >
+                    {integration.label.slice(0, 2).toUpperCase()}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[rgba(201,100,66,0.08)]">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#c96442] text-[10px] font-medium text-white">
               {getInitials(profileName)}

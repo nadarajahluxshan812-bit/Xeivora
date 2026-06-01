@@ -43,11 +43,12 @@ function normalizePublicUrl(value?: string | null) {
 
 export function getPublicOrigin(request: Request) {
   const requestUrl = new URL(request.url);
-  const configuredOrigin =
-    normalizePublicUrl(process.env.PUBLIC_APP_URL) ||
-    normalizePublicUrl(process.env.APP_URL) ||
-    normalizePublicUrl(process.env.NEXT_PUBLIC_APP_URL) ||
-    normalizePublicUrl(process.env.RAILWAY_PUBLIC_DOMAIN);
+  const configuredOrigins = [
+    normalizePublicUrl(process.env.PUBLIC_APP_URL),
+    normalizePublicUrl(process.env.APP_URL),
+    normalizePublicUrl(process.env.NEXT_PUBLIC_APP_URL),
+    normalizePublicUrl(process.env.RAILWAY_PUBLIC_DOMAIN)
+  ].filter((value): value is string => Boolean(value));
   const originHeader = normalizePublicUrl(request.headers.get("origin"));
   const refererHeader = normalizePublicUrl(request.headers.get("referer"));
   const forwardedHost = request.headers.get("x-forwarded-host");
@@ -65,6 +66,10 @@ export function getPublicOrigin(request: Request) {
       : process.env.NODE_ENV === "production"
         ? "https"
         : "http");
+  const requestLooksPublic = !isLocalHost(host);
+  const configuredOrigin = requestLooksPublic
+    ? configuredOrigins.find((value) => !isLocalHost(new URL(value).hostname)) || configuredOrigins[0] || null
+    : configuredOrigins[0] || null;
 
   return (
     configuredOrigin ||

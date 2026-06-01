@@ -3,6 +3,15 @@ import type { Accent } from "@/lib/types";
 export type ProviderKey = "openai" | "anthropic" | "google" | "gemini" | "ollama" | "simulation";
 export type ModelKey = "orbit-auto" | "gpt-4o" | "claude" | "gemini";
 export type ChatRole = "user" | "assistant" | "system";
+export type IntegrationProvider =
+  | "github"
+  | "google_drive"
+  | "notion"
+  | "slack"
+  | "gmail"
+  | "linear"
+  | "jira"
+  | "figma";
 
 export type ProviderStatusItem = {
   available: boolean;
@@ -83,6 +92,19 @@ export type ChatBootstrap = {
   providerStatus: ProviderStatus;
   sessions: ChatSessionSummary[];
   projects: WorkspaceProject[];
+  integrations: IntegrationConnectionSummary[];
+};
+
+export type IntegrationConnectionSummary = {
+  provider: IntegrationProvider;
+  label: string;
+  description: string;
+  icon: string;
+  connected: boolean;
+  available: boolean;
+  accountLabel?: string | null;
+  scopes: string[];
+  connectedAt?: string | null;
 };
 
 export type WorkspaceProject = {
@@ -154,7 +176,7 @@ export type ChatToolExecution = {
   uiLabel: string;
   status: "completed" | "not_connected" | "error";
   connected: boolean;
-  source: "mcp" | "workspace";
+  source: "mcp" | "workspace" | "integration";
   summary: string;
   input?: Record<string, unknown>;
   payload?: Record<string, unknown>;

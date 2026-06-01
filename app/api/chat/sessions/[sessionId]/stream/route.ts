@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { getViewer } from "@/lib/auth";
+import { listIntegrationSummaries } from "@/lib/integrations/oauth";
+import type { IntegrationProvider } from "@/lib/chat-types";
+
 const { addUserMessage, removeLastAssistantMessage } = require("@/lib/server/chat-store");
 const { streamChatCompletion } = require("@/lib/server/ai-runtime");
 const { createSseResponse } = require("@/lib/server/sse");
@@ -27,8 +31,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
   const { sessionId } = await params;
   const body = await request.json().catch(() => ({}));
   const input = body?.input?.trim();
+  const desktopContext = `${body?.desktopContext || ""}`.trim() || null;
   const modelKey = body?.modelKey || "orbit-auto";
   const regenerate = Boolean(body?.regenerate);
+  const viewer = await getViewer();
+  const integrations = viewer ? await listIntegrationSummaries(viewer.id) : [];
+  const enabledIntegrationProviders = Array.isArray(body?.enabledIntegrationProviders)
+    ? body.enabledIntegrationProviders.filter(Boolean)
+    : [];
 
   if (!input) {
     return NextResponse.json(
@@ -47,9 +57,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
     return createSseResponse(async (sink: { write: (chunk: string) => void }) => {
       await streamChatCompletion({
         modelKey,
+        desktopContext,
+        enabledIntegrationProviders: enabledIntegrationProviders as IntegrationProvider[],
+        integrations,
         prompt: input,
         res: sink,
-        session
+        session,
+        viewerId: viewer?.id || null
       });
     });
   } catch (error) {

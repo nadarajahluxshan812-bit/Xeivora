@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { getViewer } from "@/lib/auth";
+import { listIntegrationSummaries } from "@/lib/integrations/oauth";
+import type { IntegrationProvider } from "@/lib/chat-types";
+
 const { getSession } = require("@/lib/server/chat-store");
 const { createChatCompletion, getProviderDebugState, getProviderStatusReport } = require("@/lib/server/ai-runtime");
 
@@ -16,7 +20,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    const viewer = await getViewer();
     const session = body?.sessionId ? await getSession(body.sessionId) : null;
+    const integrations = viewer ? await listIntegrationSummaries(viewer.id) : [];
+    const enabledIntegrationProviders = Array.isArray(body?.enabledIntegrationProviders)
+      ? body.enabledIntegrationProviders.filter(Boolean)
+      : [];
 
     if (body?.sessionId && !session) {
       return NextResponse.json({ error: "Chat session not found." }, { status: 404 });
@@ -26,7 +35,10 @@ export async function POST(request: Request) {
       modelKey,
       prompt: input,
       session,
-      historyMessages: Array.isArray(body?.messages) ? body.messages : []
+      historyMessages: Array.isArray(body?.messages) ? body.messages : [],
+      integrations,
+      enabledIntegrationProviders: enabledIntegrationProviders as IntegrationProvider[],
+      viewerId: viewer?.id || null
     });
     const attemptedProviders = Array.isArray(result.attemptedProviders) ? result.attemptedProviders : [];
     const switched = attemptedProviders.length > 1 && attemptedProviders[0] !== attemptedProviders[attemptedProviders.length - 1];
