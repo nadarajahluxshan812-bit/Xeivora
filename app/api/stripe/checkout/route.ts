@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_update: {
+        address: "auto",
         name: "auto"
       },
       mode: plan.mode,
