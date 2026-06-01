@@ -11,12 +11,9 @@ export const metadata: Metadata = {
   description:
     "Xeivora is a unified AI intelligence workspace for routing prompts across models, tools, agents, memory, and workflows.",
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/xeivora-icon.svg", type: "image/svg+xml" }
-    ],
-    shortcut: ["/icon.svg"],
-    apple: ["/apple-icon.svg"]
+    icon: [{ url: "/xeivora-icon.svg?v=20260601-bright", type: "image/svg+xml" }],
+    shortcut: ["/xeivora-icon.svg?v=20260601-bright"],
+    apple: ["/xeivora-icon.svg?v=20260601-bright"]
   }
 };
 
