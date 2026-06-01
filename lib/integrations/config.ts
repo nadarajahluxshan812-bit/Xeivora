@@ -8,9 +8,11 @@ export type IntegrationDescriptor = {
   authUrl: string;
   tokenUrl: string;
   scopes: string[];
+  userScopes?: string[];
   clientIdEnv: string;
   clientSecretEnv: string;
   scopeDelimiter?: "space" | "comma";
+  userScopeDelimiter?: "space" | "comma";
   usesGoogleOAuth?: boolean;
 };
 
@@ -56,10 +58,12 @@ export const integrationDescriptors: Record<IntegrationProvider, IntegrationDesc
     icon: "slack",
     authUrl: "https://slack.com/oauth/v2/authorize",
     tokenUrl: "https://slack.com/api/oauth.v2.access",
-    scopes: ["channels:read", "chat:write", "users:read", "search:read", "groups:read", "im:history"],
+    scopes: ["channels:read", "chat:write", "users:read", "groups:read", "im:history"],
+    userScopes: ["search:read"],
     clientIdEnv: "SLACK_CLIENT_ID",
     clientSecretEnv: "SLACK_CLIENT_SECRET",
-    scopeDelimiter: "comma"
+    scopeDelimiter: "comma",
+    userScopeDelimiter: "comma"
   },
   gmail: {
     provider: "gmail",
@@ -123,6 +127,16 @@ export function getIntegrationScopeValue(provider: IntegrationProvider) {
   const descriptor = integrationDescriptors[provider];
   const delimiter = descriptor.scopeDelimiter === "comma" ? "," : " ";
   return descriptor.scopes.join(delimiter);
+}
+
+export function getIntegrationUserScopeValue(provider: IntegrationProvider) {
+  const descriptor = integrationDescriptors[provider];
+  const scopes = Array.isArray(descriptor.userScopes) ? descriptor.userScopes : [];
+  if (!scopes.length) {
+    return "";
+  }
+  const delimiter = descriptor.userScopeDelimiter === "comma" ? "," : " ";
+  return scopes.join(delimiter);
 }
 
 export function isIntegrationConfigured(provider: IntegrationProvider) {

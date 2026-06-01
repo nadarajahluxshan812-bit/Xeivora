@@ -5,6 +5,7 @@ import { getPublicOrigin } from "@/lib/auth";
 import {
   getIntegrationDescriptor,
   getIntegrationScopeValue,
+  getIntegrationUserScopeValue,
   integrationOrder,
   isIntegrationConfigured
 } from "@/lib/integrations/config";
@@ -105,6 +106,10 @@ export function buildIntegrationAuthUrl(request: Request, provider: IntegrationP
     url.searchParams.set("client_id", clientId);
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("scope", getIntegrationScopeValue(provider));
+    const userScope = getIntegrationUserScopeValue(provider);
+    if (userScope) {
+      url.searchParams.set("user_scope", userScope);
+    }
     url.searchParams.set("state", state);
     return url.toString();
   }
@@ -271,11 +276,13 @@ async function exchangeSlackCode(request: Request, code: string) {
     accessToken: payload.access_token as string,
     refreshToken: payload.refresh_token || null,
     expiresAt: payload.expires_in ? new Date(Date.now() + payload.expires_in * 1000).toISOString() : null,
-    scopes: normalizeScopes(payload.scope),
+    scopes: [...normalizeScopes(payload.scope), ...normalizeScopes(payload.authed_user?.scope)],
     accountLabel: payload.team?.name || payload.authed_user?.id || null,
     metadata: {
       teamId: payload.team?.id || null,
-      teamName: payload.team?.name || null
+      teamName: payload.team?.name || null,
+      userAccessToken: payload.authed_user?.access_token || null,
+      userScopes: normalizeScopes(payload.authed_user?.scope)
     }
   };
 }
