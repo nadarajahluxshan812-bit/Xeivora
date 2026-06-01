@@ -55,8 +55,7 @@ export async function POST(request: NextRequest) {
         plan_key: planKey
       },
       allow_promotion_codes: true,
-      billing_address_collection: "auto",
-      tax_id_collection: { enabled: true }
+      billing_address_collection: "auto"
     });
 
     return NextResponse.json({ url: session.url });
