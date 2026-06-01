@@ -14,21 +14,21 @@ import {
   Globe,
   HeartPulse,
   Menu,
-  Moon,
   Search,
   Sparkles
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import UpgradeButton from "@/components/payments/UpgradeButton";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import UpgradeButton from "@/components/payments/UpgradeButton";
 import { OrbitLogo } from "@/components/orbit-logo";
+import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { cn } from "@/lib/utils";
 
-const bg = "#0e0b08";
-const coral = "#c96442";
-const cream = "#f0ead8";
+const bg = "var(--site-bg)";
+const coral = "var(--site-accent)";
+const cream = "var(--site-text)";
 
 const navLinks = [
   { label: "How it works", href: "#how-it-works" },
@@ -270,10 +270,10 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         }
 
         .xv-marketing-home {
-          background: #0e0b08;
-          color: #f0ead8;
+          background: var(--site-bg);
+          color: var(--site-text);
           overflow-x: hidden;
-          scrollbar-color: #c96442 transparent;
+          scrollbar-color: var(--site-accent) transparent;
           scrollbar-width: thin;
         }
 
@@ -283,7 +283,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         }
 
         .xv-marketing-home *::-webkit-scrollbar-thumb {
-          background: #c96442;
+          background: var(--site-accent);
           border: 0;
           border-radius: 999px;
         }
@@ -294,7 +294,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
         .xv-outline-text {
           color: transparent;
-          -webkit-text-stroke: 1px rgba(240, 234, 216, 0.4);
+          -webkit-text-stroke: 1px var(--site-outline);
         }
 
         .xv-section-reveal {
@@ -322,6 +322,54 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         .xv-status-pulse {
           animation: xv-status-pulse 2s infinite;
         }
+
+        .xv-home-panel {
+          background: var(--site-panel);
+        }
+
+        .xv-home-card {
+          background: var(--site-card);
+        }
+
+        .xv-home-card-soft {
+          background: var(--site-card-soft);
+        }
+
+        .xv-home-border {
+          border-color: var(--site-border);
+        }
+
+        .xv-home-border-soft {
+          border-color: var(--site-border-soft);
+        }
+
+        .xv-home-border-strong {
+          border-color: var(--site-border-strong);
+        }
+
+        .xv-home-text {
+          color: var(--site-text);
+        }
+
+        .xv-home-muted {
+          color: var(--site-muted);
+        }
+
+        .xv-home-subtle {
+          color: var(--site-subtle);
+        }
+
+        .xv-home-accent {
+          color: var(--site-accent);
+        }
+
+        .xv-home-ghost {
+          background: var(--site-ghost-bg);
+        }
+
+        .xv-home-ghost:hover {
+          background: var(--site-ghost-hover);
+        }
       `}</style>
       <ParticleCanvas />
       <CursorFollower />
@@ -331,12 +379,18 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
       <main className="relative z-10">
         <section className="relative flex min-h-screen items-center overflow-hidden pt-28">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(201,100,66,0.18),transparent_34%),radial-gradient(circle_at_18%_24%,rgba(240,234,216,0.04),transparent_22%),radial-gradient(circle_at_82%_16%,rgba(201,100,66,0.08),transparent_16%)]" />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 50% 28%, rgba(var(--site-accent-rgb),0.18), transparent 34%), radial-gradient(circle at 18% 24%, rgba(var(--site-accent-rgb),0.04), transparent 22%), radial-gradient(circle at 82% 16%, rgba(var(--site-accent-rgb),0.08), transparent 16%)"
+              }}
+            />
           </div>
 
           <div className="relative mx-auto flex w-full max-w-[1280px] flex-col px-6 pb-14 sm:px-8 lg:px-12">
             <Reveal>
-              <div className="mb-12 flex flex-col gap-4 text-[12px] font-medium uppercase tracking-[0.24em] text-[#d7ceb8] md:flex-row md:items-center md:justify-between">
+              <div className="xv-home-muted mb-12 flex flex-col gap-4 text-[12px] font-medium uppercase tracking-[0.24em] md:flex-row md:items-center md:justify-between">
                 <span>XVR — 2026</span>
                 <span className="inline-flex items-center gap-3">
                   <span className="xv-status-pulse h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
@@ -347,7 +401,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
             <Reveal delay={70}>
               <div className="max-w-[860px]">
-                <p className="mb-5 text-[12px] font-medium uppercase tracking-[0.3em] text-[#c9b8a4]">
+                <p className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.3em]">
                   Continuity · Memory · Momentum
                 </p>
                 <h1
@@ -364,7 +418,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             </Reveal>
 
             <Reveal delay={120}>
-              <p className="mt-8 max-w-[620px] text-balance text-[18px] font-light leading-[1.9] text-[#d0c6b3]">
+              <p className="xv-home-muted mt-8 max-w-[620px] text-balance text-[18px] font-light leading-[1.9]">
                 Switch between Claude, GPT-4o, Gemini without losing a single byte of context, memory, or momentum.
               </p>
             </Reveal>
@@ -372,15 +426,15 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <Reveal delay={170}>
               <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
                 <Link
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white shadow-[0_16px_48px_rgba(201,100,66,0.35)] transition hover:-translate-y-0.5"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white transition hover:-translate-y-0.5"
                   href="/chat"
-                  style={{ backgroundColor: coral }}
+                  style={{ backgroundColor: coral, boxShadow: "0 16px 48px var(--site-accent-glow)" }}
                 >
                   Enter Xeivora
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02] px-6 text-[15px] font-medium text-[#f0ead8] transition hover:border-[#f0ead833] hover:bg-white/[0.04]"
+                  className="xv-home-border xv-home-ghost xv-home-text inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:border-[color:var(--site-border-strong)]"
                   href="#how-it-works"
                 >
                   See how it works
@@ -389,11 +443,11 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             </Reveal>
 
             <Reveal delay={220}>
-              <div className="mt-16 grid gap-px overflow-hidden rounded-[28px] border border-[#f0ead818] bg-[#f0ead80a] shadow-[0_30px_120px_rgba(0,0,0,0.35)] md:grid-cols-3">
+              <div className="xv-home-border mt-16 grid gap-px overflow-hidden rounded-[28px] border bg-[color:var(--site-ghost-bg)] shadow-[0_30px_120px_rgba(0,0,0,0.2)] md:grid-cols-3">
                 {heroPillars.map((item) => (
-                  <div className="bg-[#14100d]/92 px-6 py-5" key={item.label}>
-                    <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#b8ae9b]">{item.label}</div>
-                    <div className="mt-3 text-[15px] font-light leading-7 text-[#f0ead8]">{item.value}</div>
+                  <div className="xv-home-card px-6 py-5" key={item.label}>
+                    <div className="xv-home-subtle text-[11px] font-medium uppercase tracking-[0.18em]">{item.label}</div>
+                    <div className="xv-home-text mt-3 text-[15px] font-light leading-7">{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -401,7 +455,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
           </div>
         </section>
 
-        <section className="relative border-y border-[#f0ead812] bg-[#120e0b]/92 py-4">
+        <section className="xv-home-border relative border-y xv-home-panel py-4">
           <div className="overflow-hidden">
             <div className="xv-ticker-track flex min-w-max items-center gap-12 px-6">
               {[...tickerItems, ...tickerItems, ...tickerItems].map((item, index) => (
@@ -409,12 +463,12 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                   <span
                     className={cn(
                       "text-[13px] font-medium uppercase tracking-[0.22em]",
-                      index % 2 === 0 ? "text-[#c96442]" : "text-[#b8ae9b]"
+                      index % 2 === 0 ? "xv-home-accent" : "xv-home-subtle"
                     )}
                   >
                     {item}
                   </span>
-                  <span className="text-[#6a5c4f]">·</span>
+                  <span className="xv-home-subtle opacity-60">·</span>
                 </div>
               ))}
             </div>
@@ -423,13 +477,13 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12">
           <section className="mx-auto max-w-[1180px]">
-            <div className="grid gap-px overflow-hidden rounded-[30px] border border-[#f0ead814] bg-[#f0ead809] md:grid-cols-4">
+            <div className="xv-home-border grid gap-px overflow-hidden rounded-[30px] border bg-[color:var(--site-ghost-bg)] md:grid-cols-4">
               {stats.map((stat) => (
-                <div className="bg-[#15110e] px-6 py-8 text-center" key={stat.label}>
+                <div className="xv-home-card px-6 py-8 text-center" key={stat.label}>
                   <div className="font-[Georgia,'Times New Roman',serif] text-[3rem] leading-none tracking-[-0.06em]" style={{ color: coral }}>
                     {stat.value}
                   </div>
-                  <div className="mt-3 text-[13px] uppercase tracking-[0.22em] text-[#b8ae9b]">{stat.label}</div>
+                  <div className="xv-home-subtle mt-3 text-[13px] uppercase tracking-[0.22em]">{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -439,18 +493,18 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12" id="demo">
           <section className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
             <div>
-              <div className="mb-5 text-[12px] font-medium uppercase tracking-[0.24em] text-[#c9b8a4]">
+              <div className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.24em]">
                 Continuity demo
               </div>
-              <h2 className="font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.02] tracking-[-0.05em] text-[#f0ead8] sm:text-[3.5rem]">
+              <h2 className="xv-home-text font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.02] tracking-[-0.05em] sm:text-[3.5rem]">
                 Context never dies
               </h2>
-              <p className="mt-6 max-w-[520px] text-[17px] font-light leading-8 text-[#cfc5b1]">
+              <p className="xv-home-muted mt-6 max-w-[520px] text-[17px] font-light leading-8">
                 Xeivora tracks the shape of the work, preserves the state of the conversation, and continues the exact
                 same thread when one model reaches a boundary. No reset. No copy-paste. No re-explaining the task.
               </p>
               <Link
-                className="mt-8 inline-flex h-12 items-center justify-center rounded-full border border-[#c9644266] px-6 text-[15px] font-medium text-[#f0ead8] transition hover:bg-[#c9644214]"
+                className="xv-home-border-strong xv-home-text mt-8 inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:bg-[color:var(--site-accent-soft)]"
                 href="/chat"
               >
                 Watch continuity in action
@@ -464,8 +518,8 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12" id="how-it-works">
           <section className="mx-auto max-w-[1180px]">
             <div className="mb-12 max-w-[700px]">
-              <div className="text-[12px] font-medium uppercase tracking-[0.24em] text-[#c9b8a4]">How it works</div>
-              <h2 className="mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] text-[#f0ead8] sm:text-[3.5rem]">
+              <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">How it works</div>
+              <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
                 The workspace that protects momentum
               </h2>
             </div>
@@ -481,8 +535,8 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12" id="models">
           <section className="mx-auto max-w-[1180px]">
             <div className="mb-12 max-w-[720px]">
-              <div className="text-[12px] font-medium uppercase tracking-[0.24em] text-[#c9b8a4]">Models</div>
-              <h2 className="mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] text-[#f0ead8] sm:text-[3.5rem]">
+              <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Models</div>
+              <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
                 Every model. One brain.
               </h2>
             </div>
@@ -498,8 +552,8 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12" id="features">
           <section className="mx-auto max-w-[1180px]">
             <div className="mb-12 max-w-[760px]">
-              <div className="text-[12px] font-medium uppercase tracking-[0.24em] text-[#c9b8a4]">Features</div>
-              <h2 className="mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] text-[#f0ead8] sm:text-[3.5rem]">
+              <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Features</div>
+              <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
                 Built to keep work alive
               </h2>
             </div>
@@ -515,8 +569,8 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12" id="pricing">
           <section className="mx-auto max-w-[1180px]">
             <div className="mb-12 max-w-[720px]">
-              <div className="text-[12px] font-medium uppercase tracking-[0.24em] text-[#c9b8a4]">Pricing</div>
-              <h2 className="mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] text-[#f0ead8] sm:text-[3.5rem]">
+              <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Pricing</div>
+              <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
                 Start free. Scale without losing continuity.
               </h2>
             </div>
@@ -530,38 +584,38 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         </RevealSection>
 
         <RevealSection className="px-6 pb-16 pt-12 sm:px-8 lg:px-12">
-          <section className="relative mx-auto overflow-hidden rounded-[36px] border border-[#f0ead812] bg-[#15110e] px-6 py-16 shadow-[0_30px_120px_rgba(0,0,0,0.35)] sm:px-10">
+          <section className="xv-home-border xv-home-card relative mx-auto overflow-hidden rounded-[36px] border px-6 py-16 shadow-[0_30px_120px_rgba(0,0,0,0.2)] sm:px-10">
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <span className="font-[Georgia,'Times New Roman',serif] text-[5rem] leading-none tracking-[-0.08em] text-white/[0.03] sm:text-[9rem] lg:text-[13rem]">
+              <span className="font-[Georgia,'Times New Roman',serif] text-[5rem] leading-none tracking-[-0.08em] text-[color:rgba(var(--site-accent-rgb),0.06)] sm:text-[9rem] lg:text-[13rem]">
                 Xeivora
               </span>
             </div>
 
             <div className="relative z-10 mx-auto max-w-[760px] text-center">
-              <div className="text-[12px] font-medium uppercase tracking-[0.24em] text-[#c9b8a4]">Ready to enter</div>
-              <h2 className="mt-5 font-[Georgia,'Times New Roman',serif] text-[3.1rem] leading-[1.02] tracking-[-0.06em] text-[#f0ead8] sm:text-[4rem]">
+              <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Ready to enter</div>
+              <h2 className="xv-home-text mt-5 font-[Georgia,'Times New Roman',serif] text-[3.1rem] leading-[1.02] tracking-[-0.06em] sm:text-[4rem]">
                 Stop starting over.
               </h2>
               <p className="mt-3 text-[1.8rem] italic leading-tight" style={{ color: coral }}>
                 Never lose context.
               </p>
-              <p className="mt-2 text-[1.35rem] text-[#f0ead8]">Never restart.</p>
-              <p className="mx-auto mt-6 max-w-[620px] text-[17px] font-light leading-8 text-[#cfc5b1]">
+              <p className="xv-home-text mt-2 text-[1.35rem]">Never restart.</p>
+              <p className="xv-home-muted mx-auto mt-6 max-w-[620px] text-[17px] font-light leading-8">
                 Bring your thinking, files, and workflows into one environment that remembers what matters and keeps
                 moving when the model changes.
               </p>
 
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white shadow-[0_16px_48px_rgba(201,100,66,0.35)] transition hover:-translate-y-0.5"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white transition hover:-translate-y-0.5"
                   href="/signup"
-                  style={{ backgroundColor: coral }}
+                  style={{ backgroundColor: coral, boxShadow: "0 16px 48px var(--site-accent-glow)" }}
                 >
                   Get started
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02] px-6 text-[15px] font-medium text-[#f0ead8] transition hover:border-[#f0ead833] hover:bg-white/[0.04]"
+                  className="xv-home-border xv-home-ghost xv-home-text inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:border-[color:var(--site-border-strong)]"
                   href="/login"
                 >
                   Sign in
@@ -572,8 +626,8 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         </RevealSection>
       </main>
 
-      <footer className="relative z-10 border-t border-[#f0ead812] px-6 py-8 sm:px-8 lg:px-12">
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-6 text-[13px] text-[#c9b8a4] lg:flex-row lg:items-center lg:justify-between">
+      <footer className="xv-home-border relative z-10 border-t px-6 py-8 sm:px-8 lg:px-12">
+        <div className="xv-home-subtle mx-auto flex max-w-[1180px] flex-col gap-6 text-[13px] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <XeivoraWordmark />
             <span>Continuity · Memory · Momentum</span>
@@ -581,7 +635,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
           <div className="flex flex-wrap items-center justify-center gap-5">
             {footerLinks.map((link) => (
-              <Link className="transition hover:text-[#f0ead8]" href={link.href} key={link.label}>
+              <Link className="transition hover:text-[color:var(--site-text)]" href={link.href} key={link.label}>
                 {link.label}
               </Link>
             ))}
@@ -608,7 +662,7 @@ function MarketingNavbar({
       <header
         className={cn(
           "fixed inset-x-0 top-0 z-50 transition-all duration-300",
-          scrolled ? "border-b border-[#f0ead812] bg-[#120f0d]/74 backdrop-blur-2xl" : "bg-transparent"
+          scrolled ? "xv-home-border border-b bg-[color:rgba(var(--site-accent-rgb),0.05)] backdrop-blur-2xl" : "bg-transparent"
         )}
       >
         <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 sm:px-8 lg:px-12">
@@ -619,7 +673,7 @@ function MarketingNavbar({
           <nav className="hidden items-center gap-8 lg:flex">
             {navLinks.map((item) => (
               <Link
-                className="text-[14px] font-medium text-[#d9ceb9] transition hover:text-[#f0ead8]"
+                className="xv-home-muted text-[14px] font-medium transition hover:text-[color:var(--site-text)]"
                 href={item.href}
                 key={item.label}
               >
@@ -629,23 +683,17 @@ function MarketingNavbar({
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <button
-              aria-label="Dark mode active"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02] text-[#f0ead8] transition hover:border-[#f0ead833] hover:bg-white/[0.04]"
-              type="button"
-            >
-              <Moon className="h-4 w-4" />
-            </button>
+            <ThemeToggleButton />
             <Link
-              className="inline-flex h-11 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02] px-5 text-[14px] font-medium text-[#f0ead8] transition hover:border-[#f0ead833] hover:bg-white/[0.04]"
+              className="xv-home-border xv-home-ghost xv-home-text inline-flex h-11 items-center justify-center rounded-full border px-5 text-[14px] font-medium transition hover:border-[color:var(--site-border-strong)]"
               href="/login"
             >
               Sign in
             </Link>
             <Link
-              className="inline-flex h-11 items-center justify-center rounded-full px-5 text-[14px] font-medium text-white shadow-[0_16px_40px_rgba(201,100,66,0.35)] transition hover:-translate-y-0.5"
+              className="inline-flex h-11 items-center justify-center rounded-full px-5 text-[14px] font-medium text-white transition hover:-translate-y-0.5"
               href="/signup"
-              style={{ backgroundColor: coral }}
+              style={{ backgroundColor: coral, boxShadow: "0 16px 40px var(--site-accent-glow)" }}
             >
               Get started
             </Link>
@@ -653,7 +701,7 @@ function MarketingNavbar({
 
           <button
             aria-label="Open navigation"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02] text-[#f0ead8] lg:hidden"
+            className="xv-home-border xv-home-ghost xv-home-text inline-flex h-11 w-11 items-center justify-center rounded-full border lg:hidden"
             onClick={() => onMobileOpenChange(true)}
             type="button"
           >
@@ -663,13 +711,13 @@ function MarketingNavbar({
       </header>
 
       <Sheet onOpenChange={onMobileOpenChange} open={mobileOpen}>
-        <SheetContent className="border-[#f0ead812] bg-[#110e0b] p-0" side="right">
+        <SheetContent className="xv-home-border xv-home-panel p-0" side="right">
           <div className="flex h-full flex-col px-5 py-6">
             <XeivoraWordmark />
             <div className="mt-10 grid gap-2">
               {navLinks.map((item) => (
                 <Link
-                  className="rounded-2xl border border-transparent px-4 py-3 text-[14px] font-medium text-[#d9ceb9] transition hover:border-[#f0ead812] hover:bg-white/[0.03] hover:text-[#f0ead8]"
+                  className="xv-home-muted rounded-2xl border border-transparent px-4 py-3 text-[14px] font-medium transition hover:border-[color:var(--site-border)] hover:bg-[color:var(--site-ghost-bg)] hover:text-[color:var(--site-text)]"
                   href={item.href}
                   key={item.label}
                   onClick={() => onMobileOpenChange(false)}
@@ -679,8 +727,9 @@ function MarketingNavbar({
               ))}
             </div>
             <div className="mt-auto grid gap-3">
+              <ThemeToggleButton className="w-full rounded-[999px]" compact />
               <Link
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[#f0ead81a] bg-white/[0.02] px-5 text-[14px] font-medium text-[#f0ead8]"
+                className="xv-home-border xv-home-ghost xv-home-text inline-flex h-11 items-center justify-center rounded-full border px-5 text-[14px] font-medium"
                 href="/login"
                 onClick={() => onMobileOpenChange(false)}
               >
@@ -922,16 +971,17 @@ function CursorFollower() {
     <>
       <div
         className={cn(
-          "pointer-events-none fixed left-0 top-0 z-[70] hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#c96442] transition-opacity duration-300 lg:block",
+          "pointer-events-none fixed left-0 top-0 z-[70] hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--site-accent)] transition-opacity duration-300 lg:block",
           visible ? "opacity-100" : "opacity-0"
         )}
         ref={cursorRef}
       />
       <div
         className={cn(
-          "pointer-events-none fixed left-0 top-0 z-[69] hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#c9644266] bg-[#c9644208] transition-opacity duration-300 lg:block",
+          "pointer-events-none fixed left-0 top-0 z-[69] hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-opacity duration-300 lg:block",
           visible ? "opacity-100" : "opacity-0"
         )}
+        style={{ borderColor: "var(--site-border-strong)", backgroundColor: "rgba(var(--site-accent-rgb),0.08)" }}
         ref={ringRef}
       />
     </>
@@ -940,26 +990,26 @@ function CursorFollower() {
 
 function TerminalWindow() {
   return (
-    <div className="overflow-hidden rounded-[30px] border border-[#f0ead814] bg-[#11100d] shadow-[0_28px_120px_rgba(0,0,0,0.36)]">
-      <div className="flex items-center gap-2 border-b border-[#f0ead810] px-5 py-4">
+    <div className="xv-home-border xv-home-panel overflow-hidden rounded-[30px] border shadow-[0_28px_120px_rgba(0,0,0,0.2)]">
+      <div className="xv-home-border flex items-center gap-2 border-b px-5 py-4">
         <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
         <span className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
         <span className="h-3 w-3 rounded-full bg-[#28c840]" />
       </div>
 
-      <div className="space-y-3 px-5 py-6 font-mono text-[14px] leading-7 text-[#f0ead8]">
+      <div className="xv-home-text space-y-3 px-5 py-6 font-mono text-[14px] leading-7">
         <div>
-          <span className="text-[#8b7f71]">$</span> xvr session --model claude-3.5
+          <span className="xv-home-subtle">$</span> xvr session --model claude-3.5
         </div>
-        <div className="text-[#d7ceb8]">→ Session initialized</div>
-        <div className="text-[#d7ceb8]">→ Memory layer active</div>
+        <div className="xv-home-muted">→ Session initialized</div>
+        <div className="xv-home-muted">→ Memory layer active</div>
         <div className="text-[#ffbe85]">⚠ Token limit: 199k / 200k</div>
         <div className="text-[#ffbe85]">⚠ Initiating context transfer...</div>
-        <div className="text-[#c96442]">⇄ claude-3.5 → gpt-4o</div>
+        <div className="xv-home-accent">⇄ claude-3.5 → gpt-4o</div>
         <div className="text-[#9fe3c1]">✓ Context compressed and restored</div>
-        <div className="text-[#d7ceb8]">
+        <div className="xv-home-muted">
           gpt-4o: Continuing...
-          <span className="xv-terminal-cursor ml-1 inline-block text-[#c96442]">|</span>
+          <span className="xv-terminal-cursor xv-home-accent ml-1 inline-block">|</span>
         </div>
       </div>
     </div>
@@ -976,13 +1026,13 @@ function HowItWorksCard({
   title: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[28px] border border-[#f0ead812] bg-[#14110d] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.2)]">
-      <span className="absolute left-0 top-0 h-[2px] w-full origin-left scale-x-0 bg-[#c96442] transition-transform duration-500 group-hover:scale-x-100" />
-      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#b8ae9b]">{number}</div>
-      <h3 className="mt-5 font-[Georgia,'Times New Roman',serif] text-[1.8rem] tracking-[-0.04em] text-[#f0ead8]">
+    <div className="xv-home-border xv-home-card group relative overflow-hidden rounded-[28px] border p-6 shadow-[0_20px_80px_rgba(0,0,0,0.12)]">
+      <span className="absolute left-0 top-0 h-[2px] w-full origin-left scale-x-0 bg-[color:var(--site-accent)] transition-transform duration-500 group-hover:scale-x-100" />
+      <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.18em]">{number}</div>
+      <h3 className="xv-home-text mt-5 font-[Georgia,'Times New Roman',serif] text-[1.8rem] tracking-[-0.04em]">
         {title}
       </h3>
-      <p className="mt-4 text-[15px] font-light leading-7 text-[#cfc5b1]">{detail}</p>
+      <p className="xv-home-muted mt-4 text-[15px] font-light leading-7">{detail}</p>
     </div>
   );
 }
@@ -993,19 +1043,19 @@ function ModelCard({
   card: (typeof modelCards)[number];
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[28px] border border-[#f0ead812] bg-[#14110d] p-6 transition hover:border-[#c9644233] hover:shadow-[0_20px_80px_rgba(201,100,66,0.12)]">
-      <div className="pointer-events-none absolute right-5 top-4 font-[Georgia,'Times New Roman',serif] text-[5rem] leading-none tracking-[-0.08em] text-white/[0.04]">
+    <div className="xv-home-border xv-home-card group relative overflow-hidden rounded-[28px] border p-6 transition hover:border-[color:var(--site-border-strong)] hover:shadow-[0_20px_80px_rgba(var(--site-accent-rgb),0.12)]">
+      <div className="pointer-events-none absolute right-5 top-4 font-[Georgia,'Times New Roman',serif] text-[5rem] leading-none tracking-[-0.08em] text-[color:rgba(var(--site-accent-rgb),0.08)]">
         {card.letter}
       </div>
       <div className="relative z-10">
-        <div className="inline-flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-[#b8ae9b]">
+        <div className="xv-home-subtle inline-flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em]">
           <span className="xv-status-pulse h-2 w-2 rounded-full bg-[#22c55e]" />
           {card.status}
         </div>
-        <h3 className="mt-5 font-[Georgia,'Times New Roman',serif] text-[2rem] tracking-[-0.05em] text-[#f0ead8]">
+        <h3 className="xv-home-text mt-5 font-[Georgia,'Times New Roman',serif] text-[2rem] tracking-[-0.05em]">
           {card.title}
         </h3>
-        <p className="mt-4 text-[15px] font-light leading-7 text-[#cfc5b1]">{card.detail}</p>
+        <p className="xv-home-muted mt-4 text-[15px] font-light leading-7">{card.detail}</p>
       </div>
     </div>
   );
@@ -1021,15 +1071,15 @@ function FeatureCard({
   title: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[28px] border border-[#f0ead812] bg-[#14110d] p-6 shadow-[0_18px_70px_rgba(0,0,0,0.18)]">
-      <span className="absolute left-0 top-0 h-full w-[3px] origin-bottom scale-y-0 bg-[#c96442] transition-transform duration-400 group-hover:scale-y-100" />
-      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#c9644212] text-[#c96442]">
+    <div className="xv-home-border xv-home-card group relative overflow-hidden rounded-[28px] border p-6 shadow-[0_18px_70px_rgba(0,0,0,0.12)]">
+      <span className="absolute left-0 top-0 h-full w-[3px] origin-bottom scale-y-0 bg-[color:var(--site-accent)] transition-transform duration-400 group-hover:scale-y-100" />
+      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--site-accent-soft)] text-[color:var(--site-accent)]">
         <Icon className="h-5 w-5" />
       </div>
-      <h3 className="font-[Georgia,'Times New Roman',serif] text-[1.9rem] tracking-[-0.05em] text-[#f0ead8]">
+      <h3 className="xv-home-text font-[Georgia,'Times New Roman',serif] text-[1.9rem] tracking-[-0.05em]">
         {title}
       </h3>
-      <p className="mt-4 text-[15px] font-light leading-7 text-[#cfc5b1]">{detail}</p>
+      <p className="xv-home-muted mt-4 text-[15px] font-light leading-7">{detail}</p>
     </div>
   );
 }
@@ -1046,23 +1096,23 @@ function PricingCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[30px] border border-[#f0ead812] bg-[#14110d] p-7 shadow-[0_22px_90px_rgba(0,0,0,0.2)]",
-        tier.featured && "border-[#c964423d] shadow-[0_26px_110px_rgba(201,100,66,0.14)]"
+        "xv-home-border xv-home-card relative overflow-hidden rounded-[30px] border p-7 shadow-[0_22px_90px_rgba(0,0,0,0.12)]",
+        tier.featured && "border-[color:var(--site-border-strong)] shadow-[0_26px_110px_rgba(var(--site-accent-rgb),0.14)]"
       )}
     >
-      {tier.featured ? <span className="absolute inset-x-0 top-0 h-[3px] bg-[#c96442]" /> : null}
-      <div className="text-[12px] font-medium uppercase tracking-[0.24em] text-[#b8ae9b]">{tier.kicker}</div>
-      <h3 className="mt-4 font-[Georgia,'Times New Roman',serif] text-[2rem] tracking-[-0.05em] text-[#f0ead8]">{tier.name}</h3>
+      {tier.featured ? <span className="absolute inset-x-0 top-0 h-[3px] bg-[color:var(--site-accent)]" /> : null}
+      <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">{tier.kicker}</div>
+      <h3 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[2rem] tracking-[-0.05em]">{tier.name}</h3>
       <div className="mt-8 flex items-end gap-2">
         <span className="font-[Georgia,'Times New Roman',serif] text-[3.4rem] leading-none tracking-[-0.07em]" style={{ color: coral }}>
           {tier.price}
         </span>
-        <span className="pb-2 text-[14px] text-[#b8ae9b]">{tier.period}</span>
+        <span className="xv-home-subtle pb-2 text-[14px]">{tier.period}</span>
       </div>
       <div className="mt-8 space-y-3">
         {tier.features.map((feature) => (
-          <div className="flex items-start gap-3 text-[14px] font-light leading-7 text-[#d3c9b6]" key={feature}>
-            <Check className="mt-1 h-4 w-4 shrink-0 text-[#c96442]" />
+          <div className="xv-home-muted flex items-start gap-3 text-[14px] font-light leading-7" key={feature}>
+            <Check className="mt-1 h-4 w-4 shrink-0 text-[color:var(--site-accent)]" />
             <span>{feature.replace(/^—\s*/, "")}</span>
           </div>
         ))}
@@ -1074,11 +1124,11 @@ function PricingCard({
           className={cn(
             "mt-9 inline-flex h-11 w-full items-center justify-center rounded-full border px-5 text-[14px] font-medium transition",
             tier.featured
-              ? "border-transparent text-white shadow-[0_14px_40px_rgba(201,100,66,0.32)] hover:-translate-y-0.5"
-              : "border-[#f0ead81a] bg-white/[0.02] text-[#f0ead8] hover:border-[#f0ead833] hover:bg-white/[0.04]"
+              ? "border-transparent text-white hover:-translate-y-0.5"
+              : "xv-home-border xv-home-ghost xv-home-text hover:border-[color:var(--site-border-strong)]"
           )}
           href={isEnterpriseTier ? "/contact" : isStarterTier ? "/signup" : "/pricing"}
-          style={tier.featured ? { backgroundColor: coral } : undefined}
+          style={tier.featured ? { backgroundColor: coral, boxShadow: "0 14px 40px var(--site-accent-glow)" } : undefined}
         >
           {tier.cta}
         </Link>

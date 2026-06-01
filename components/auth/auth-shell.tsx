@@ -8,6 +8,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { OrbitLogo } from "@/components/orbit-logo";
+import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 
 type AuthShellProps = {
@@ -48,22 +49,28 @@ const authHighlights = [
   }
 ];
 
-const authBg = "#0e0b08";
-const authPanel = "#120e0a";
-const authCard = "#1a1410";
-const authBorder = "rgba(201,100,66,0.15)";
-const authBorderStrong = "rgba(201,100,66,0.3)";
-const authText = "#f0ead8";
-const authMuted = "rgba(240,234,216,0.6)";
-const authCoral = "#c96442";
+const authBg = "var(--site-bg)";
+const authPanel = "var(--site-panel)";
+const authCard = "var(--site-card)";
+const authBorder = "var(--site-border)";
+const authBorderStrong = "var(--site-border-strong)";
+const authText = "var(--site-text)";
+const authMuted = "var(--site-subtle)";
+const authCoral = "var(--site-accent)";
 
 export function AuthShell({ children, eyebrow, title, subtitle }: AuthShellProps) {
   return (
-    <div className="relative min-h-screen overflow-hidden text-white" style={{ backgroundColor: authBg }}>
+    <div className="relative min-h-screen overflow-hidden text-[color:var(--site-text)]" style={{ backgroundColor: authBg }}>
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,100,66,0.16),transparent_30%),radial-gradient(circle_at_18%_18%,rgba(201,100,66,0.07),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(240,234,216,0.04),transparent_20%),linear-gradient(180deg,#0e0b08_0%,#120e0a_48%,#0e0b08_100%)]" />
-        <div className="absolute left-1/2 top-[-20%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full blur-[120px]" style={{ backgroundColor: "rgba(201,100,66,0.12)" }} />
-        <div className="absolute bottom-[-8rem] right-[-4rem] h-[20rem] w-[20rem] rounded-full blur-[120px]" style={{ backgroundColor: "rgba(201,100,66,0.06)" }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at top, rgba(var(--site-accent-rgb),0.14), transparent 30%), radial-gradient(circle at 18% 18%, rgba(var(--site-accent-rgb),0.06), transparent 18%), radial-gradient(circle at 82% 14%, rgba(var(--site-accent-rgb),0.03), transparent 20%), linear-gradient(180deg, var(--site-bg) 0%, var(--site-panel) 48%, var(--site-bg) 100%)"
+          }}
+        />
+        <div className="absolute left-1/2 top-[-20%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full blur-[120px]" style={{ backgroundColor: "rgba(var(--site-accent-rgb),0.11)" }} />
+        <div className="absolute bottom-[-8rem] right-[-4rem] h-[20rem] w-[20rem] rounded-full blur-[120px]" style={{ backgroundColor: "rgba(var(--site-accent-rgb),0.05)" }} />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1280px] flex-col px-6 py-6 sm:px-8 lg:px-10">
@@ -72,6 +79,7 @@ export function AuthShell({ children, eyebrow, title, subtitle }: AuthShellProps
             <OrbitLogo iconSize={36} nameClassName="text-[15px]" showTagline={false} />
           </Link>
           <div className="flex items-center gap-3">
+            <ThemeToggleButton compact />
             <Link className="inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm transition hover:bg-[rgba(201,100,66,0.08)]" href="/" style={{ borderColor: authBorder, color: authText }}>
               Back to home
             </Link>

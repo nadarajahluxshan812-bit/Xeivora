@@ -52,8 +52,8 @@ export default function UpgradeButton({
         "mt-9 inline-flex h-12 items-center justify-center rounded-xl px-4 text-sm font-semibold transition",
         fullWidth ? "w-full" : "",
         variant === "primary"
-          ? "bg-[#c96442] text-white hover:bg-[#a04e32]"
-          : "border border-[rgba(201,100,66,0.35)] bg-transparent text-[#f0ead8] hover:bg-[rgba(201,100,66,0.08)]",
+          ? "bg-[color:var(--site-accent)] text-white hover:bg-[color:var(--site-accent-strong)]"
+          : "border border-[color:var(--site-border-strong)] bg-transparent text-[color:var(--site-text)] hover:bg-[color:var(--site-accent-soft)]",
         loading ? "cursor-not-allowed opacity-70" : ""
       ].join(" ")}
       disabled={loading}

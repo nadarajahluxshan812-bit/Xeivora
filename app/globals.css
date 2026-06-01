@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+html[data-theme="dark"] {
   color-scheme: dark;
   --font-marketing-body:
     "Manrope",
@@ -16,15 +17,34 @@
     "Segoe UI",
     "Helvetica Neue",
     sans-serif;
-  --bg: #0a0a0a;
-  --surface: #111111;
-  --surface-soft: #151515;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #ffffff;
-  --muted: #9ca3af;
-  --subtle: rgba(255, 255, 255, 0.42);
-  --accent: #ffffff;
-  --accent-soft: #1a1a1a;
+  --site-bg: #0e0b08;
+  --site-panel: #120e0a;
+  --site-card: #1a1410;
+  --site-card-soft: rgba(181, 107, 75, 0.08);
+  --site-border: rgba(240, 234, 216, 0.12);
+  --site-border-soft: rgba(240, 234, 216, 0.08);
+  --site-border-strong: rgba(181, 107, 75, 0.28);
+  --site-text: #f0ead8;
+  --site-muted: rgba(240, 234, 216, 0.78);
+  --site-subtle: rgba(240, 234, 216, 0.52);
+  --site-outline: rgba(240, 234, 216, 0.34);
+  --site-accent: #b56b4b;
+  --site-accent-strong: #9c5738;
+  --site-accent-soft: rgba(181, 107, 75, 0.14);
+  --site-accent-glow: rgba(181, 107, 75, 0.28);
+  --site-ghost-bg: rgba(255, 255, 255, 0.02);
+  --site-ghost-hover: rgba(255, 255, 255, 0.05);
+  --site-inverse: #fffdf9;
+  --site-accent-rgb: 181, 107, 75;
+  --bg: var(--site-bg);
+  --surface: var(--site-panel);
+  --surface-soft: var(--site-card);
+  --border: var(--site-border-soft);
+  --text: var(--site-text);
+  --muted: var(--site-muted);
+  --subtle: var(--site-subtle);
+  --accent: var(--site-accent);
+  --accent-soft: var(--site-card-soft);
   --xv-chat-bg: #f6f3ed;
   --xv-chat-surface: rgba(255, 255, 255, 0.92);
   --xv-chat-surface-soft: rgba(255, 255, 255, 0.72);
@@ -46,27 +66,76 @@
   --xv-chat-shadow: 0 18px 60px rgba(15, 23, 42, 0.06);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --xv-chat-bg: #0f1115;
-    --xv-chat-surface: rgba(23, 24, 28, 0.92);
-    --xv-chat-surface-soft: rgba(28, 29, 33, 0.9);
-    --xv-chat-sidebar: #111317;
-    --xv-chat-border: rgba(255, 255, 255, 0.08);
-    --xv-chat-border-strong: rgba(255, 255, 255, 0.12);
-    --xv-chat-text: #f8fafc;
-    --xv-chat-muted: #9ca3af;
-    --xv-chat-code-bg: #16181d;
-    --xv-chat-code-header-bg: rgba(255, 255, 255, 0.03);
-    --xv-chat-code-border: rgba(255, 255, 255, 0.08);
-    --xv-chat-code-text: rgba(248, 250, 252, 0.92);
-    --xv-chat-inline-code-bg: rgba(201, 100, 66, 0.18);
-    --xv-chat-inline-code-text: #f6b39a;
-    --xv-chat-ghost-bg: rgba(255, 255, 255, 0.04);
-    --xv-chat-ghost-bg-hover: rgba(255, 255, 255, 0.08);
-    --xv-chat-ghost-text: rgba(255, 255, 255, 0.72);
-    --xv-chat-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
-  }
+html[data-theme="light"] {
+  color-scheme: light;
+  --site-bg: #f6f0e5;
+  --site-panel: #fbf7f0;
+  --site-card: #fffdf8;
+  --site-card-soft: rgba(181, 107, 75, 0.06);
+  --site-border: rgba(81, 51, 38, 0.14);
+  --site-border-soft: rgba(81, 51, 38, 0.09);
+  --site-border-strong: rgba(181, 107, 75, 0.24);
+  --site-text: #201611;
+  --site-muted: rgba(32, 22, 17, 0.78);
+  --site-subtle: rgba(32, 22, 17, 0.56);
+  --site-outline: rgba(32, 22, 17, 0.26);
+  --site-accent: #af6545;
+  --site-accent-strong: #965238;
+  --site-accent-soft: rgba(175, 101, 69, 0.14);
+  --site-accent-glow: rgba(175, 101, 69, 0.18);
+  --site-ghost-bg: rgba(32, 22, 17, 0.03);
+  --site-ghost-hover: rgba(32, 22, 17, 0.06);
+  --site-inverse: #fffdf8;
+  --site-accent-rgb: 175, 101, 69;
+  --bg: var(--site-bg);
+  --surface: var(--site-panel);
+  --surface-soft: var(--site-card);
+  --border: var(--site-border-soft);
+  --text: var(--site-text);
+  --muted: var(--site-muted);
+  --subtle: var(--site-subtle);
+  --accent: var(--site-accent);
+  --accent-soft: var(--site-card-soft);
+  --xv-chat-bg: #fbf6ee;
+  --xv-chat-surface: #fffdf8;
+  --xv-chat-surface-soft: rgba(175, 101, 69, 0.06);
+  --xv-chat-sidebar: #f5ede1;
+  --xv-chat-border: rgba(81, 51, 38, 0.08);
+  --xv-chat-border-strong: rgba(81, 51, 38, 0.14);
+  --xv-chat-text: #201611;
+  --xv-chat-muted: rgba(32, 22, 17, 0.62);
+  --xv-chat-accent: var(--site-accent);
+  --xv-chat-code-bg: #f4ede1;
+  --xv-chat-code-header-bg: rgba(32, 22, 17, 0.04);
+  --xv-chat-code-border: rgba(81, 51, 38, 0.08);
+  --xv-chat-code-text: #201611;
+  --xv-chat-inline-code-bg: rgba(175, 101, 69, 0.12);
+  --xv-chat-inline-code-text: #7f4831;
+  --xv-chat-ghost-bg: rgba(32, 22, 17, 0.04);
+  --xv-chat-ghost-bg-hover: rgba(32, 22, 17, 0.08);
+  --xv-chat-ghost-text: rgba(32, 22, 17, 0.72);
+  --xv-chat-shadow: 0 24px 80px rgba(81, 51, 38, 0.08);
+}
+
+html[data-theme="dark"] {
+  --xv-chat-bg: #0f1115;
+  --xv-chat-surface: rgba(23, 24, 28, 0.92);
+  --xv-chat-surface-soft: rgba(28, 29, 33, 0.9);
+  --xv-chat-sidebar: #111317;
+  --xv-chat-border: rgba(255, 255, 255, 0.08);
+  --xv-chat-border-strong: rgba(255, 255, 255, 0.12);
+  --xv-chat-text: #f8fafc;
+  --xv-chat-muted: #9ca3af;
+  --xv-chat-code-bg: #16181d;
+  --xv-chat-code-header-bg: rgba(255, 255, 255, 0.03);
+  --xv-chat-code-border: rgba(255, 255, 255, 0.08);
+  --xv-chat-code-text: rgba(248, 250, 252, 0.92);
+  --xv-chat-inline-code-bg: rgba(181, 107, 75, 0.18);
+  --xv-chat-inline-code-text: #f0c5b3;
+  --xv-chat-ghost-bg: rgba(255, 255, 255, 0.04);
+  --xv-chat-ghost-bg-hover: rgba(255, 255, 255, 0.08);
+  --xv-chat-ghost-text: rgba(255, 255, 255, 0.72);
+  --xv-chat-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
 }
 
 * {
@@ -80,8 +149,8 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--site-bg);
+  color: var(--site-text);
   font-family:
     "SF Pro Display",
     "Avenir Next",
@@ -120,7 +189,7 @@ a {
 *::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--site-accent-rgb), 0.42);
   background-clip: padding-box;
 }
 
@@ -159,8 +228,8 @@ a {
   background: transparent;
   border-radius: 14px;
   box-shadow:
-    0 10px 24px rgba(201, 100, 66, 0.07),
-    0 4px 10px rgba(201, 100, 66, 0.04);
+    0 10px 24px rgba(var(--site-accent-rgb), 0.08),
+    0 4px 10px rgba(var(--site-accent-rgb), 0.05);
 }
 
 .xei-logo-mark svg {
