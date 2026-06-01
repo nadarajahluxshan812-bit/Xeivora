@@ -48,6 +48,7 @@ import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
 import { OrbitLogo, XeivoraGlyph } from "@/components/orbit-logo";
+import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useElectron, type DesktopFileNode } from "@/hooks/useElectron";
@@ -73,7 +74,7 @@ import type {
 import { cn } from "@/lib/utils";
 
 const workspaceName = "Xeivora";
-const coralAccent = "#c96442";
+const coralAccent = "var(--xv-chat-accent)";
 
 const navItems: SidebarItem[] = [
   { label: "Chats", icon: MessageSquareText, href: "/chat" },
@@ -158,24 +159,24 @@ type DesktopCommandResult = {
 
 const chatTheme = {
   "--xeivora-coral": coralAccent,
-  "--xv-chat-bg": "#0e0b08",
-  "--xv-chat-surface": "#1a1410",
-  "--xv-chat-surface-soft": "rgba(201,100,66,0.08)",
-  "--xv-chat-sidebar": "#120e0a",
-  "--xv-chat-border": "rgba(201,100,66,0.12)",
-  "--xv-chat-border-strong": "rgba(201,100,66,0.2)",
-  "--xv-chat-text": "#f0ead8",
-  "--xv-chat-muted": "rgba(240,234,216,0.7)",
-  "--xv-chat-accent": coralAccent,
-  "--xv-chat-code-bg": "#1a1410",
-  "--xv-chat-code-header-bg": "rgba(201,100,66,0.08)",
-  "--xv-chat-code-border": "rgba(201,100,66,0.15)",
-  "--xv-chat-code-text": "#f0ead8",
-  "--xv-chat-inline-code-bg": "rgba(201,100,66,0.16)",
-  "--xv-chat-inline-code-text": "#f0ead8",
-  "--xv-chat-ghost-bg": "rgba(201,100,66,0.08)",
-  "--xv-chat-ghost-bg-hover": "rgba(201,100,66,0.12)",
-  "--xv-chat-ghost-text": "rgba(240,234,216,0.7)",
+  "--xv-chat-bg": "var(--site-bg)",
+  "--xv-chat-surface": "var(--site-card)",
+  "--xv-chat-surface-soft": "var(--site-card-soft)",
+  "--xv-chat-sidebar": "var(--site-panel)",
+  "--xv-chat-border": "var(--site-border)",
+  "--xv-chat-border-strong": "var(--site-border-strong)",
+  "--xv-chat-text": "var(--site-text)",
+  "--xv-chat-muted": "var(--site-subtle)",
+  "--xv-chat-accent": "var(--site-accent)",
+  "--xv-chat-code-bg": "var(--site-card)",
+  "--xv-chat-code-header-bg": "var(--site-card-soft)",
+  "--xv-chat-code-border": "var(--site-border)",
+  "--xv-chat-code-text": "var(--site-text)",
+  "--xv-chat-inline-code-bg": "var(--site-accent-soft)",
+  "--xv-chat-inline-code-text": "var(--site-text)",
+  "--xv-chat-ghost-bg": "var(--site-ghost-bg)",
+  "--xv-chat-ghost-bg-hover": "var(--site-ghost-hover)",
+  "--xv-chat-ghost-text": "var(--site-subtle)",
   "--xv-chat-shadow": "0 12px 30px rgba(0, 0, 0, 0.28)"
 } as CSSProperties;
 
@@ -1227,7 +1228,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       style={{ ...chatTheme, fontFamily: "Inter, system-ui, sans-serif" }}
     >
       <div className="min-h-screen bg-[var(--xv-chat-bg)]">
-        <aside className="fixed inset-y-0 left-0 z-50 hidden w-[260px] shrink-0 border-r border-[rgba(201,100,66,0.1)] bg-[var(--xv-chat-sidebar)] md:flex">
+        <aside className="fixed inset-y-0 left-0 z-50 hidden w-[260px] shrink-0 border-r border-[var(--xv-chat-border)] bg-[var(--xv-chat-sidebar)] md:flex">
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
             collapsed={false}
@@ -1563,7 +1564,7 @@ function SidebarContent({
     <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
       <div className="mb-2 flex items-center justify-between gap-3 px-1.5">
         <Link
-          className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[rgba(201,100,66,0.08)]"
+          className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[var(--xv-chat-ghost-bg)]"
           href="/"
           onClick={() => onDismiss?.()}
         >
@@ -1571,21 +1572,22 @@ function SidebarContent({
         </Link>
 
         <div className="flex items-center gap-2">
+          <ThemeToggleButton compact />
           <button
             aria-label="Start new chat"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
             onClick={onNewChat}
             type="button"
           >
             <Pencil className="h-4 w-4" />
           </button>
           {mobile ? (
-            <button
-              aria-label="Close sidebar"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
-              onClick={onToggleCollapse}
-              type="button"
-            >
+              <button
+                aria-label="Close sidebar"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                onClick={onToggleCollapse}
+                type="button"
+              >
               <ChevronLeft className="h-4 w-4" />
             </button>
           ) : null}
@@ -1594,7 +1596,7 @@ function SidebarContent({
 
       <button
         className={cn(
-          "mb-2 flex h-10 items-center rounded-[10px] border border-[rgba(201,100,66,0.15)] bg-[var(--xv-chat-surface)] px-3 text-[13px] font-normal text-[var(--xv-chat-muted)] shadow-sm transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]",
+          "mb-2 flex h-10 items-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 text-[13px] font-normal text-[var(--xv-chat-muted)] shadow-sm transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]",
           collapsed ? "justify-center px-0" : "gap-2.5"
         )}
         onClick={onNewChat}
@@ -1606,7 +1608,7 @@ function SidebarContent({
 
       {!collapsed || mobile ? (
         <>
-          <nav className="grid gap-[1px] border-b border-[rgba(201,100,66,0.1)] pb-2" aria-label="Workspace navigation">
+          <nav className="grid gap-[1px] border-b border-[var(--xv-chat-border)] pb-2" aria-label="Workspace navigation">
             {navItems.map((item) => (
               <SidebarNavItem item={item} key={item.label} onDismiss={onDismiss} pathname={pathname} />
             ))}
@@ -1632,7 +1634,7 @@ function SidebarContent({
               ) : null}
 
               <div className="mb-1 flex items-center justify-between px-2">
-                <p className="text-[11px] font-normal tracking-[0.01em] text-[rgba(240,234,216,0.35)]">
+                <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--xv-chat-muted)]">
                   Recents
                 </p>
               </div>
@@ -1642,7 +1644,7 @@ function SidebarContent({
                   {sessionGroups.length ? (
                     sessionGroups.map(([group, items]) => (
                       <div className="space-y-1" key={group}>
-                        <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                        <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
                           {group}
                         </h3>
                         {items.map((session) => (
@@ -1680,16 +1682,16 @@ function SidebarContent({
             </div>
           </div>
 
-          <div className="mt-auto border-t border-[rgba(201,100,66,0.1)] px-1 pt-2">
+          <div className="mt-auto border-t border-[var(--xv-chat-border)] px-1 pt-2">
             {connectedIntegrations.length ? (
               <div className="mb-2 px-1.5">
-                <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
                   Connected apps
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {connectedIntegrations.map((integration) => (
                     <Link
-                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[rgba(201,100,66,0.15)] bg-[var(--xv-chat-surface)] px-2 text-[10px] font-medium text-[rgba(240,234,216,0.75)] transition hover:border-[rgba(201,100,66,0.28)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-2 text-[10px] font-medium text-[var(--xv-chat-muted)] transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
                       href="/integrations"
                       key={integration.provider}
                       onClick={() => onDismiss?.()}
@@ -1702,7 +1704,7 @@ function SidebarContent({
               </div>
             ) : null}
 
-            <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[rgba(201,100,66,0.08)]">
+            <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[var(--xv-chat-ghost-bg)]">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-[10px] font-medium text-white">
                 {getInitials(profileName)}
               </div>
@@ -1712,7 +1714,7 @@ function SidebarContent({
               </div>
               <button
                 aria-label="Profile options"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
                 type="button"
               >
                 <Ellipsis className="h-4 w-4" />
@@ -1765,8 +1767,8 @@ function SidebarNavItem({
       className={cn(
         "flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] transition",
         isActive
-          ? "bg-[#1a1410] font-medium text-[#f0ead8]"
-          : "text-[var(--xv-chat-muted)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+          ? "bg-[var(--xv-chat-surface)] font-medium text-[var(--xv-chat-text)]"
+          : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
       )}
       href={item.href}
       onClick={() => onDismiss?.()}
@@ -1819,8 +1821,8 @@ function RecentSessionRow({
       {editing ? (
         <form
           className={cn(
-            "flex h-9 w-full items-center gap-2 rounded-[10px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-2.5 pr-2 text-left text-[12px] font-normal",
-            active ? "text-[#f0ead8]" : "text-[var(--xv-chat-muted)]"
+            "flex h-9 w-full items-center gap-2 rounded-[10px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-2.5 pr-2 text-left text-[12px] font-normal",
+            active ? "text-[var(--xv-chat-text)]" : "text-[var(--xv-chat-muted)]"
           )}
           onClick={(event) => event.stopPropagation()}
           onSubmit={(event) => {
@@ -1828,10 +1830,10 @@ function RecentSessionRow({
             onEditingSubmit();
           }}
         >
-          {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
+          {session.pinned ? <span className="shrink-0 text-[12px] text-[var(--xv-chat-accent)]">★</span> : null}
           <input
             autoFocus
-            className="w-full bg-transparent text-[12px] text-[#f0ead8] outline-none"
+            className="w-full bg-transparent text-[12px] text-[var(--xv-chat-text)] outline-none"
             onBlur={onEditingSubmit}
             onChange={(event) => onEditingTitleChange(event.target.value)}
             onKeyDown={(event) => {
@@ -1847,18 +1849,18 @@ function RecentSessionRow({
         <div
           className={cn(
             "flex h-9 w-full items-center gap-1 rounded-[10px] pl-0.5 pr-1 transition",
-            active ? "bg-[#1a1410]" : "hover:bg-[rgba(201,100,66,0.08)]"
+            active ? "bg-[var(--xv-chat-surface)]" : "hover:bg-[var(--xv-chat-ghost-bg)]"
           )}
         >
           <button
             className={cn(
               "flex min-w-0 flex-1 items-center gap-2 rounded-[10px] px-2.5 text-left text-[12px] font-normal transition",
-              active ? "text-[#f0ead8]" : "text-[var(--xv-chat-muted)] hover:text-[var(--xv-chat-text)]"
+              active ? "text-[var(--xv-chat-text)]" : "text-[var(--xv-chat-muted)] hover:text-[var(--xv-chat-text)]"
             )}
             onClick={onSelect}
             type="button"
           >
-            {session.pinned ? <span className="shrink-0 text-[12px] text-[#c96442]">★</span> : null}
+            {session.pinned ? <span className="shrink-0 text-[12px] text-[var(--xv-chat-accent)]">★</span> : null}
             <span className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
               {truncateSidebarSessionTitle(session.title)}
             </span>
@@ -1869,8 +1871,8 @@ function RecentSessionRow({
             className={cn(
               "z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] border border-transparent transition",
               active || menuOpen || menuProjectOpen
-                ? "bg-[rgba(240,234,216,0.08)] text-[#f0ead8]"
-                : "bg-transparent text-[rgba(240,234,216,0.58)] hover:bg-[rgba(201,100,66,0.12)] hover:text-[var(--xv-chat-text)]"
+                ? "bg-[var(--xv-chat-ghost-bg-hover)] text-[var(--xv-chat-text)]"
+                : "bg-transparent text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
             )}
             onClick={(event) => {
               event.preventDefault();
@@ -1888,7 +1890,7 @@ function RecentSessionRow({
         {menuOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute right-0 top-[calc(100%+4px)] z-[999] min-w-[160px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+            className="absolute right-0 top-[calc(100%+4px)] z-[999] min-w-[160px] rounded-[8px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-1 shadow-[var(--xv-chat-shadow)]"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
@@ -1912,13 +1914,13 @@ function RecentSessionRow({
         {menuProjectOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute right-0 top-[calc(100%+4px)] z-[999] min-w-[180px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+            className="absolute right-0 top-[calc(100%+4px)] z-[999] min-w-[180px] rounded-[8px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-1 shadow-[var(--xv-chat-shadow)]"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
           >
             <button
-              className="flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.1)]"
+              className="flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
               onClick={() => onAssignProject(null)}
               type="button"
             >
@@ -1928,7 +1930,7 @@ function RecentSessionRow({
 
             {projects.map((project) => (
               <button
-                className="flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.1)]"
+                className="flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
                 key={project.id}
                 onClick={() => onAssignProject(project.id)}
                 type="button"
@@ -1963,8 +1965,8 @@ function SessionMenuButton({
       className={cn(
         "flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-left text-[13px] transition",
         destructive
-          ? "text-[#f0ead8] hover:bg-[rgba(239,68,68,0.12)] hover:text-[#ef4444]"
-          : "text-[#f0ead8] hover:bg-[rgba(201,100,66,0.1)]"
+          ? "text-[var(--xv-chat-text)] hover:bg-[rgba(239,68,68,0.12)] hover:text-[#ef4444]"
+          : "text-[var(--xv-chat-text)] hover:bg-[var(--xv-chat-ghost-bg)]"
       )}
       onClick={onClick}
       type="button"
@@ -1997,22 +1999,22 @@ function DesktopFileExplorerSection({
   onFolderToggle: (path: string) => void;
 }) {
   return (
-    <div className="mb-3 border-b border-t border-[rgba(201,100,66,0.1)] py-3">
+    <div className="mb-3 border-b border-t border-[var(--xv-chat-border)] py-3">
       <div className="mb-2 flex items-center justify-between px-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">Files</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">Files</p>
         <button
-          className="inline-flex h-7 items-center gap-1.5 rounded-[8px] border border-[rgba(201,100,66,0.28)] px-2.5 font-mono text-[11px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+          className="inline-flex h-7 items-center gap-1.5 rounded-[8px] border border-[var(--xv-chat-border-strong)] px-2.5 font-mono text-[11px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
           onClick={onFolderOpen}
           type="button"
         >
-          <FolderOpen className="h-3.5 w-3.5 text-[rgba(201,100,66,0.72)]" />
+          <FolderOpen className="h-3.5 w-3.5 text-[var(--xv-chat-accent)]" />
           <span>{folderOpen ? "Change folder" : "Open folder"}</span>
         </button>
       </div>
 
       {folderOpen ? (
         <div className="space-y-2">
-          <div className="px-2 text-[11px] text-[rgba(240,234,216,0.52)]">
+          <div className="px-2 text-[11px] text-[var(--xv-chat-muted)]">
             {folderLabel || "Project folder"}
           </div>
 
@@ -2069,18 +2071,18 @@ function DesktopFileTreeNode({
     return (
       <div>
         <button
-          className="flex w-full items-center gap-1 rounded-[6px] px-2 py-1 text-left transition hover:bg-[rgba(201,100,66,0.08)]"
+          className="flex w-full items-center gap-1 rounded-[6px] px-2 py-1 text-left transition hover:bg-[var(--xv-chat-ghost-bg)]"
           onClick={() => onFolderToggle(node.path)}
           style={{ paddingLeft: `${8 + level * 12}px` }}
           type="button"
         >
           {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--xv-chat-accent)]" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--xv-chat-accent)]" />
           )}
-          <Folder className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
-          <span className="truncate text-[12px] text-[rgba(240,234,216,0.78)]">{node.name}</span>
+          <Folder className="h-3.5 w-3.5 shrink-0 text-[var(--xv-chat-accent)]" />
+          <span className="truncate text-[12px] text-[var(--xv-chat-text)]">{node.name}</span>
         </button>
 
         {expanded && node.children?.length ? (
@@ -2107,15 +2109,15 @@ function DesktopFileTreeNode({
       className={cn(
         "flex w-full items-center gap-2 rounded-[6px] py-1.5 text-left transition",
         isActive
-          ? "border-l-2 border-[var(--xv-chat-accent)] bg-[rgba(201,100,66,0.15)]"
-          : "hover:bg-[rgba(201,100,66,0.08)]"
+          ? "border-l-2 border-[var(--xv-chat-accent)] bg-[var(--xv-chat-inline-code-bg)]"
+          : "hover:bg-[var(--xv-chat-ghost-bg)]"
       )}
       onClick={() => onFileOpen(node.path)}
       style={{ paddingLeft: `${18 + level * 12}px`, paddingRight: "8px" }}
       type="button"
     >
       <FileText className="h-3.5 w-3.5 shrink-0 text-[rgba(255,255,255,0.42)]" />
-      <span className="truncate text-[12px] text-[rgba(240,234,216,0.66)]">{node.name}</span>
+      <span className="truncate text-[12px] text-[var(--xv-chat-muted)]">{node.name}</span>
     </button>
   );
 }
@@ -2140,18 +2142,18 @@ function DesktopFilePreviewPanel({
   }
 
   return (
-    <aside className="hidden h-full min-h-0 border-l border-[rgba(201,100,66,0.12)] bg-[#120e0a] xl:flex xl:flex-col">
-      <div className="flex items-center gap-2 border-b border-[rgba(201,100,66,0.12)] px-4 py-3">
+    <aside className="hidden h-full min-h-0 border-l border-[var(--xv-chat-border)] bg-[var(--xv-chat-sidebar)] xl:flex xl:flex-col">
+      <div className="flex items-center gap-2 border-b border-[var(--xv-chat-border)] px-4 py-3">
         <div className="min-w-0 flex-1">
-          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-3 py-1">
-            <FileText className="h-3.5 w-3.5 shrink-0 text-[rgba(201,100,66,0.72)]" />
-            <span className="truncate text-[12px] text-[#f0ead8]">{filePath.split(/[\\/]/).pop()}</span>
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)] px-3 py-1">
+            <FileText className="h-3.5 w-3.5 shrink-0 text-[var(--xv-chat-accent)]" />
+            <span className="truncate text-[12px] text-[var(--xv-chat-text)]">{filePath.split(/[\\/]/).pop()}</span>
           </div>
-          <p className="mt-1 truncate text-[11px] text-[rgba(240,234,216,0.4)]">{filePath}</p>
+          <p className="mt-1 truncate text-[11px] text-[var(--xv-chat-muted)]">{filePath}</p>
         </div>
 
         <button
-          className="inline-flex h-8 items-center gap-2 rounded-[10px] border border-[rgba(201,100,66,0.2)] px-3 text-[12px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+          className="inline-flex h-8 items-center gap-2 rounded-[10px] border border-[var(--xv-chat-border-strong)] px-3 text-[12px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
           onClick={onSave}
           type="button"
         >
@@ -2161,7 +2163,7 @@ function DesktopFilePreviewPanel({
 
         <button
           aria-label="Close file preview"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
           onClick={onClose}
           type="button"
         >
@@ -2170,7 +2172,7 @@ function DesktopFilePreviewPanel({
       </div>
 
       <textarea
-        className="h-full min-h-0 w-full resize-none bg-transparent px-4 py-4 font-mono text-[12px] leading-6 text-[#f0ead8] outline-none"
+        className="h-full min-h-0 w-full resize-none bg-transparent px-4 py-4 font-mono text-[12px] leading-6 text-[var(--xv-chat-text)] outline-none"
         onChange={(event) => onChange(event.target.value)}
         spellCheck={false}
         value={content}
@@ -2188,37 +2190,37 @@ function DesktopWelcomeOverlay({
 }) {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(14,11,8,0.82)] px-6 backdrop-blur-sm">
-      <div className="w-full max-w-[560px] rounded-[26px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
-        <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-4 py-2">
+      <div className="w-full max-w-[560px] rounded-[26px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-sidebar)] p-8 shadow-[var(--xv-chat-shadow)]">
+        <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)] px-4 py-2">
           <XeivoraGlyph size={20} />
-          <span className="text-[12px] font-medium tracking-[0.12em] text-[rgba(240,234,216,0.78)]">XEIVORA DESKTOP</span>
+          <span className="text-[12px] font-medium tracking-[0.12em] text-[var(--xv-chat-text)]">XEIVORA DESKTOP</span>
         </div>
 
-        <h2 className="text-[32px] font-semibold tracking-[-0.03em] text-[#f0ead8]">Welcome to Xeivora</h2>
-        <p className="mt-3 max-w-[44ch] text-[15px] leading-7 text-[rgba(240,234,216,0.64)]">
+        <h2 className="text-[32px] font-semibold tracking-[-0.03em] text-[var(--xv-chat-text)]">Welcome to Xeivora</h2>
+        <p className="mt-3 max-w-[44ch] text-[15px] leading-7 text-[var(--xv-chat-muted)]">
           Your AI operating system is ready. Sign in, open a project folder when you want desktop context, and keep your workflows continuous.
         </p>
 
-        <div className="mt-6 space-y-3 rounded-[20px] border border-[rgba(201,100,66,0.14)] bg-[#1a1410] p-5">
+        <div className="mt-6 space-y-3 rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5">
           {[
             "1. Sign in to your Xeivora account",
             "2. Open a project folder (optional)",
             "3. Start chatting"
           ].map((step) => (
-            <div className="flex items-start gap-3 text-[14px] text-[#f0ead8]" key={step}>
+            <div className="flex items-start gap-3 text-[14px] text-[var(--xv-chat-text)]" key={step}>
               <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--xv-chat-accent)]" />
               <span>{step}</span>
             </div>
           ))}
         </div>
 
-        <p className="mt-4 text-[13px] leading-6 text-[rgba(240,234,216,0.52)]">
+        <p className="mt-4 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
           Xeivora accesses files only in folders you explicitly open. Your code stays private to this desktop session.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--xv-chat-accent)] px-5 text-[14px] font-medium text-white transition hover:bg-[#b45836]"
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--xv-chat-accent)] px-5 text-[14px] font-medium text-white transition hover:brightness-95"
             onClick={onComplete}
             type="button"
           >
@@ -2226,11 +2228,11 @@ function DesktopWelcomeOverlay({
             <ArrowUp className="h-4 w-4 -rotate-45" />
           </button>
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-full border border-[rgba(201,100,66,0.2)] px-5 text-[14px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--xv-chat-border-strong)] px-5 text-[14px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
             onClick={onOpenFolder}
             type="button"
           >
-            <FolderOpen className="h-4 w-4 text-[rgba(201,100,66,0.72)]" />
+            <FolderOpen className="h-4 w-4 text-[var(--xv-chat-accent)]" />
             <span>Open project folder</span>
           </button>
         </div>
@@ -2257,12 +2259,12 @@ function DesktopToolBar({
   const activeFileLabel = activeFilePath?.split(/[\\/]/).pop() || "No file open";
 
   return (
-    <div className="rounded-[16px] border border-[rgba(201,100,66,0.14)] bg-[rgba(201,100,66,0.04)] px-3 py-2.5">
+    <div className="rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] px-3 py-2.5">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.45)]">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">
           Desktop xvr tools
         </p>
-        <span className="truncate text-[11px] text-[rgba(240,234,216,0.45)]">
+        <span className="truncate text-[11px] text-[var(--xv-chat-muted)]">
           {folderOpen ? activeFileLabel : "Open a folder to enable local tools"}
         </span>
       </div>
@@ -2289,12 +2291,12 @@ function DesktopToolButton({
 }) {
   return (
     <button
-      className="inline-flex h-8 items-center gap-2 rounded-full border border-[rgba(201,100,66,0.2)] bg-[#120e0a] px-3 font-mono text-[11px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)] disabled:cursor-not-allowed disabled:opacity-45"
+      className="inline-flex h-8 items-center gap-2 rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-sidebar)] px-3 font-mono text-[11px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)] disabled:cursor-not-allowed disabled:opacity-45"
       disabled={disabled}
       onClick={onClick}
       type="button"
     >
-      <Icon className="h-3.5 w-3.5 text-[rgba(201,100,66,0.74)]" />
+      <Icon className="h-3.5 w-3.5 text-[var(--xv-chat-accent)]" />
       <span>{label}</span>
     </button>
   );
@@ -2319,15 +2321,15 @@ function DesktopCommandModal({
 }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-[rgba(14,11,8,0.76)] px-6 backdrop-blur-sm">
-      <div className="w-full max-w-[760px] rounded-[24px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+      <div className="w-full max-w-[760px] rounded-[24px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-sidebar)] p-5 shadow-[var(--xv-chat-shadow)]">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.45)]">xvr_run_command</p>
-            <h3 className="mt-1 text-[20px] font-medium text-[#f0ead8]">Run a local command safely</h3>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">xvr_run_command</p>
+            <h3 className="mt-1 text-[20px] font-medium text-[var(--xv-chat-text)]">Run a local command safely</h3>
           </div>
           <button
             aria-label="Close command runner"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
             onClick={onClose}
             type="button"
           >
@@ -2337,13 +2339,13 @@ function DesktopCommandModal({
 
         <div className="flex gap-3">
           <input
-            className="h-11 flex-1 rounded-[14px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-4 text-[14px] text-[#f0ead8] outline-none placeholder:text-[rgba(240,234,216,0.35)] focus:border-[#c96442]"
+            className="h-11 flex-1 rounded-[14px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-4 text-[14px] text-[var(--xv-chat-text)] outline-none placeholder:text-[var(--xv-chat-muted)] focus:border-[var(--xv-chat-accent)]"
             onChange={(event) => onChange(event.target.value)}
             placeholder="npm run lint"
             value={command}
           />
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-[var(--xv-chat-accent)] px-4 text-[14px] font-medium text-white transition hover:bg-[#b45836] disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-[var(--xv-chat-accent)] px-4 text-[14px] font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-55"
             disabled={!command.trim() || running}
             onClick={onRun}
             type="button"
@@ -2354,30 +2356,30 @@ function DesktopCommandModal({
         </div>
 
         {result ? (
-          <div className="mt-4 rounded-[18px] border border-[rgba(201,100,66,0.16)] bg-[#1a1410] p-4">
+          <div className="mt-4 rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="font-mono text-[12px] text-[#f0ead8]">{result.command}</div>
+              <div className="font-mono text-[12px] text-[var(--xv-chat-text)]">{result.command}</div>
               <span
                 className={cn(
                   "rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em]",
                   result.success
-                    ? "border-[rgba(201,100,66,0.2)] text-[#c96442]"
+                    ? "border-[var(--xv-chat-border-strong)] text-[var(--xv-chat-accent)]"
                     : "border-[rgba(239,68,68,0.28)] text-[#ef4444]"
                 )}
               >
                 {result.success ? "Completed" : "Failed"}
               </span>
             </div>
-            <pre className="max-h-[320px] overflow-auto rounded-[14px] border border-[rgba(201,100,66,0.1)] bg-[#0e0b08] p-4 font-mono text-[12px] leading-6 text-[rgba(240,234,216,0.82)]">
+            <pre className="max-h-[320px] overflow-auto rounded-[14px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-code-bg)] p-4 font-mono text-[12px] leading-6 text-[var(--xv-chat-code-text)]">
 {formatDesktopCommandOutput(result)}
             </pre>
             <div className="mt-4 flex justify-end">
               <button
-                className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[rgba(201,100,66,0.2)] px-4 text-[13px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+                className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[var(--xv-chat-border-strong)] px-4 text-[13px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
                 onClick={onSendToChat}
                 type="button"
               >
-                <MessageSquareText className="h-4 w-4 text-[rgba(201,100,66,0.72)]" />
+                <MessageSquareText className="h-4 w-4 text-[var(--xv-chat-accent)]" />
                 <span>Send output to Xeivora</span>
               </button>
             </div>
@@ -2404,18 +2406,18 @@ function DesktopApplyDiffModal({
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-[rgba(14,11,8,0.76)] px-6 backdrop-blur-sm">
-      <div className="w-full max-w-[920px] rounded-[24px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+      <div className="w-full max-w-[920px] rounded-[24px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-sidebar)] p-5 shadow-[var(--xv-chat-shadow)]">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.45)]">xvr_write_file</p>
-            <h3 className="mt-1 text-[20px] font-medium text-[#f0ead8]">Xeivora wants to modify {targetName}</h3>
-            <p className="mt-2 text-[13px] leading-6 text-[rgba(240,234,216,0.58)]">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--xv-chat-muted)]">xvr_write_file</p>
+            <h3 className="mt-1 text-[20px] font-medium text-[var(--xv-chat-text)]">Xeivora wants to modify {targetName}</h3>
+            <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
               Review the proposed diff below, then apply the change only if it looks right.
             </p>
           </div>
           <button
             aria-label="Close apply diff"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
             onClick={onClose}
             type="button"
           >
@@ -2423,11 +2425,11 @@ function DesktopApplyDiffModal({
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-[18px] border border-[rgba(201,100,66,0.14)] bg-[#0e0b08]">
-          <div className="border-b border-[rgba(201,100,66,0.12)] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[rgba(240,234,216,0.45)]">
+        <div className="overflow-hidden rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-code-bg)]">
+          <div className="border-b border-[var(--xv-chat-border)] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">
             Proposed diff
           </div>
-          <div className="max-h-[420px] overflow-auto px-4 py-4 font-mono text-[12px] leading-6 text-[rgba(240,234,216,0.86)]">
+          <div className="max-h-[420px] overflow-auto px-4 py-4 font-mono text-[12px] leading-6 text-[var(--xv-chat-code-text)]">
             {diffLines.map((line, index) => (
               <div
                 className={cn(
@@ -2435,7 +2437,7 @@ function DesktopApplyDiffModal({
                     ? "text-[#8fd17a]"
                     : line.startsWith("-")
                       ? "text-[#f4a3a3]"
-                      : "text-[rgba(240,234,216,0.82)]"
+                      : "text-[var(--xv-chat-code-text)]"
                 )}
                 key={`${index}-${line}`}
               >
@@ -2447,14 +2449,14 @@ function DesktopApplyDiffModal({
 
         <div className="mt-5 flex justify-end gap-3">
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-[rgba(201,100,66,0.2)] px-4 text-[14px] text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)]"
+            className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-[var(--xv-chat-border-strong)] px-4 text-[14px] text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
             onClick={onClose}
             type="button"
           >
             Cancel
           </button>
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-[var(--xv-chat-accent)] px-4 text-[14px] font-medium text-white transition hover:bg-[#b45836] disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex h-11 items-center gap-2 rounded-[14px] bg-[var(--xv-chat-accent)] px-4 text-[14px] font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-55"
             disabled={saveState === "saving"}
             onClick={onApply}
             type="button"
@@ -2504,7 +2506,7 @@ function ChatTopbar({
   workflowMode: WorkflowMode;
 }) {
   return (
-    <header className="absolute inset-x-0 top-0 z-20 border-b border-[rgba(201,100,66,0.12)] bg-[#0e0b08]/92 backdrop-blur">
+    <header className="absolute inset-x-0 top-0 z-20 border-b border-[var(--xv-chat-border)] bg-[color:var(--xv-chat-bg)]/92 backdrop-blur">
       <div className="flex h-[50px] items-center gap-3 px-4 sm:px-4">
         <div className="min-w-0 flex-1">
           <p className="max-w-[460px] overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-medium text-[var(--xv-chat-text)]">
@@ -2517,7 +2519,7 @@ function ChatTopbar({
 
           <button
             aria-label="Share chat"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)] disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)] disabled:cursor-not-allowed disabled:opacity-55"
             disabled={!shareReady}
             onClick={onShare}
             title={shareFeedback || "Share"}
@@ -2526,10 +2528,12 @@ function ChatTopbar({
             <Share2 className="h-4 w-4" />
           </button>
 
+          <ThemeToggleButton compact />
+
           <div className="relative">
             <button
               aria-label="Open workspace status"
-              className="relative inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+              className="relative inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleStatus();
@@ -2546,7 +2550,7 @@ function ChatTopbar({
               {statusOpen ? (
                 <motion.div
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute right-0 top-[calc(100%+10px)] z-30 w-[300px] rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-4 shadow-[var(--xv-chat-shadow)]"
+                  className="absolute right-0 top-[calc(100%+10px)] z-30 w-[300px] rounded-[18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-4 shadow-[var(--xv-chat-shadow)]"
                   initial={{ opacity: 0, y: -6, scale: 0.98 }}
                   onClick={(event) => event.stopPropagation()}
                   transition={{ duration: 0.16, ease: "easeOut" }}
@@ -2657,7 +2661,7 @@ function ChatHomeView({
 
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 max-w-[400px] text-center text-[14px] font-light leading-[1.6] text-[rgba(240,234,216,0.7)]"
+            className="mt-2 max-w-[400px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
           >
@@ -2680,8 +2684,8 @@ function ChatHomeView({
                     className={cn(
                       "rounded-full border px-3 py-1.5 text-[11px] font-medium transition",
                       enabled
-                        ? "border-[rgba(201,100,66,0.28)] bg-[rgba(201,100,66,0.12)] text-[#f0ead8]"
-                        : "border-[rgba(201,100,66,0.15)] bg-[#1a1410] text-[rgba(240,234,216,0.55)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                        ? "border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)] text-[var(--xv-chat-text)]"
+                        : "border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
                     )}
                     key={integration.provider}
                     onClick={() => onToggleIntegration(integration.provider)}
@@ -2699,16 +2703,16 @@ function ChatHomeView({
           <div className="mt-6 grid w-full max-w-[520px] grid-cols-2 gap-2">
             {welcomeSuggestions.map((suggestion) => (
               <button
-                className="group rounded-[16px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] p-[14px] text-left transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[rgba(201,100,66,0.08)]"
+                className="group rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-[14px] text-left transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-ghost-bg)]"
                 key={suggestion.label}
                 onClick={() => onSuggestion(suggestion.prompt)}
                 type="button"
               >
-                <div className="text-[rgba(201,100,66,0.7)]">
+                <div className="text-[var(--xv-chat-accent)]">
                   <suggestion.icon className="h-4 w-4" />
                 </div>
                 <h3 className="mt-2 text-[13px] font-medium text-[var(--xv-chat-text)]">{suggestion.label}</h3>
-                <p className="mt-1 text-[12px] font-light leading-[1.4] text-[rgba(240,234,216,0.8)]">
+                <p className="mt-1 text-[12px] font-light leading-[1.4] text-[var(--xv-chat-muted)]">
                   {suggestion.detail}
                 </p>
               </button>
@@ -2717,7 +2721,7 @@ function ChatHomeView({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[rgba(201,100,66,0.12)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
         <ChatComposer
           composerRef={composerRef}
           connectedIntegrations={connectedIntegrations}
@@ -2833,8 +2837,8 @@ function ChatThreadView({
                       transition={{ duration: 0.18, ease: "easeOut" }}
                     >
                       <div className="ml-auto min-w-[120px] max-w-[65%]">
-                        <div className="mb-1 text-right text-[12px] font-normal text-[rgba(240,234,216,0.5)]">You</div>
-                        <div className="rounded-[18px_18px_4px_18px] border border-[rgba(201,100,66,0.25)] bg-[#2a2118] px-[18px] py-3 text-[14px] font-light leading-[1.75] text-[#f0ead8]">
+                        <div className="mb-1 text-right text-[12px] font-normal text-[var(--xv-chat-muted)]">You</div>
+                        <div className="rounded-[18px_18px_4px_18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[18px] py-3 text-[14px] font-light leading-[1.75] text-[var(--xv-chat-text)]">
                           {message.content}
                         </div>
                       </div>
@@ -2898,7 +2902,7 @@ function ChatThreadView({
                             ) : null}
                             {canApplyAssistantCode ? (
                               <button
-                                className="text-[12px] text-[var(--xv-chat-accent)] transition hover:text-[#f0ead8]"
+                                className="text-[12px] text-[var(--xv-chat-accent)] transition hover:text-[var(--xv-chat-text)]"
                                 onClick={() => onApplyAssistantCode(message)}
                                 type="button"
                               >
@@ -2916,7 +2920,7 @@ function ChatThreadView({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[rgba(201,100,66,0.12)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
         <ChatComposer
           composerRef={composerRef}
           desktopToolBar={desktopToolBar}
@@ -2995,8 +2999,8 @@ function ChatComposer({
                 className={cn(
                   "rounded-full border px-3 py-1 text-[11px] font-medium transition",
                   enabled
-                    ? "border-[rgba(201,100,66,0.28)] bg-[rgba(201,100,66,0.12)] text-[#f0ead8]"
-                    : "border-[rgba(201,100,66,0.15)] bg-[#1a1410] text-[rgba(240,234,216,0.55)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                    ? "border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)] text-[var(--xv-chat-text)]"
+                    : "border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
                 )}
                 key={integration.provider}
                 onClick={() => onToggleIntegration(integration.provider)}
@@ -3011,7 +3015,7 @@ function ChatComposer({
 
       {isDesktop && desktopToolBar ? <div className="mb-3">{desktopToolBar}</div> : null}
       <form
-        className="rounded-[18px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] py-2 shadow-[var(--xv-chat-shadow)] focus-within:border-[#c96442]"
+        className="rounded-[18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[10px] py-2 shadow-[var(--xv-chat-shadow)] focus-within:border-[var(--xv-chat-accent)]"
         onSubmit={(event) => {
           event.preventDefault();
           onSend();
@@ -3033,7 +3037,7 @@ function ChatComposer({
           <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
             {files.map((file) => (
               <div
-                className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-3 py-1 text-[12px] text-[rgba(240,234,216,0.8)]"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-1 text-[12px] text-[var(--xv-chat-text)]"
                 key={file.id}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -3053,7 +3057,7 @@ function ChatComposer({
             ))}
 
             {isUploadingFiles ? (
-              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-3 py-1 text-[12px] text-[rgba(240,234,216,0.8)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-1 text-[12px] text-[var(--xv-chat-text)]">
                 <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                 <span>Analyzing file...</span>
               </div>
@@ -3064,7 +3068,7 @@ function ChatComposer({
         <div className="flex items-end gap-2">
           <button
             aria-label="Attach file"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
             onClick={() => fileInputRef.current?.click()}
             type="button"
           >
@@ -3072,7 +3076,7 @@ function ChatComposer({
           </button>
 
           <textarea
-            className="min-h-[22px] flex-1 resize-none bg-transparent px-1 py-1.5 text-[14px] font-light leading-[1.5] text-[#f0ead8] outline-none placeholder:text-[rgba(240,234,216,0.35)]"
+            className="min-h-[22px] flex-1 resize-none bg-transparent px-1 py-1.5 text-[14px] font-light leading-[1.5] text-[var(--xv-chat-text)] outline-none placeholder:text-[var(--xv-chat-muted)]"
             onChange={(event) => onPromptChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -3089,7 +3093,7 @@ function ChatComposer({
           <div className="flex shrink-0 items-center gap-1">
             <button
               aria-label="Voice input"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[var(--xv-chat-text)]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
               onMouseDown={() => void onStartVoiceCapture()}
               onMouseLeave={onStopVoiceCapture}
               onMouseUp={onStopVoiceCapture}
@@ -3109,7 +3113,7 @@ function ChatComposer({
             {isStreaming ? (
               <button
                 aria-label="Stop generating"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#c96442] text-white transition hover:bg-[#b85a3b]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--xv-chat-accent)] text-white transition hover:brightness-95"
                 onClick={onStop}
                 type="button"
               >
@@ -3118,7 +3122,7 @@ function ChatComposer({
             ) : (
               <button
                 aria-label="Send message"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#c96442] text-white transition hover:bg-[#b85a3b] disabled:cursor-not-allowed disabled:bg-[#46362c] disabled:text-[rgba(240,234,216,0.4)]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--xv-chat-accent)] text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-[var(--xv-chat-surface-soft)] disabled:text-[var(--xv-chat-muted)]"
                 disabled={!prompt.trim() && !files.length}
                 type="submit"
               >
@@ -3156,8 +3160,8 @@ function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] })
             execution.status === "error"
               ? "border-[rgba(239,68,68,0.28)] bg-[rgba(239,68,68,0.08)]"
               : execution.connected
-                ? "border-[rgba(201,100,66,0.16)] bg-[rgba(201,100,66,0.06)]"
-                : "border-[rgba(201,100,66,0.16)] bg-[rgba(240,234,216,0.03)]"
+                ? "border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)]"
+                : "border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]"
           )}
           key={execution.id}
         >
@@ -3172,8 +3176,8 @@ function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] })
                 execution.status === "error"
                   ? "border-[rgba(239,68,68,0.28)] text-[#ef4444]"
                   : execution.connected
-                    ? "border-[rgba(201,100,66,0.2)] text-[#c96442]"
-                    : "border-[rgba(240,234,216,0.12)] text-[rgba(240,234,216,0.7)]"
+                    ? "border-[var(--xv-chat-border-strong)] text-[var(--xv-chat-accent)]"
+                    : "border-[var(--xv-chat-border)] text-[var(--xv-chat-muted)]"
               )}
             >
               {formatToolStatus(execution)}
@@ -3187,7 +3191,7 @@ function ToolExecutionGroup({ executions }: { executions: ChatToolExecution[] })
 
 function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boolean }) {
   return (
-    <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[rgba(201,100,66,0.2)] bg-[#1a1410] px-[10px] text-[12px] text-[#f0ead8]">
+    <div className="inline-flex h-8 items-center gap-[5px] rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-[10px] text-[12px] text-[var(--xv-chat-text)]">
       <span className="relative inline-flex h-2.5 w-2.5">
         {pulse ? (
           <motion.span
@@ -3200,7 +3204,7 @@ function ModelPill({ model, pulse = false }: { model: ModelPillData; pulse?: boo
         <span className="relative h-2.5 w-2.5 rounded-full" style={{ backgroundColor: coralAccent }} />
       </span>
       <span>{model.label}</span>
-      <ChevronDown className="h-3.5 w-3.5 text-[rgba(240,234,216,0.7)]" />
+      <ChevronDown className="h-3.5 w-3.5 text-[var(--xv-chat-muted)]" />
     </div>
   );
 }
@@ -3239,7 +3243,7 @@ function ErrorBanner({ className, message }: { className?: string; message: stri
   return (
     <div
       className={cn(
-        "rounded-[20px] border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-4 py-3 text-[13px] leading-6 text-[#f4c0b4]",
+        "rounded-[20px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)] px-4 py-3 text-[13px] leading-6 text-[var(--xv-chat-text)]",
         className
       )}
     >
