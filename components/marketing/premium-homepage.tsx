@@ -21,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import UpgradeButton from "@/components/payments/UpgradeButton";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { OrbitLogo } from "@/components/orbit-logo";
 import { cn } from "@/lib/utils";
@@ -1021,6 +1022,10 @@ function PricingCard({
 }: {
   tier: (typeof pricingTiers)[number];
 }) {
+  const isProTier = tier.name === "Pro";
+  const isStarterTier = tier.name === "Starter";
+  const isEnterpriseTier = tier.name === "Enterprise";
+
   return (
     <div
       className={cn(
@@ -1045,18 +1050,22 @@ function PricingCard({
           </div>
         ))}
       </div>
-      <Link
-        className={cn(
-          "mt-9 inline-flex h-11 w-full items-center justify-center rounded-full border px-5 text-[14px] font-medium transition",
-          tier.featured
-            ? "border-transparent text-white shadow-[0_14px_40px_rgba(201,100,66,0.32)] hover:-translate-y-0.5"
-            : "border-[#f0ead81a] bg-white/[0.02] text-[#f0ead8] hover:border-[#f0ead833] hover:bg-white/[0.04]"
-        )}
-        href="/signup"
-        style={tier.featured ? { backgroundColor: coral } : undefined}
-      >
-        {tier.cta}
-      </Link>
+      {isProTier ? (
+        <UpgradeButton label={tier.cta} planKey="pro" />
+      ) : (
+        <Link
+          className={cn(
+            "mt-9 inline-flex h-11 w-full items-center justify-center rounded-full border px-5 text-[14px] font-medium transition",
+            tier.featured
+              ? "border-transparent text-white shadow-[0_14px_40px_rgba(201,100,66,0.32)] hover:-translate-y-0.5"
+              : "border-[#f0ead81a] bg-white/[0.02] text-[#f0ead8] hover:border-[#f0ead833] hover:bg-white/[0.04]"
+          )}
+          href={isEnterpriseTier ? "/contact" : isStarterTier ? "/signup" : "/pricing"}
+          style={tier.featured ? { backgroundColor: coral } : undefined}
+        >
+          {tier.cta}
+        </Link>
+      )}
     </div>
   );
 }
