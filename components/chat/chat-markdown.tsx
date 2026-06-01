@@ -42,7 +42,7 @@ function CodeBlock({ className, children, ...props }: CodeBlockProps) {
   }
 
   return (
-    <pre className="my-3 overflow-x-auto rounded-lg bg-[#111111] p-4">
+    <pre className="my-3 overflow-x-auto rounded-lg border border-[var(--xv-chat-code-border)] bg-[var(--xv-chat-code-bg)] p-4">
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">{language}</div>
         <button
@@ -62,7 +62,7 @@ function CodeBlock({ className, children, ...props }: CodeBlockProps) {
           <span>{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
-      <code className="font-mono text-sm text-[#b8d29b]" {...props}>
+      <code className="font-mono text-sm text-[var(--xv-chat-code-text)]" {...props}>
         {code}
       </code>
     </pre>

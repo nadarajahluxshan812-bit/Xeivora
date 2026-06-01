@@ -134,20 +134,20 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
         />
 
         {statusMessage ? (
-          <div className="rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[rgba(201,100,66,0.08)] px-4 py-3 text-sm text-[#f0ead8]">
+          <div className="rounded-[8px] border border-[color:var(--site-border-strong)] bg-[var(--site-accent-soft)] px-4 py-3 text-sm text-[var(--site-text)]">
             {statusMessage}
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-[8px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[#f0ead8]">
+          <div className="rounded-[8px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[var(--site-text)]">
             {error}
           </div>
         ) : null}
 
         {loading ? (
           <WorkspaceCard className="flex min-h-[240px] items-center justify-center">
-            <div className="flex items-center gap-3 text-[rgba(240,234,216,0.7)]">
+            <div className="flex items-center gap-3 text-[var(--site-muted)]">
               <LoaderCircle className="h-5 w-5 animate-spin" />
               Loading connected apps...
             </div>
@@ -161,7 +161,7 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
 
               return (
                 <WorkspaceCard
-                  className="flex min-h-[220px] flex-col justify-between border-[rgba(201,100,66,0.15)] bg-[#1a1410] p-5"
+                  className="flex min-h-[220px] flex-col justify-between border-[color:var(--site-border)] bg-[var(--site-card)] p-5"
                   key={integration.provider}
                 >
                   <div>
@@ -170,7 +170,7 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
                         <IntegrationGlyph icon={integration.icon} label={integration.label} />
                         <div>
                           <WorkspaceSectionTitle className="text-[18px]">{integration.label}</WorkspaceSectionTitle>
-                          <p className="mt-1 text-sm leading-6 text-[rgba(240,234,216,0.5)]">
+                          <p className="mt-1 text-sm leading-6 text-[var(--site-subtle)]">
                             {integration.description}
                           </p>
                         </div>
@@ -182,15 +182,15 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
                           Connected
                         </span>
                       ) : !available ? (
-                        <span className="inline-flex items-center rounded-full border border-[rgba(201,100,66,0.15)] px-2.5 py-1 text-[11px] text-[rgba(240,234,216,0.4)]">
+                        <span className="inline-flex items-center rounded-full border border-[color:var(--site-border)] px-2.5 py-1 text-[11px] text-[var(--site-subtle)]">
                           Not configured
                         </span>
                       ) : null}
                     </div>
 
                     {integration.accountLabel ? (
-                      <p className="mt-4 text-xs text-[rgba(240,234,216,0.5)]">
-                        Connected as <span className="text-[#f0ead8]">{integration.accountLabel}</span>
+                      <p className="mt-4 text-xs text-[var(--site-subtle)]">
+                        Connected as <span className="text-[var(--site-text)]">{integration.accountLabel}</span>
                       </p>
                     ) : null}
 
@@ -198,7 +198,7 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
                       <div className="mt-4 flex flex-wrap gap-2">
                         {integration.scopes.slice(0, 4).map((scope) => (
                           <span
-                            className="rounded-full border border-[rgba(201,100,66,0.15)] bg-[rgba(201,100,66,0.06)] px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] text-[rgba(240,234,216,0.45)]"
+                            className="rounded-full border border-[color:var(--site-border)] bg-[var(--site-accent-soft)] px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] text-[var(--site-subtle)]"
                             key={scope}
                           >
                             {scope}
@@ -220,7 +220,7 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
                           {disconnecting ? "Disconnecting..." : "Disconnect"}
                         </WorkspaceButton>
                         <a
-                          className="inline-flex items-center gap-2 text-sm text-[rgba(240,234,216,0.6)] transition hover:text-[#f0ead8]"
+                          className="inline-flex items-center gap-2 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-text)]"
                           href={`/api/integrations/${integration.provider}/auth`}
                         >
                           Reconnect
@@ -229,13 +229,13 @@ export function IntegrationsShell({ viewer }: IntegrationsShellProps) {
                       </>
                     ) : available ? (
                       <a
-                        className="inline-flex items-center justify-center rounded-[8px] bg-[#c96442] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a04e32]"
+                        className="inline-flex items-center justify-center rounded-[8px] bg-[var(--site-accent)] px-4 py-2 text-sm font-medium text-[var(--site-inverse)] transition hover:bg-[var(--site-accent-strong)]"
                         href={`/api/integrations/${integration.provider}/auth`}
                       >
                         Connect
                       </a>
                     ) : (
-                      <span className="text-sm text-[rgba(240,234,216,0.45)]">
+                      <span className="text-sm text-[var(--site-subtle)]">
                         Add OAuth credentials to enable this integration.
                       </span>
                     )}
@@ -272,7 +272,7 @@ function IntegrationGlyph({ icon, label }: { icon: string; label: string }) {
   return (
     <div
       className={cn(
-        "flex h-11 w-11 items-center justify-center rounded-[14px] border border-[rgba(201,100,66,0.2)] bg-[rgba(201,100,66,0.08)] text-sm font-semibold text-[#f0ead8]"
+        "flex h-11 w-11 items-center justify-center rounded-[14px] border border-[color:var(--site-border)] bg-[var(--site-accent-soft)] text-sm font-semibold text-[var(--site-text)]"
       )}
       aria-label={label}
       title={label}
@@ -294,5 +294,5 @@ function iconLabel(icon: string) {
   if (normalized === "jira") return "Ji";
   if (normalized === "figma") return "Fi";
 
-  return <PlugZap className="h-4 w-4 text-[#c96442]" />;
+  return <PlugZap className="h-4 w-4 text-[var(--site-accent)]" />;
 }

@@ -302,11 +302,11 @@ export function WorkspaceSidebar({
   }
 
   return (
-    <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[rgba(201,100,66,0.1)] bg-[#120e0a] text-[#f0ead8] md:flex">
+    <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[color:var(--site-border)] bg-[var(--site-panel)] text-[var(--site-text)] md:flex">
       <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
         <div className="mb-2 flex items-center justify-between gap-3 px-1.5">
           <Link
-            className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[rgba(201,100,66,0.08)]"
+            className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[var(--site-accent-soft)]"
             href="/"
           >
             <OrbitLogo iconSize={28} nameClassName="text-[15px] tracking-[-0.01em]" showTagline={false} />
@@ -314,7 +314,7 @@ export function WorkspaceSidebar({
 
           <button
             aria-label="Start new chat"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[rgba(240,234,216,0.7)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--site-muted)] transition hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
             onClick={handleNewChat}
             type="button"
           >
@@ -323,7 +323,7 @@ export function WorkspaceSidebar({
         </div>
 
         <button
-          className="mb-2 flex h-10 items-center gap-2.5 rounded-[10px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-3 text-[13px] font-normal text-[rgba(240,234,216,0.7)] shadow-sm transition hover:border-[rgba(201,100,66,0.2)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+          className="mb-2 flex h-10 items-center gap-2.5 rounded-[10px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-3 text-[13px] font-normal text-[var(--site-muted)] shadow-sm transition hover:border-[color:var(--site-border-strong)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
           onClick={handleNewChat}
           type="button"
         >
@@ -331,7 +331,7 @@ export function WorkspaceSidebar({
           <span>New chat</span>
         </button>
 
-        <nav className="grid gap-[1px] border-b border-[rgba(201,100,66,0.1)] pb-2" aria-label="Workspace navigation">
+        <nav className="grid gap-[1px] border-b border-[color:var(--site-border)] pb-2" aria-label="Workspace navigation">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 
@@ -340,8 +340,8 @@ export function WorkspaceSidebar({
                 className={cn(
                   "flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] transition",
                   isActive
-                    ? "bg-[#1a1410] font-medium text-[#f0ead8]"
-                    : "text-[rgba(240,234,216,0.7)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                    ? "bg-[var(--site-card)] font-medium text-[var(--site-text)]"
+                    : "text-[var(--site-muted)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
                 )}
                 href={item.href}
                 key={item.label}
@@ -354,10 +354,10 @@ export function WorkspaceSidebar({
         </nav>
 
         <div className="mt-2 min-h-0 flex-1 overflow-hidden">
-          <label className="mb-2 flex h-10 items-center gap-2 rounded-[10px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-3 text-[rgba(240,234,216,0.35)] transition focus-within:border-[rgba(201,100,66,0.2)]">
+          <label className="mb-2 flex h-10 items-center gap-2 rounded-[10px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-3 text-[var(--site-subtle)] transition focus-within:border-[color:var(--site-border-strong)]">
             <Search className="h-4 w-4 shrink-0" />
             <input
-              className="w-full bg-transparent text-[13px] text-[#f0ead8] outline-none placeholder:text-[rgba(240,234,216,0.35)]"
+              className="w-full bg-transparent text-[13px] text-[var(--site-text)] outline-none placeholder:text-[var(--site-subtle)]"
               onChange={(event) => {
                 setQuery(event.target.value);
                 onSearchChange?.(event.target.value);
@@ -368,7 +368,7 @@ export function WorkspaceSidebar({
           </label>
 
           <div className="mb-1 flex items-center justify-between px-2">
-            <p className="text-[11px] font-normal tracking-[0.01em] text-[rgba(240,234,216,0.35)]">Recents</p>
+            <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--site-subtle)]">Recents</p>
           </div>
 
           <div className="h-full overflow-y-auto pr-1">
@@ -376,7 +376,7 @@ export function WorkspaceSidebar({
               {filteredRecentSections.length ? (
                 filteredRecentSections.map((section) => (
                   <div className="space-y-1" key={section.label}>
-                    <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                    <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">
                       {section.label}
                     </h3>
                     {section.items.map((item) => (
@@ -384,8 +384,8 @@ export function WorkspaceSidebar({
                         className={cn(
                           "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 text-left text-[12px] font-normal transition",
                           item.active
-                            ? "bg-[#1a1410] text-[#f0ead8]"
-                            : "text-[rgba(240,234,216,0.7)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                            ? "bg-[var(--site-card)] text-[var(--site-text)]"
+                            : "text-[var(--site-muted)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
                         )}
                         key={item.id}
                         onClick={() => {
@@ -408,7 +408,7 @@ export function WorkspaceSidebar({
               ) : groupedSessions.length ? (
                 groupedSessions.map(([group, items]) => (
                   <div className="space-y-1" key={group}>
-                    <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                    <h3 className="px-2 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">
                       {group}
                     </h3>
                     {items.map((session) => (
@@ -428,7 +428,7 @@ export function WorkspaceSidebar({
                   </div>
                 ))
               ) : (
-                <div className="px-2 pt-2 text-[13px] text-[rgba(240,234,216,0.7)]">
+                <div className="px-2 pt-2 text-[13px] text-[var(--site-muted)]">
                   {recentSections?.length ? recentSections[0]?.emptyLabel || "No recent items yet." : "No recent chats yet."}
                 </div>
               )}
@@ -436,16 +436,16 @@ export function WorkspaceSidebar({
           </div>
         </div>
 
-        <div className="mt-auto border-t border-[rgba(201,100,66,0.1)] px-1 pt-2">
+        <div className="mt-auto border-t border-[color:var(--site-border)] px-1 pt-2">
           {connectedIntegrations.length ? (
             <div className="mb-2 px-1.5">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+              <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-[var(--site-subtle)]">
                 Connected apps
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {connectedIntegrations.map((integration) => (
                   <Link
-                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-2 text-[10px] font-medium text-[rgba(240,234,216,0.75)] transition hover:border-[rgba(201,100,66,0.28)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                    className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[color:var(--site-border)] bg-[var(--site-card)] px-2 text-[10px] font-medium text-[var(--site-muted)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
                     href="/integrations"
                     key={integration.provider}
                     title={integration.label}
@@ -457,17 +457,17 @@ export function WorkspaceSidebar({
             </div>
           ) : null}
 
-          <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[rgba(201,100,66,0.08)]">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#c96442] text-[10px] font-medium text-white">
+          <div className="flex items-center gap-2 rounded-[10px] px-1.5 py-1.5 transition hover:bg-[var(--site-accent-soft)]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--site-accent)] text-[10px] font-medium text-[var(--site-inverse)]">
               {getInitials(profileName)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12.5px] font-medium text-[#f0ead8]">{profileName}</p>
-              <p className="text-[10.5px] text-[rgba(240,234,216,0.7)]">{profilePlan}</p>
+              <p className="truncate text-[12.5px] font-medium text-[var(--site-text)]">{profileName}</p>
+              <p className="text-[10.5px] text-[var(--site-muted)]">{profilePlan}</p>
             </div>
             <button
               aria-label="Profile options"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[rgba(240,234,216,0.7)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[var(--site-muted)] transition hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
               type="button"
             >
               <Ellipsis className="h-4 w-4" />
@@ -506,20 +506,20 @@ function RecentSessionRow({
         className={cn(
           "flex h-9 w-full items-center gap-2 rounded-[10px] px-2.5 pr-9 text-left text-[12px] font-normal transition",
           active
-            ? "bg-[#1a1410] text-[#f0ead8]"
-            : "text-[rgba(240,234,216,0.7)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+            ? "bg-[var(--site-card)] text-[var(--site-text)]"
+            : "text-[var(--site-muted)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
         )}
         onClick={onSelect}
         type="button"
       >
-        {session.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-[#c96442]" /> : null}
+        {session.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--site-accent)]" /> : null}
         <span className="truncate">{session.title}</span>
       </button>
 
       <button
         aria-label={`Open options for ${session.title}`}
         className={cn(
-          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[rgba(240,234,216,0.7)] transition hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]",
+          "absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] text-[var(--site-muted)] transition hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]",
           menuOpen || active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
         onClick={(event) => {
@@ -536,7 +536,7 @@ function RecentSessionRow({
         {menuOpen ? (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute left-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[8px] border border-[rgba(201,100,66,0.2)] bg-[#1a1410] p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
+            className="absolute left-0 top-[calc(100%+8px)] z-40 w-[220px] rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)] p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.28)]"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             onClick={(event) => event.stopPropagation()}
             transition={{ duration: 0.14, ease: "easeOut" }}
@@ -576,8 +576,8 @@ function SessionMenuButton({
       className={cn(
         "flex h-9 w-full items-center gap-3 rounded-[8px] px-3 text-left text-[13px] transition",
         destructive
-          ? "text-[#f07f67] hover:bg-[rgba(201,100,66,0.1)]"
-          : "text-[#f0ead8] hover:bg-[rgba(201,100,66,0.1)]"
+          ? "text-[#f07f67] hover:bg-[var(--site-accent-soft)]"
+          : "text-[var(--site-text)] hover:bg-[var(--site-accent-soft)]"
       )}
       onClick={onClick}
       type="button"

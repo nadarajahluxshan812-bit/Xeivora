@@ -295,7 +295,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
         {error ? <Feedback tone="error">{error}</Feedback> : null}
 
         <div className="grid gap-8 xl:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] p-3">
+          <aside className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)] p-3">
             <nav className="space-y-1">
               {sections.map((section) => {
                 const active = activeSection === section.key;
@@ -304,8 +304,8 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
                     className={cn(
                       "flex w-full items-center rounded-[8px] border-l-2 px-4 py-3 text-left text-sm transition-colors",
                       active
-                        ? "border-l-[#c96442] bg-[rgba(201,100,66,0.12)] text-white"
-                        : "border-l-transparent text-[rgba(255,255,255,0.55)] hover:bg-[rgba(201,100,66,0.08)] hover:text-[#f0ead8]"
+                        ? "border-l-[var(--site-accent)] bg-[var(--site-accent-soft)] text-[var(--site-text)]"
+                        : "border-l-transparent text-[var(--site-subtle)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
                     )}
                     key={section.key}
                     onClick={() => setActiveSection(section.key)}
@@ -321,7 +321,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
           <div className="space-y-6">
             {activeSection === "profile" ? (
               <WorkspaceCard>
-                <div className="flex items-center justify-between gap-4 border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="flex items-center justify-between gap-4 border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>Profile</WorkspaceSectionTitle>
                   <WorkspaceButton disabled={savingProfile} onClick={() => void handleSaveProfile()}>
                     <Save className="h-4 w-4" />
@@ -331,7 +331,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
                 <div className="mt-6 flex flex-col gap-6 lg:flex-row">
                   <div className="space-y-3">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[#c96442] text-lg font-semibold text-white">
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-[var(--site-accent)] text-lg font-semibold text-[var(--site-inverse)]">
                       {avatarDraft ? (
                         <Image
                           alt={user.name}
@@ -377,9 +377,9 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
                       </div>
                     </WorkspaceField>
 
-                    <div className="rounded-[8px] border border-[rgba(239,68,68,0.2)] bg-[#120e0a] p-4">
-                      <div className="text-sm font-medium text-white">Delete account</div>
-                      <p className="mt-2 text-sm leading-6 text-[rgba(255,255,255,0.5)]">
+                    <div className="rounded-[8px] border border-[rgba(239,68,68,0.2)] bg-[var(--site-panel)] p-4">
+                      <div className="text-sm font-medium text-[var(--site-text)]">Delete account</div>
+                      <p className="mt-2 text-sm leading-6 text-[var(--site-subtle)]">
                         Account deletion is still protected. Reach out before removing your workspace permanently.
                       </p>
                       <div className="mt-4">
@@ -393,7 +393,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
             {activeSection === "appearance" ? (
               <WorkspaceCard>
-                <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>Appearance</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-6">
@@ -436,8 +436,8 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
                     onToggle={() => void persistSettings({ showModelIndicator: !(settings?.showModelIndicator ?? true) })}
                   />
 
-                  <div className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4 text-sm text-[rgba(255,255,255,0.55)]">
-                    Current resolved theme: <span className="text-white">{resolvedTheme}</span>
+                  <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4 text-sm text-[var(--site-subtle)]">
+                    Current resolved theme: <span className="text-[var(--site-text)]">{resolvedTheme}</span>
                   </div>
                 </div>
               </WorkspaceCard>
@@ -445,7 +445,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
             {activeSection === "models" ? (
               <WorkspaceCard>
-                <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>Models</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-6">
@@ -470,11 +470,11 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
                     {modelChoices.map((model) => {
                       const enabled = enabledModels.includes(model.key);
                       return (
-                        <div className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4" key={model.key}>
+                        <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4" key={model.key}>
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-sm font-medium text-white">{model.label}</div>
-                              <div className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">{model.description}</div>
+                              <div className="text-sm font-medium text-[var(--site-text)]">{model.label}</div>
+                              <div className="mt-1 text-sm text-[var(--site-subtle)]">{model.description}</div>
                             </div>
                             <WorkspaceToggle
                               checked={enabled}
@@ -516,7 +516,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
             {activeSection === "memory" ? (
               <WorkspaceCard>
-                <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>Memory</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-4">
@@ -529,17 +529,17 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
                   <div className="space-y-3">
                     {memories.map((memory) => (
-                      <div className="flex items-start justify-between gap-4 rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4" key={memory.id}>
+                      <div className="flex items-start justify-between gap-4 rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4" key={memory.id}>
                         <div>
-                          <div className="text-sm font-medium text-white">{memory.title}</div>
-                          <div className="mt-2 text-sm leading-6 text-[rgba(255,255,255,0.5)]">{memory.content}</div>
+                          <div className="text-sm font-medium text-[var(--site-text)]">{memory.title}</div>
+                          <div className="mt-2 text-sm leading-6 text-[var(--site-subtle)]">{memory.content}</div>
                         </div>
-                        <button className="text-[rgba(255,255,255,0.45)] transition hover:text-[#ef4444]" onClick={() => void handleRemoveMemory(memory.id)} type="button">
+                        <button className="text-[var(--site-subtle)] transition hover:text-[#ef4444]" onClick={() => void handleRemoveMemory(memory.id)} type="button">
                           ×
                         </button>
                       </div>
                     ))}
-                    {!memories.length ? <div className="text-sm text-[rgba(255,255,255,0.5)]">No saved memories yet.</div> : null}
+                    {!memories.length ? <div className="text-sm text-[var(--site-subtle)]">No saved memories yet.</div> : null}
                   </div>
 
                   <WorkspaceButton onClick={() => void handleClearMemory()} variant="danger">Clear all memory</WorkspaceButton>
@@ -549,7 +549,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
             {activeSection === "integrations" ? (
               <WorkspaceCard>
-                <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>Integrations</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-5">
@@ -561,11 +561,11 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {integrations.map((integration) => (
-                      <div className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] p-4" key={integration.provider}>
+                      <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-4" key={integration.provider}>
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <div className="text-sm font-medium text-white">{integration.label}</div>
-                            <div className="mt-1 text-sm text-[rgba(255,255,255,0.5)]">{integration.description}</div>
+                            <div className="text-sm font-medium text-[var(--site-text)]">{integration.label}</div>
+                            <div className="mt-1 text-sm text-[var(--site-subtle)]">{integration.description}</div>
                           </div>
                           {integration.connected ? <WorkspaceBadge tone="live">Connected</WorkspaceBadge> : null}
                         </div>
@@ -585,13 +585,13 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
             {activeSection === "billing" ? (
               <WorkspaceCard>
-                <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>Billing</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-6">
-                  <div className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] p-4">
-                    <div className="text-sm font-medium text-white">Current plan: {billingStatus?.plan || user.plan}</div>
-                    <div className="mt-2 text-sm text-[rgba(255,255,255,0.5)]">Usage this month: {usageLabel}</div>
+                  <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-4">
+                    <div className="text-sm font-medium text-[var(--site-text)]">Current plan: {billingStatus?.plan || user.plan}</div>
+                    <div className="mt-2 text-sm text-[var(--site-subtle)]">Usage this month: {usageLabel}</div>
                     {billingStatus?.stripeCustomerId ? <div className="mt-4"><ManageSubscription /></div> : null}
                   </div>
 
@@ -613,7 +613,7 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
 
             {activeSection === "api-keys" ? (
               <WorkspaceCard>
-                <div className="border-b border-[rgba(201,100,66,0.1)] pb-4">
+                <div className="border-b border-[color:var(--site-border)] pb-4">
                   <WorkspaceSectionTitle>API Keys</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-5">
@@ -658,10 +658,10 @@ function PreferenceToggleRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4">
+    <div className="flex items-start justify-between gap-4 rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4">
       <div>
-        <div className="text-sm font-medium text-white">{label}</div>
-        <div className="mt-2 text-sm leading-6 text-[rgba(255,255,255,0.5)]">{description}</div>
+        <div className="text-sm font-medium text-[var(--site-text)]">{label}</div>
+        <div className="mt-2 text-sm leading-6 text-[var(--site-subtle)]">{description}</div>
       </div>
       <WorkspaceToggle checked={checked} onClick={onToggle} />
     </div>
@@ -681,7 +681,7 @@ function SegmentField({
 }) {
   return (
     <div className="space-y-3">
-      <div className="text-[12px] uppercase tracking-[0.06em] text-[rgba(255,255,255,0.5)]">{label}</div>
+      <div className="text-[12px] uppercase tracking-[0.06em] text-[var(--site-subtle)]">{label}</div>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const active = option.key === value;
@@ -690,8 +690,8 @@ function SegmentField({
               className={cn(
                 "rounded-full border px-4 py-2 text-sm transition",
                 active
-                  ? "border-[#c96442] bg-[rgba(201,100,66,0.12)] text-white"
-                  : "border-[rgba(201,100,66,0.2)] bg-[#120e0a] text-[rgba(255,255,255,0.55)] hover:text-[#f0ead8]"
+                  ? "border-[var(--site-accent)] bg-[var(--site-accent-soft)] text-[var(--site-text)]"
+                  : "border-[color:var(--site-border)] bg-[var(--site-panel)] text-[var(--site-subtle)] hover:text-[var(--site-text)]"
               )}
               key={option.key}
               onClick={() => onChange(option.key)}
@@ -708,19 +708,19 @@ function SegmentField({
 
 function PricingMiniCard({ description, price, title }: { description: string; price: string; title: string }) {
   return (
-    <div className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] p-5">
-      <div className="text-base font-medium text-white">{title}</div>
-      <div className="mt-3 text-[28px] font-bold text-white">{price}</div>
-      <div className="mt-3 text-sm leading-6 text-[rgba(255,255,255,0.5)]">{description}</div>
+    <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-5">
+      <div className="text-base font-medium text-[var(--site-text)]">{title}</div>
+      <div className="mt-3 text-[28px] font-bold text-[var(--site-text)]">{price}</div>
+      <div className="mt-3 text-sm leading-6 text-[var(--site-subtle)]">{description}</div>
     </div>
   );
 }
 
 function UsageStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4">
-      <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">{label}</div>
-      <div className="mt-2 text-sm text-white">{value}</div>
+    <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4">
+      <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-subtle)]">{label}</div>
+      <div className="mt-2 text-sm text-[var(--site-text)]">{value}</div>
     </div>
   );
 }

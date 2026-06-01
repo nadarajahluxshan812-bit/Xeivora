@@ -86,8 +86,8 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="text-[15px] font-medium text-white">{item.title}</h2>
-                    <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{item.content}</p>
+                    <h2 className="text-[15px] font-medium text-[var(--site-text)]">{item.title}</h2>
+                    <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">{item.content}</p>
                   </div>
                   <WorkspaceBadge tone={item.enabled ? "learning" : "standby"}>
                     {item.enabled ? item.type.replaceAll("_", " ") : "disabled"}
@@ -95,8 +95,8 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
                 </div>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-3 border-t border-[rgba(201,100,66,0.1)] pt-4">
-                <span className="text-xs uppercase tracking-[0.08em] text-[rgba(255,255,255,0.3)]">
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-[color:var(--site-border)] pt-4">
+                <span className="text-xs uppercase tracking-[0.08em] text-[var(--site-subtle)]">
                   {new Date(item.updatedAt).toLocaleDateString("en-GB", {
                     day: "2-digit",
                     month: "short",
@@ -116,21 +116,21 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           ))}
 
           <button
-            className="flex min-h-[240px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[rgba(201,100,66,0.2)] bg-[#120e0a] text-center transition-colors hover:border-[#c96442]"
+            className="flex min-h-[240px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[color:var(--site-border-strong)] bg-[var(--site-panel)] text-center transition-colors hover:border-[var(--site-accent)]"
             onClick={() => void handleCreateMemory()}
             type="button"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(201,100,66,0.12)] text-[#c96442]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
               <Plus className="h-5 w-5" />
             </div>
-            <div className="mt-4 text-sm text-[rgba(255,255,255,0.3)]">Add memory</div>
+            <div className="mt-4 text-sm text-[var(--site-subtle)]">Add memory</div>
           </button>
         </div>
 
         {items.length > 0 && !filteredItems.length ? (
           <WorkspaceCard>
             <WorkspaceSectionTitle>No memory matches yet</WorkspaceSectionTitle>
-            <p className="mt-3 max-w-[36rem] text-sm leading-7 text-[rgba(255,255,255,0.55)]">
+            <p className="mt-3 max-w-[36rem] text-sm leading-7 text-[var(--site-subtle)]">
               Try a different search term or create a new reusable memory for your workspace.
             </p>
           </WorkspaceCard>

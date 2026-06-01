@@ -375,9 +375,9 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
         <WorkspaceCard className="overflow-hidden p-0">
           <div className="mx-auto max-w-[860px] px-6 py-10 md:px-10 md:py-12">
             <div className="mx-auto max-w-[760px] text-center">
-              <label className="block rounded-[14px] border border-[rgba(201,100,66,0.18)] bg-[#120e0a] px-5 py-4 text-left shadow-[0_16px_48px_rgba(0,0,0,0.18)] transition-colors focus-within:border-[#c96442]">
+              <label className="block rounded-[14px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-5 py-4 text-left shadow-[0_16px_48px_rgba(0,0,0,0.18)] transition-colors focus-within:border-[var(--site-accent)]">
                 <textarea
-                  className="min-h-[92px] w-full resize-none bg-transparent text-[18px] leading-8 text-[#f0ead8] outline-none placeholder:text-[rgba(240,234,216,0.35)]"
+                  className="min-h-[92px] w-full resize-none bg-transparent text-[18px] leading-8 text-[var(--site-text)] outline-none placeholder:text-[var(--site-subtle)]"
                   onChange={(event) => setInput(event.target.value)}
                   placeholder="What if I launch Xeivora for free with no paid plan?"
                   value={input}
@@ -387,7 +387,7 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 {exampleScenarios.map((scenario) => (
                   <button
-                    className="rounded-full border border-[rgba(201,100,66,0.15)] bg-[rgba(201,100,66,0.06)] px-3 py-1.5 text-xs text-[rgba(240,234,216,0.75)] transition hover:border-[rgba(201,100,66,0.28)] hover:bg-[rgba(201,100,66,0.12)] hover:text-[#f0ead8]"
+                    className="rounded-full border border-[color:var(--site-border)] bg-[var(--site-accent-soft)] px-3 py-1.5 text-xs text-[var(--site-muted)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
                     key={scenario}
                     onClick={() => void handleSimulate(scenario)}
                     type="button"
@@ -439,7 +439,7 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
           >
             <div className="flex items-center gap-3">
               <WorkspaceBadge tone="learning">ASSEMBLING YOUR COUNCIL</WorkspaceBadge>
-              {topicLabel ? <span className="text-sm text-[rgba(240,234,216,0.5)]">{topicLabel} scenario</span> : null}
+              {topicLabel ? <span className="text-sm text-[var(--site-subtle)]">{topicLabel} scenario</span> : null}
             </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {assemblyAgents.slice(0, assemblyVisibleCount).map((agent) => (
@@ -450,16 +450,16 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   transition={{ duration: 0.15 }}
                 >
                   <div
-                    className="rounded-[8px] border border-[rgba(201,100,66,0.15)] border-l-4 bg-[#1a1410] p-4 text-[#f0ead8] transition-colors duration-150 hover:border-[rgba(201,100,66,0.35)]"
+                    className="rounded-[8px] border border-[color:var(--site-border)] border-l-4 bg-[var(--site-card)] p-4 text-[var(--site-text)] transition-colors duration-150 hover:border-[color:var(--site-border-strong)]"
                     style={{ borderLeftColor: agent.accentColor }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="flex items-center gap-2 text-base font-medium text-white">
+                        <div className="flex items-center gap-2 text-base font-medium text-[var(--site-text)]">
                           <span>{agent.emoji}</span>
                           <span>{agent.name}</span>
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-[rgba(240,234,216,0.55)]">{agent.role}</p>
+                        <p className="mt-2 text-sm leading-6 text-[var(--site-subtle)]">{agent.role}</p>
                       </div>
                         <WorkspaceBadge tone="learning">selected</WorkspaceBadge>
                       </div>
@@ -476,13 +476,13 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
             <div className="mt-5 space-y-3">
               {thinkingRows.map((row) => (
                 <div
-                  className="flex items-center gap-3 rounded-[10px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-3"
+                  className="flex items-center gap-3 rounded-[10px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-3"
                   key={row.id}
                 >
                   <span className="text-lg">{row.emoji}</span>
-                  <div className="text-sm text-[#f0ead8]">{row.name}</div>
-                  <div className="flex items-center gap-2 text-xs text-[rgba(240,234,216,0.45)]">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#c96442]" />
+                  <div className="text-sm text-[var(--site-text)]">{row.name}</div>
+                  <div className="flex items-center gap-2 text-xs text-[var(--site-subtle)]">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--site-accent)]" />
                     <span>{row.statusLabel}</span>
                   </div>
                 </div>
@@ -495,7 +495,7 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <section className="space-y-4">
             <div className="flex items-center gap-3">
               <WorkspaceBadge tone="learning">LIVE DEBATE</WorkspaceBadge>
-              <span className="text-sm text-[rgba(240,234,216,0.5)]">Specialists are challenging each other in real time.</span>
+              <span className="text-sm text-[var(--site-subtle)]">Specialists are challenging each other in real time.</span>
             </div>
 
             <div className="space-y-4">
@@ -509,19 +509,19 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
                     transition={{ duration: 0.15 }}
                   >
                     <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[rgba(201,100,66,0.2)] bg-[#1a1410] text-lg"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--site-border)] bg-[var(--site-card)] text-lg"
                       style={{ borderColor: `${entry.agent.accentColor}55` }}
                     >
                       {entry.agent.emoji}
                     </div>
                     <div className="max-w-[900px] min-w-0">
-                      <div className="text-sm font-medium text-white">
+                      <div className="text-sm font-medium text-[var(--site-text)]">
                         {entry.agent.name}
-                        <span className="ml-2 text-[12px] font-normal text-[rgba(240,234,216,0.45)]">
+                        <span className="ml-2 text-[12px] font-normal text-[var(--site-subtle)]">
                           {entry.message.resolvedModel || entry.message.provider}
                         </span>
                       </div>
-                      <div className="mt-2 rounded-[18px] rounded-tl-[4px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410] px-4 py-3 text-[15px] leading-7 text-[rgba(240,234,216,0.85)]">
+                      <div className="mt-2 rounded-[18px] rounded-tl-[4px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-4 py-3 text-[15px] leading-7 text-[var(--site-muted)]">
                         {entry.message.text}
                       </div>
                     </div>
@@ -537,21 +537,21 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
             <WorkspaceCard className="space-y-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">Simulation report</div>
-                  <h2 className="mt-3 text-[clamp(28px,3vw,34px)] font-semibold tracking-[-0.03em] text-white">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--site-subtle)]">Simulation report</div>
+                  <h2 className="mt-3 text-[clamp(28px,3vw,34px)] font-semibold tracking-[-0.03em] text-[var(--site-text)]">
                     {selectedSimulation.report.verdict}
                   </h2>
-                  <p className="mt-3 max-w-[760px] text-sm leading-7 text-[rgba(240,234,216,0.55)]">
+                  <p className="mt-3 max-w-[760px] text-sm leading-7 text-[var(--site-subtle)]">
                     Scenario: {selectedSimulation.scenario}
                   </p>
                 </div>
                 <WorkspaceBadge tone="learning">{selectedSimulation.report.verdictTag}</WorkspaceBadge>
               </div>
 
-              <div className="rounded-[12px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] p-4">
-                <div className="flex items-center justify-between gap-4 text-sm text-[rgba(240,234,216,0.55)]">
+              <div className="rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-4">
+                <div className="flex items-center justify-between gap-4 text-sm text-[var(--site-subtle)]">
                   <span>Confidence</span>
-                  <span className="font-medium text-[#f0ead8]">{selectedSimulation.report.confidence}%</span>
+                  <span className="font-medium text-[var(--site-text)]">{selectedSimulation.report.confidence}%</span>
                 </div>
                 <div className="mt-3">
                   <WorkspaceProgressBar value={selectedSimulation.report.confidence} />
@@ -565,36 +565,36 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                <WorkspaceCard className="border-[rgba(201,100,66,0.12)] bg-[#120e0a] p-5">
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">Key risks</div>
-                  <ul className="mt-4 space-y-3 text-sm leading-7 text-[rgba(240,234,216,0.78)]">
+                <WorkspaceCard className="border-[color:var(--site-border)] bg-[var(--site-panel)] p-5">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--site-subtle)]">Key risks</div>
+                  <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--site-muted)]">
                     {selectedSimulation.report.keyRisks.map((risk) => (
                       <li className="flex items-start gap-3" key={risk}>
-                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#c96442]" />
+                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[var(--site-accent)]" />
                         <span>{risk}</span>
                       </li>
                     ))}
                   </ul>
                 </WorkspaceCard>
 
-                <WorkspaceCard className="border-[rgba(201,100,66,0.12)] bg-[#120e0a] p-5">
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">Recommended action</div>
-                  <p className="mt-4 text-sm leading-7 text-[rgba(240,234,216,0.78)]">
+                <WorkspaceCard className="border-[color:var(--site-border)] bg-[var(--site-panel)] p-5">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--site-subtle)]">Recommended action</div>
+                  <p className="mt-4 text-sm leading-7 text-[var(--site-muted)]">
                     {selectedSimulation.report.recommendedAction}
                   </p>
-                  <div className="mt-6 text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">
+                  <div className="mt-6 text-[11px] uppercase tracking-[0.14em] text-[var(--site-subtle)]">
                     What changes the outcome
                   </div>
-                  <p className="mt-3 text-sm leading-7 text-[rgba(240,234,216,0.78)]">
+                  <p className="mt-3 text-sm leading-7 text-[var(--site-muted)]">
                     {selectedSimulation.report.outcomeVariable}
                   </p>
                 </WorkspaceCard>
               </div>
 
-              <div className="rounded-[12px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] px-4 py-3 text-sm text-[rgba(240,234,216,0.65)]">
-                <span className="font-medium text-[#f0ead8]">Agents:</span>{" "}
+              <div className="rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-3 text-sm text-[var(--site-muted)]">
+                <span className="font-medium text-[var(--site-text)]">Agents:</span>{" "}
                 {selectedSimulation.agentsUsed.map((agentId) => agentMap.get(agentId)?.name || agentId).join(", ")}
-                <span className="ml-4 font-medium text-[#f0ead8]">Confidence:</span> {selectedSimulation.report.agentConfidence}%
+                <span className="ml-4 font-medium text-[var(--site-text)]">Confidence:</span> {selectedSimulation.report.agentConfidence}%
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -631,9 +631,9 @@ export function SimulateShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
 function ReportCard({ label, value }: { label: string; value: string }) {
   return (
-    <WorkspaceCard className="border-[rgba(201,100,66,0.12)] bg-[#120e0a] p-5">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-[rgba(240,234,216,0.35)]">{label}</div>
-      <p className="mt-4 text-sm leading-7 text-[rgba(240,234,216,0.78)]">{value}</p>
+    <WorkspaceCard className="border-[color:var(--site-border)] bg-[var(--site-panel)] p-5">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-[var(--site-subtle)]">{label}</div>
+      <p className="mt-4 text-sm leading-7 text-[var(--site-muted)]">{value}</p>
     </WorkspaceCard>
   );
 }

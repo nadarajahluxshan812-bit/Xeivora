@@ -40,8 +40,8 @@ export function AgentsShell({ viewer = null }: { viewer?: AuthUser | null }) {
               <WorkspaceCard className="h-full p-6">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-xl font-semibold text-white">{agent.name}</div>
-                    <div className="mt-2 text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.3)]">
+                    <div className="text-xl font-semibold text-[var(--site-text)]">{agent.name}</div>
+                    <div className="mt-2 text-[10px] uppercase tracking-[0.12em] text-[var(--site-subtle)]">
                       {agent.specialty}
                     </div>
                   </div>
@@ -50,14 +50,14 @@ export function AgentsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   </WorkspaceBadge>
                 </div>
 
-                <div className="mt-5 rounded-[8px] border border-[rgba(201,100,66,0.1)] bg-[rgba(255,255,255,0.04)] p-4">
-                  <div className="text-[9px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.25)]">MODEL</div>
-                  <div className="mt-2 text-lg font-medium text-white">{agent.model}</div>
+                <div className="mt-5 rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-ghost-bg)] p-4">
+                  <div className="text-[9px] uppercase tracking-[0.12em] text-[var(--site-subtle)]">MODEL</div>
+                  <div className="mt-2 text-lg font-medium text-[var(--site-text)]">{agent.model}</div>
                 </div>
 
                 <div className="mt-5">
                   <WorkspaceProgressBar value={agent.load} />
-                  <div className="mt-3 text-xs text-[rgba(255,255,255,0.35)]">{agent.load}% active load</div>
+                  <div className="mt-3 text-xs text-[var(--site-subtle)]">{agent.load}% active load</div>
                 </div>
               </WorkspaceCard>
             </motion.div>
@@ -69,20 +69,20 @@ export function AgentsShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {overview.memoryLanes.map((lane) => (
               <div
-                className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] p-5 transition-colors hover:border-[rgba(201,100,66,0.35)]"
+                className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[color:var(--site-border-strong)]"
                 key={lane.name}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-[15px] font-medium text-white">{lane.name}</div>
-                    <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.5)]">{lane.detail}</p>
+                    <div className="text-[15px] font-medium text-[var(--site-text)]">{lane.name}</div>
+                    <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">{lane.detail}</p>
                   </div>
                   <WorkspaceBadge tone="learning">LIVE OBJECTIVE</WorkspaceBadge>
                 </div>
                 <div className="mt-5">
                   <WorkspaceProgressBar value={lane.coverage} />
                 </div>
-                <div className="mt-3 text-xs text-[rgba(255,255,255,0.35)]">{lane.items}</div>
+                <div className="mt-3 text-xs text-[var(--site-subtle)]">{lane.items}</div>
               </div>
             ))}
           </div>
@@ -96,13 +96,13 @@ function WorkspaceLoading({ viewer = null }: { viewer?: AuthUser | null }) {
   return (
     <WorkspacePageShell statusLabel="Connecting" viewer={viewer}>
       <div className="space-y-5">
-        <div className="h-36 animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" />
+        <div className="h-36 animate-pulse rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)]" />
         <div className="grid gap-5 xl:grid-cols-3">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div className="h-80 animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" key={index} />
+            <div className="h-80 animate-pulse rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)]" key={index} />
           ))}
         </div>
-        <div className="h-96 animate-pulse rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#1a1410]" />
+        <div className="h-96 animate-pulse rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)]" />
       </div>
     </WorkspacePageShell>
   );

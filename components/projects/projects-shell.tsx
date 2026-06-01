@@ -91,7 +91,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                 <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {filteredProjects.map((project) => (
                     <article
-                      className="rounded-[8px] border border-[rgba(201,100,66,0.15)] bg-[#120e0a] p-5 transition-colors hover:border-[rgba(201,100,66,0.35)]"
+                      className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-5 transition-colors hover:border-[color:var(--site-border-strong)]"
                       key={project.id}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -103,18 +103,18 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                             <FolderKanban className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
-                            <div className="truncate text-base font-medium text-white">{project.name}</div>
-                            <div className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[rgba(255,255,255,0.35)]">
+                            <div className="truncate text-base font-medium text-[var(--site-text)]">{project.name}</div>
+                            <div className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[var(--site-subtle)]">
                               {project.status}
                             </div>
                           </div>
                         </div>
-                        <span className="text-xs text-[rgba(255,255,255,0.35)]">{project.chatCount} chats</span>
+                        <span className="text-xs text-[var(--site-subtle)]">{project.chatCount} chats</span>
                       </div>
 
-                      <p className="mt-4 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{project.description}</p>
+                      <p className="mt-4 text-sm leading-7 text-[var(--site-subtle)]">{project.description}</p>
 
-                      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-[rgba(201,100,66,0.1)] pt-4">
+                      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-[color:var(--site-border)] pt-4">
                         <Metric label="Chats" value={`${project.chatCount}`} />
                         <Metric label="Files" value={`${project.fileCount}`} />
                         <Metric label="Memory" value={`${project.memoryCount}`} />
@@ -148,14 +148,14 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                 {toolLogs.length ? (
                   toolLogs.map((log) => (
                     <div
-                      className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4"
+                      className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4"
                       key={log.id}
                     >
-                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[rgba(255,255,255,0.35)]">
-                        <Sparkles className="h-3.5 w-3.5 text-[#c96442]" />
+                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.1em] text-[var(--site-subtle)]">
+                        <Sparkles className="h-3.5 w-3.5 text-[var(--site-accent)]" />
                         <span>{log.tool}</span>
                       </div>
-                      <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">{log.summary}</p>
+                      <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">{log.summary}</p>
                     </div>
                   ))
                 ) : (
@@ -174,23 +174,23 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
               {files.length ? (
                 files.slice(0, 8).map((file) => (
                   <div
-                    className="rounded-[8px] border border-[rgba(201,100,66,0.12)] bg-[#120e0a] px-4 py-4 transition-colors hover:border-[rgba(201,100,66,0.25)]"
+                    className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4 transition-colors hover:border-[color:var(--site-border-strong)]"
                     key={file.id}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[rgba(201,100,66,0.08)] text-[#c96442]">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-white">{file.name}</div>
-                          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">
+                          <div className="truncate text-sm font-medium text-[var(--site-text)]">{file.name}</div>
+                          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-[var(--site-subtle)]">
                             {file.kind}
                           </div>
                         </div>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm leading-7 text-[rgba(255,255,255,0.55)]">
+                    <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">
                       {file.summary || file.previewText || "Ready for analysis."}
                     </p>
                   </div>
@@ -211,9 +211,9 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[8px] border border-[rgba(201,100,66,0.1)] bg-[#1a1410] px-3 py-3">
-      <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(255,255,255,0.35)]">{label}</div>
-      <div className="mt-2 text-sm font-medium text-white">{value}</div>
+    <div className="rounded-[8px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-3 py-3">
+      <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--site-subtle)]">{label}</div>
+      <div className="mt-2 text-sm font-medium text-[var(--site-text)]">{value}</div>
     </div>
   );
 }
