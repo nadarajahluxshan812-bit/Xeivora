@@ -62,10 +62,10 @@ const navItems = [
   { label: "Chats", icon: MessageSquareText, href: "/chat" },
   { label: "Projects", icon: FolderKanban, href: "/dashboard" },
   { label: "Memory", icon: BrainCircuit, href: "/memory" },
-  { label: "Workflows", icon: Workflow, href: "/workflows" },
-  { label: "Agents", icon: Bot, href: "/agents" },
-  { label: "Simulate", icon: Target, href: "/simulate" },
-  { label: "Integrations", icon: PlugZap, href: "/integrations" },
+  { label: "Workflows", icon: Workflow, href: "/workflows", soon: true },
+  { label: "Agents", icon: Bot, href: "/agents", soon: true },
+  { label: "Simulate", icon: Target, href: "/simulate", soon: true },
+  { label: "Integrations", icon: PlugZap, href: "/integrations", soon: true },
   { label: "Settings", icon: Settings2, href: "/settings" }
 ] as const;
 
@@ -122,7 +122,7 @@ export function WorkspaceSidebar({
   onSelectSession,
   recentSections,
   searchQuery = "",
-  searchPlaceholder = "Search chats",
+  searchPlaceholder = "Search context and chats",
   sessions = [],
   statusLabel = "Protected",
   onSearchChange,
@@ -289,7 +289,7 @@ export function WorkspaceSidebar({
       return;
     }
 
-    router.push("/chat");
+    router.push("/dashboard");
   }
 
   function handleSelectSession(sessionId: string) {
@@ -328,7 +328,7 @@ export function WorkspaceSidebar({
           type="button"
         >
           <Plus className="h-4 w-4 shrink-0" />
-          <span>New chat</span>
+          <span>Continue project</span>
         </button>
 
         <nav className="grid gap-[1px] border-b border-[color:var(--site-border)] pb-2" aria-label="Workspace navigation">
@@ -348,6 +348,11 @@ export function WorkspaceSidebar({
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span>{item.label}</span>
+                {"soon" in item && item.soon ? (
+                  <span className="ml-auto rounded-full border border-[color:var(--site-border)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[var(--site-subtle)]">
+                    Soon
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -362,13 +367,13 @@ export function WorkspaceSidebar({
                 setQuery(event.target.value);
                 onSearchChange?.(event.target.value);
               }}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder || "Search context and chats"}
               value={query}
             />
           </label>
 
           <div className="mb-1 flex items-center justify-between px-2">
-            <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--site-subtle)]">Recents</p>
+            <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--site-subtle)]">Recent context</p>
           </div>
 
           <div className="h-full overflow-y-auto pr-1">
@@ -429,7 +434,7 @@ export function WorkspaceSidebar({
                 ))
               ) : (
                 <div className="px-2 pt-2 text-[13px] text-[var(--site-muted)]">
-                  {recentSections?.length ? recentSections[0]?.emptyLabel || "No recent items yet." : "No recent chats yet."}
+                  {recentSections?.length ? recentSections[0]?.emptyLabel || "No saved continuity yet." : "No saved continuity yet."}
                 </div>
               )}
             </div>

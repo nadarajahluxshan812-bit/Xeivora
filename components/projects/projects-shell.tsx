@@ -72,22 +72,22 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const stats = useMemo(
     () => [
       {
-        label: "Projects",
+        label: "Saved projects",
         value: projects.length,
         icon: FolderKanban
       },
       {
-        label: "Conversations",
+        label: "Context threads",
         value: projects.reduce((sum, project) => sum + Number(project.chatCount || 0), 0),
         icon: MessageSquareText
       },
       {
-        label: "Files",
+        label: "Attached files",
         value: files.length,
         icon: FileText
       },
       {
-        label: "Memories",
+        label: "Memory items",
         value: projects.reduce((sum, project) => sum + Number(project.memoryCount || 0), 0),
         icon: BrainCircuit
       }
@@ -97,6 +97,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
   const activitySeries = useMemo(() => buildActivitySeries(toolLogs), [toolLogs]);
   const activityFeed = useMemo(() => buildActivityFeed(toolLogs), [toolLogs]);
+  const leadProject = filteredProjects[0] || projects[0] || null;
 
   async function handleCreateProject() {
     const name = window.prompt("Project name", "New Xeivora project");
@@ -118,6 +119,15 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
     setProjects((current) => [project, ...current]);
   }
 
+  function handleContinueProject(projectId: string | null) {
+    if (projectId) {
+      router.push(`/chat?project=${encodeURIComponent(projectId)}`);
+      return;
+    }
+
+    router.push("/chat");
+  }
+
   return (
     <WorkspacePageShell statusLabel="Projects" viewer={viewer}>
       <div className="space-y-6 md:space-y-7">
@@ -132,6 +142,14 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <div className="flex items-center gap-3 self-start md:self-auto">
             <button
               className="inline-flex items-center gap-2 rounded-[8px] bg-[var(--site-accent)] px-4 py-2.5 text-[13px] font-medium text-[var(--site-inverse)] transition duration-150 hover:scale-[1.02] hover:bg-[var(--site-accent-strong)]"
+              onClick={() => handleContinueProject(leadProject?.id || null)}
+              type="button"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Continue Project
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-[8px] border border-[color:var(--site-border-strong)] px-4 py-2.5 text-[13px] font-medium text-[var(--site-text)] transition duration-150 hover:bg-[var(--site-ghost-bg)]"
               onClick={() => void handleCreateProject()}
               type="button"
             >
@@ -153,24 +171,23 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
         >
           <div className="max-w-[560px]">
             <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[color:var(--site-accent)] opacity-80">
-              Projects workspace
+              Continuity workspace
             </div>
             <h1 className="mt-3 font-[Georgia,'Times New Roman',serif] text-[32px] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--site-text)] md:text-[36px]">
-              <span className="block">Organize work around</span>
-              <span className="block">durable context.</span>
+              Continue your AI work across models without losing context.
             </h1>
             <p className="mt-4 max-w-[480px] text-[13px] font-light leading-6 text-[var(--site-subtle)]">
-              Create persistent workspaces for chats, files, memory, and orchestration traces.
+              Projects keep conversations, files, memory, and decisions attached so Xeivora can resume exactly where work stopped.
             </p>
           </div>
 
           <button
             className="inline-flex items-center gap-2 rounded-[8px] bg-[var(--site-accent)] px-5 py-2.5 text-[13px] font-medium text-[var(--site-inverse)] transition duration-150 hover:scale-[1.02] hover:bg-[var(--site-accent-strong)]"
-            onClick={() => void handleCreateProject()}
+            onClick={() => handleContinueProject(leadProject?.id || null)}
             type="button"
           >
-            <Plus className="h-4 w-4" />
-            New project
+            <ArrowRight className="h-4 w-4" />
+            Continue Project
           </button>
         </motion.section>
 
@@ -184,7 +201,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <input
             className="w-full bg-transparent text-[13px] font-light text-[var(--site-text)] outline-none placeholder:text-[var(--site-subtle)]"
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search projects..."
+            placeholder="Search projects, context, and saved work..."
             value={query}
           />
         </motion.label>
@@ -213,7 +230,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <FadeCard delay={0.36}>
             <section className={pageCardClassName}>
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-[14px] font-medium text-[var(--site-text)]">Project registry</h2>
+                <h2 className="text-[14px] font-medium text-[var(--site-text)]">Continue projects</h2>
                 <button
                   className="text-[13px] font-medium text-[var(--site-accent)] transition hover:opacity-80"
                   onClick={() => setQuery("")}
@@ -230,6 +247,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                       <button
                         className="group flex w-full items-start gap-4 rounded-[10px] px-2 py-4 text-left transition duration-150 hover:bg-[var(--site-ghost-bg)]"
                         key={project.id}
+                        onClick={() => handleContinueProject(project.id)}
                         type="button"
                       >
                         <div
@@ -248,7 +266,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                             </span>
                           </div>
                           <p className="mt-2 line-clamp-2 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
-                            {project.description || "Workspace for durable context, live memory, and orchestrated tasks."}
+                            {project.description || "Workspace for durable context, memory checkpoints, and model-to-model continuity."}
                           </p>
                           <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] font-light text-[var(--site-subtle)]">
                             <span>
@@ -267,7 +285,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   </div>
                 ) : (
                   <div className="rounded-[10px] border border-dashed border-[color:var(--site-border)] px-5 py-10 text-center text-[13px] font-light text-[var(--site-subtle)]">
-                    No matching projects yet.
+                    No matching project continuity yet.
                   </div>
                 )}
               </div>
@@ -277,7 +295,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <FadeCard delay={0.41}>
             <section className={pageCardClassName}>
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-[14px] font-medium text-[var(--site-text)]">Recent files</h2>
+                <h2 className="text-[14px] font-medium text-[var(--site-text)]">Saved context files</h2>
                 <button
                   className="text-[13px] font-medium text-[var(--site-accent)] transition hover:opacity-80"
                   onClick={() => router.push("/chat")}
@@ -310,7 +328,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   ))
                 ) : (
                   <div className="rounded-[10px] border border-dashed border-[color:var(--site-border)] px-5 py-10 text-center text-[13px] font-light text-[var(--site-subtle)]">
-                    No files stored yet.
+                    No project files saved yet.
                   </div>
                 )}
               </div>
@@ -321,7 +339,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
         <FadeCard delay={0.46}>
           <section className={pageCardClassName}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-[14px] font-medium text-[var(--site-text)]">Workspace activity</h2>
+              <h2 className="text-[14px] font-medium text-[var(--site-text)]">Continuity activity</h2>
               <button
                 className="inline-flex items-center rounded-full border border-[color:var(--site-border)] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--site-subtle)]"
                 type="button"
@@ -359,7 +377,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   </div>
                 ))
               ) : (
-                <div className="text-[13px] font-light text-[var(--site-subtle)]">No recent workspace activity yet.</div>
+                <div className="text-[13px] font-light text-[var(--site-subtle)]">No continuity events recorded yet.</div>
               )}
             </div>
           </section>
@@ -368,28 +386,28 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             {
-              title: "New Chat",
-              description: "Start a conversation",
-              icon: MessageSquareText,
-              onClick: () => router.push("/chat")
+              title: "Continue Project",
+              description: "Resume saved context",
+              icon: FolderKanban,
+              onClick: () => handleContinueProject(leadProject?.id || null)
             },
             {
-              title: "Upload File",
-              description: "Add to workspace",
-              icon: Upload,
-              onClick: () => router.push("/chat")
-            },
-            {
-              title: "New Workflow",
-              description: "Automate tasks",
-              icon: GitBranch,
-              onClick: () => router.push("/workflows")
-            },
-            {
-              title: "Add Memory",
-              description: "Save context",
+              title: "Project Memory",
+              description: "Review saved context",
               icon: BrainCircuit,
               onClick: () => router.push("/memory")
+            },
+            {
+              title: "Summarise Previous Work",
+              description: "Get the latest recap",
+              icon: FileText,
+              onClick: () => handleContinueProject(leadProject?.id || null)
+            },
+            {
+              title: "Continue Coding Work",
+              description: "Resume development context",
+              icon: GitBranch,
+              onClick: () => handleContinueProject(leadProject?.id || null)
             }
           ].map((action, index) => (
             <FadeCard delay={0.5 + index * 0.05} key={action.title}>

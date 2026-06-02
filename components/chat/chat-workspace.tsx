@@ -94,49 +94,49 @@ const navItems: SidebarItem[] = [
   { label: "Chats", icon: MessageSquareText, href: "/chat" },
   { label: "Projects", icon: FolderKanban, href: "/dashboard" },
   { label: "Memory", icon: BrainCircuit, href: "/memory" },
-  { label: "Workflows", icon: Workflow, href: "/workflows" },
-  { label: "Agents", icon: Bot, href: "/agents" },
-  { label: "Simulate", icon: Target, href: "/simulate" },
-  { label: "Integrations", icon: PlugZap, href: "/integrations" },
+  { label: "Workflows", icon: Workflow, href: "/workflows", soon: true },
+  { label: "Agents", icon: Bot, href: "/agents", soon: true },
+  { label: "Simulate", icon: Target, href: "/simulate", soon: true },
+  { label: "Integrations", icon: PlugZap, href: "/integrations", soon: true },
   { label: "Settings", icon: Settings2, href: "/settings" }
 ];
 
 const welcomeSuggestions: SuggestionCard[] = [
   {
-    label: "Write or edit",
-    detail: "Emails, essays, docs, code",
+    label: "Resume Project",
+    detail: "Pick up where the work stopped",
     icon: Pencil,
-    prompt: "Help me write or edit this clearly and professionally."
+    prompt: "Resume my project from the last saved context and continue the next best step."
   },
   {
-    label: "Travel planning",
-    detail: "Visas, eSIM, itineraries",
-    icon: Plane,
-    prompt: "Plan a smart trip itinerary and help me compare the best options."
+    label: "Project Memory",
+    detail: "Review saved decisions and notes",
+    icon: BrainCircuit,
+    prompt: "Show me the important project memory, decisions, and open threads I need before continuing."
   },
   {
-    label: "Code & build",
+    label: "Continue Coding Work",
     detail: "Any language, any framework",
     icon: Code2,
-    prompt: "Help me code and build this feature end to end."
+    prompt: "Continue the coding work from the last checkpoint without losing the previous context."
   },
   {
-    label: "Research & analyse",
-    detail: "Deep dives, summaries",
+    label: "Summarise Previous Work",
+    detail: "Recap progress and next steps",
     icon: Search,
-    prompt: "Research this topic and analyze the best path forward."
+    prompt: "Summarise the previous work, what decisions were made, and what should happen next."
   },
   {
-    label: "Health info",
-    detail: "Symptoms, medications",
-    icon: Heart,
-    prompt: "Help me understand this health topic clearly and carefully."
+    label: "Switch Model With Context",
+    detail: "Carry everything forward cleanly",
+    icon: RefreshCcw,
+    prompt: "Switch to the best model for this task and preserve all project context."
   },
   {
-    label: "Learn anything",
-    detail: "Tutoring, explanations",
-    icon: GraduationCap,
-    prompt: "Teach me this topic in a simple, structured way."
+    label: "View Project Timeline",
+    detail: "See the sequence of work so far",
+    icon: FolderOpen,
+    prompt: "Show me the project timeline so I can see what happened, what changed, and what comes next."
   }
 ];
 
@@ -219,6 +219,7 @@ type SidebarItem = {
   href: string;
   icon: LucideIcon;
   label: string;
+  soon?: boolean;
 };
 
 type SuggestionCard = {
@@ -425,7 +426,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const topbarTitle =
     activeSession?.title && activeSession.title.trim() !== "New Xeivora chat"
       ? activeSession.title
-      : "New chat";
+      : selectedProjectId
+        ? `Continue ${projects.find((project) => project.id === selectedProjectId)?.name || "Project"}`
+        : "Continue project";
   const showDesktopPreview = isDesktop && Boolean(activeFile);
   const searchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
@@ -481,10 +484,14 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
   useEffect(() => {
     const sessionId = searchParams.get("session");
+    const projectId = searchParams.get("project");
     if (sessionId) {
       void loadSession(sessionId).catch(() => {
         // Ignore deep-link load failures and keep the workspace usable.
       });
+    }
+    if (!sessionId && projectId) {
+      setSelectedProjectId(projectId);
     }
   }, [searchParams]);
 
@@ -1965,6 +1972,10 @@ function SidebarContent({
   const profileName = viewer?.name || workspaceName;
   const profilePlan = viewer?.plan || "Pro";
   const profileEmail = viewer?.email || "luxshan@xeivora.com";
+  const handleContinueProject = () => {
+    onDismiss?.();
+    router.push("/dashboard");
+  };
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
@@ -2004,11 +2015,11 @@ function SidebarContent({
           "mb-2 flex h-10 items-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 text-[13px] font-normal text-[var(--xv-chat-muted)] shadow-sm transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]",
           collapsed ? "justify-center px-0" : "gap-2.5"
         )}
-        onClick={onNewChat}
+        onClick={handleContinueProject}
         type="button"
       >
         <Plus className="h-4 w-4 shrink-0" />
-        {!collapsed ? <span>New chat</span> : null}
+        {!collapsed ? <span>Continue project</span> : null}
       </button>
 
       {!collapsed || mobile ? (
@@ -2040,7 +2051,7 @@ function SidebarContent({
 
               <div className="mb-1 flex items-center justify-between px-2">
                 <p className="text-[11px] font-normal tracking-[0.01em] text-[var(--xv-chat-muted)]">
-                  Recents
+                  Recent context
                 </p>
                 <button
                   aria-label="Search chats"
@@ -2089,7 +2100,7 @@ function SidebarContent({
                       </div>
                     ))
                   ) : (
-                    <div className="px-2 pt-2 text-[13px] text-[var(--xv-chat-muted)]">No recent chats yet.</div>
+                    <div className="px-2 pt-2 text-[13px] text-[var(--xv-chat-muted)]">No saved continuity yet.</div>
                   )}
                 </div>
               </ScrollArea>
@@ -2256,6 +2267,11 @@ function SidebarNavItem({
     >
       <item.icon className="h-4 w-4 shrink-0" />
       <span>{item.label}</span>
+      {item.soon ? (
+        <span className="ml-auto rounded-full border border-[var(--xv-chat-border)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">
+          Soon
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -3251,12 +3267,12 @@ function ChatHomeView({
 
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 max-w-[400px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
+            className="mt-2 max-w-[460px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
           >
-            One workspace. Every model. Your work never stops — context preserved across Claude, GPT-4o,
-            Gemini and more.
+            Never lose AI context again. Continue your AI work across models without losing context,
+            decisions, files, or progress.
           </motion.p>
 
           {connectedIntegrations.length ? (
@@ -3743,7 +3759,7 @@ function ChatComposer({
                 onSend();
               }
             }}
-            placeholder="Ask anything"
+            placeholder="Continue your work with full context"
             ref={composerRef}
             rows={1}
             value={prompt}
@@ -3803,7 +3819,7 @@ function ChatComposer({
       </form>
 
       <p className="mt-3 text-center text-[12px] font-light text-[var(--xv-chat-muted)]">
-        Xeivora switches models automatically — your context is always preserved
+        Xeivora remembers conversations, decisions, files, and progress across AI models
       </p>
     </div>
   );

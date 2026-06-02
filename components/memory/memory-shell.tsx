@@ -46,8 +46,8 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "reusable_context",
-        title: "New reusable context",
-        content: "Add project notes, user preferences, or workflow state here.",
+        title: "New project checkpoint",
+        content: "Add the decisions, progress, and next steps Xeivora should remember.",
         enabled: true
       })
     });
@@ -70,15 +70,15 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           actions={
             <WorkspaceButton onClick={() => void handleCreateMemory()}>
               <Plus className="h-4 w-4" />
-              Create memory
+              Save memory checkpoint
             </WorkspaceButton>
           }
-          description="Reusable context, product promises, coding checkpoints, and durable workspace facts stay preserved here so every conversation starts with continuity."
-          eyebrow="Memory system"
-          title="Persistent context that stays useful"
+          description="Keep decisions, progress notes, reusable prompts, and project facts here so Xeivora can continue work across models without losing context."
+          eyebrow="Project memory"
+          title="Persistent memory that survives model switches"
         />
 
-        <WorkspaceSearchInput onChange={setQuery} placeholder="Search memories" value={query} />
+        <WorkspaceSearchInput onChange={setQuery} placeholder="Search saved context" value={query} />
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredItems.map((item) => (
@@ -123,7 +123,7 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
               <Plus className="h-5 w-5" />
             </div>
-            <div className="mt-4 text-sm text-[var(--site-subtle)]">Add memory</div>
+            <div className="mt-4 text-sm text-[var(--site-subtle)]">Add memory checkpoint</div>
           </button>
         </div>
 
@@ -131,7 +131,7 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <WorkspaceCard>
             <WorkspaceSectionTitle>No memory matches yet</WorkspaceSectionTitle>
             <p className="mt-3 max-w-[36rem] text-sm leading-7 text-[var(--site-subtle)]">
-              Try a different search term or create a new reusable memory for your workspace.
+              Try a different search term or save a new checkpoint so Xeivora can resume the work later.
             </p>
           </WorkspaceCard>
         ) : null}
@@ -141,11 +141,11 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
             action={
               <WorkspaceButton onClick={() => void handleCreateMemory()}>
                 <Plus className="h-4 w-4" />
-                Create memory
+                Save memory checkpoint
               </WorkspaceButton>
             }
-            description="Store project facts, recurring preferences, and continuity checkpoints so Xeivora always has the right context."
-            title="No memory items yet"
+            description="Store project facts, recurring preferences, and continuity checkpoints so Xeivora remembers what matters across every model."
+            title="No project memory yet"
           />
         ) : null}
       </div>
