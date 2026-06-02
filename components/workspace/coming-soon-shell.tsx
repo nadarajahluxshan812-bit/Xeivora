@@ -13,8 +13,7 @@ import {
 import type { AuthUser } from "@/lib/auth-types";
 
 type ComingSoonShellProps = {
-  description: string;
-  title: string;
+  feature: string;
   viewer?: AuthUser | null;
 };
 
@@ -34,8 +33,7 @@ const focusAreas = [
 ];
 
 export function ComingSoonShell({
-  description,
-  title,
+  feature,
   viewer = null
 }: ComingSoonShellProps) {
   return (
@@ -53,14 +51,14 @@ export function ComingSoonShell({
               <Link href="/memory">
                 <WorkspaceButton variant="secondary">
                   <BrainCircuit className="h-4 w-4" />
-                  Open Memory
+                  Open Project Brain
                 </WorkspaceButton>
               </Link>
             </div>
           }
-          description={description}
-          eyebrow="Planned next"
-          title={title}
+          description="We are currently focused on perfecting AI continuity, persistent memory, and project context. This feature will arrive after the core Xeivora experience is fully refined."
+          eyebrow={feature}
+          title="Coming Soon"
         />
 
         <WorkspaceCard className="p-7 md:p-8">
@@ -90,7 +88,7 @@ export function ComingSoonShell({
           <div>
             <div className="text-[15px] font-medium text-[var(--site-text)]">Keep momentum in the meantime</div>
             <p className="mt-2 text-[13px] leading-6 text-[var(--site-subtle)]">
-              Use Projects and Memory to continue work, save key context, and pick up exactly where you stopped.
+              Use Projects and Project Brain to continue work, save key context, and pick up exactly where you stopped.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">

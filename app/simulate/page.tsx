@@ -3,11 +3,5 @@ import { requireViewer } from "@/lib/auth";
 
 export default async function SimulatePage() {
   const viewer = await requireViewer("/simulate");
-  return (
-    <ComingSoonShell
-      description="Simulation tools are planned, but Xeivora is narrowing in on never losing project context across AI models first."
-      title="Simulate is coming soon"
-      viewer={viewer}
-    />
-  );
+  return <ComingSoonShell feature="Simulate" viewer={viewer} />;
 }

@@ -87,7 +87,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
         icon: FileText
       },
       {
-        label: "Memory items",
+        label: "Project Brain items",
         value: projects.reduce((sum, project) => sum + Number(project.memoryCount || 0), 0),
         icon: BrainCircuit
       }
@@ -110,7 +110,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        description: "Workspace for chats, files, memory, and orchestration traces.",
+        description: "Workspace for chats, files, Project Brain, and continuity checkpoints.",
         color: "#c96442"
       })
     });
@@ -276,7 +276,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                               Files <strong className="font-medium text-[var(--site-text)]">{project.fileCount}</strong>
                             </span>
                             <span>
-                              Memory <strong className="font-medium text-[var(--site-text)]">{project.memoryCount}</strong>
+                              Project Brain <strong className="font-medium text-[var(--site-text)]">{project.memoryCount}</strong>
                             </span>
                           </div>
                         </div>
@@ -392,7 +392,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
               onClick: () => handleContinueProject(leadProject?.id || null)
             },
             {
-              title: "Project Memory",
+              title: "Project Brain",
               description: "Review saved context",
               icon: BrainCircuit,
               onClick: () => router.push("/memory")
@@ -564,7 +564,7 @@ function normalizeActivityTitle(summary: string, tool: string) {
 
   const map: Record<string, string> = {
     file_analysis: "File uploaded",
-    save_memory: "Memory added",
+    save_memory: "Project Brain updated",
     create_project: "New project created"
   };
 

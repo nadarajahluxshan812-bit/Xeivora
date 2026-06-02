@@ -64,7 +64,7 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
   }
 
   return (
-    <WorkspacePageShell statusLabel="Memory" viewer={viewer}>
+    <WorkspacePageShell statusLabel="Project Brain" viewer={viewer}>
       <div className="space-y-10">
         <WorkspacePageHero
           actions={
@@ -77,6 +77,29 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           eyebrow="Project memory"
           title="Persistent memory that survives model switches"
         />
+
+        <WorkspaceCard className="p-6">
+          <WorkspaceSectionTitle>What Project Brain stores</WorkspaceSectionTitle>
+          <p className="mt-3 max-w-[42rem] text-sm leading-7 text-[var(--site-subtle)]">
+            Project Brain is Xeivora&apos;s permanent memory of your work. It keeps the parts of a project that should survive model switches and long gaps between sessions.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {[
+              "Decisions",
+              "Key conversations",
+              "Goals",
+              "Files",
+              "Summaries",
+              "Progress",
+              "Action items",
+              "Project history"
+            ].map((item) => (
+              <WorkspaceBadge key={item} tone="learning">
+                {item}
+              </WorkspaceBadge>
+            ))}
+          </div>
+        </WorkspaceCard>
 
         <WorkspaceSearchInput onChange={setQuery} placeholder="Search saved context" value={query} />
 

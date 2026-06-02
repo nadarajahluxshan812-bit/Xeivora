@@ -93,7 +93,7 @@ const coralAccent = "var(--xv-chat-accent)";
 const navItems: SidebarItem[] = [
   { label: "Chats", icon: MessageSquareText, href: "/chat" },
   { label: "Projects", icon: FolderKanban, href: "/dashboard" },
-  { label: "Memory", icon: BrainCircuit, href: "/memory" },
+  { label: "Project Brain", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows", soon: true },
   { label: "Agents", icon: Bot, href: "/agents", soon: true },
   { label: "Simulate", icon: Target, href: "/simulate", soon: true },
@@ -109,7 +109,7 @@ const welcomeSuggestions: SuggestionCard[] = [
     prompt: "Resume my project from the last saved context and continue the next best step."
   },
   {
-    label: "Project Memory",
+    label: "Project Brain",
     detail: "Review saved decisions and notes",
     icon: BrainCircuit,
     prompt: "Show me the important project memory, decisions, and open threads I need before continuing."
@@ -1777,6 +1777,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 ) : (
                   <ChatHomeView
                     composerRef={composerRef}
+                    projects={projects}
                     desktopToolBar={
                       isDesktop ? (
                         <DesktopToolBar
@@ -3171,7 +3172,7 @@ function ChatTopbar({
                   <div className="space-y-2.5 text-sm">
                     <StatusRow label="Current model" value={currentModelSummary} />
                     <StatusRow label="Next fallback" value={fallbackSummary} />
-                    <StatusRow label="Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
+                    <StatusRow label="Project Brain" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
                     <StatusRow
                       label="Context"
                       value={continuityStatus.contextCompressed ? "Compressed" : "Preserved"}
@@ -3200,6 +3201,7 @@ function ChatTopbar({
 
 function ChatHomeView({
   composerRef,
+  projects,
   desktopToolBar,
   error,
   fileInputRef,
@@ -3222,6 +3224,7 @@ function ChatHomeView({
   voiceState
 }: {
   composerRef: RefObject<HTMLTextAreaElement | null>;
+  projects: WorkspaceProject[];
   desktopToolBar?: ReactNode;
   error: string | null;
   fileInputRef: RefObject<HTMLInputElement | null>;
@@ -3243,6 +3246,15 @@ function ChatHomeView({
   sessionFiles: UploadedFileSummary[];
   voiceState: VoiceState;
 }) {
+  const router = useRouter();
+  const recentProject = useMemo(
+    () =>
+      [...projects].sort(
+        (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+      )[0] || null,
+    [projects]
+  );
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
@@ -3262,25 +3274,75 @@ function ChatHomeView({
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut", delay: 0.02 }}
           >
-            What can I help with?
+            Continue your work
           </motion.h1>
 
           <motion.p
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 max-w-[460px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
+            className="mt-2 max-w-[560px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
             initial={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
           >
-            Never lose AI context again. Continue your AI work across models without losing context,
-            decisions, files, or progress.
+            Continue any project across Claude, GPT, Gemini, DeepSeek, and local models. Xeivora automatically remembers conversations, decisions, files, and progress.
           </motion.p>
+
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 w-full max-w-[520px]"
+            initial={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
+          >
+            <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">
+              Continue Recent Project
+            </div>
+            <div className="rounded-[18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-4 shadow-[var(--xv-chat-shadow)]">
+              {recentProject ? (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="text-[16px] font-medium text-[var(--xv-chat-text)]">{recentProject.name}</div>
+                    <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">
+                      Last active {formatRelativeTime(recentProject.updatedAt)}
+                    </div>
+                    <div className="mt-2 inline-flex items-center rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1 text-[11px] text-[var(--xv-chat-accent)]">
+                      Claude → GPT transition available
+                    </div>
+                  </div>
+                  <button
+                    className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[var(--xv-chat-accent)] px-4 py-2.5 text-[13px] font-medium text-white transition hover:brightness-95"
+                    onClick={() => router.push(`/chat?project=${encodeURIComponent(recentProject.id)}`)}
+                    type="button"
+                  >
+                    Continue Project
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-[16px] font-medium text-[var(--xv-chat-text)]">No recent project yet</div>
+                    <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">
+                      Create a project once, then Xeivora will remember where the work stopped.
+                    </div>
+                  </div>
+                  <button
+                    className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[var(--xv-chat-accent)] px-4 py-2.5 text-[13px] font-medium text-white transition hover:brightness-95"
+                    onClick={() => router.push("/dashboard")}
+                    type="button"
+                  >
+                    Continue Project
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
 
           {connectedIntegrations.length ? (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 flex max-w-[620px] flex-wrap items-center justify-center gap-2"
               initial={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
+              transition={{ duration: 0.2, ease: "easeOut", delay: 0.06 }}
             >
               {connectedIntegrations.map((integration) => {
                 const enabled = enabledIntegrationProviders.includes(integration.provider);
@@ -3759,7 +3821,7 @@ function ChatComposer({
                 onSend();
               }
             }}
-            placeholder="Continue your work with full context"
+            placeholder="Continue your work with full context..."
             ref={composerRef}
             rows={1}
             value={prompt}
@@ -3819,7 +3881,7 @@ function ChatComposer({
       </form>
 
       <p className="mt-3 text-center text-[12px] font-light text-[var(--xv-chat-muted)]">
-        Xeivora remembers conversations, decisions, files, and progress across AI models
+        Xeivora remembers conversations, files, decisions, and progress automatically.
       </p>
     </div>
   );
@@ -4209,7 +4271,7 @@ function ProfileMenuButton({
 function KeyboardShortcutsModal({ onClose }: { onClose: () => void }) {
   const shortcuts = [
     ["⌘ K", "Search chats"],
-    ["⌘ N", "New chat"],
+    ["⌘ N", "New continuity thread"],
     ["⌘ ,", "Settings"],
     ["⌘ /", "Show shortcuts"],
     ["Esc", "Close / cancel"],
@@ -4429,6 +4491,23 @@ function getInitials(value: string) {
       .map((part) => part[0]?.toUpperCase() || "")
       .join("") || "X"
   );
+}
+
+function formatRelativeTime(value: string) {
+  const diff = Date.now() - new Date(value).getTime();
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (diff < hour) {
+    return `${Math.max(1, Math.round(diff / minute))} minutes ago`;
+  }
+
+  if (diff < day) {
+    return `${Math.max(1, Math.round(diff / hour))} hours ago`;
+  }
+
+  return `${Math.max(1, Math.round(diff / day))} days ago`;
 }
 
 type ModelPillData = {
