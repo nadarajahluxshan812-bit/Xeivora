@@ -47,14 +47,12 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
+    console.error("Legacy image generation route error:", error);
     return NextResponse.json(
       {
         connected: false,
         images: [],
-        message:
-          error instanceof Error
-            ? error.message
-            : "Xeivora could not generate the image right now. The provider fallback architecture is ready.",
+        message: "Image generation temporarily unavailable. Try again in a moment.",
         provider: "openai",
         model: null
       },

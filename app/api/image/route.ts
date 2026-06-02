@@ -43,13 +43,14 @@ export async function POST(request: Request) {
       revisedPrompt: primary?.revisedPrompt || prompt
     });
   } catch (error) {
+    console.error("Image generation route error:", error);
     return NextResponse.json(
       {
         connected: false,
         images: [],
         imageUrl: null,
         revisedPrompt: prompt,
-        message: error instanceof Error ? error.message : "Xeivora could not generate the image right now.",
+        message: "Image generation temporarily unavailable. Try again in a moment.",
         provider: "openai",
         model: null
       },
