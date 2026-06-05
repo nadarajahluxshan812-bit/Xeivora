@@ -9,7 +9,6 @@ import { OrbitLogo } from "@/components/orbit-logo";
 import UpgradeButton from "@/components/payments/UpgradeButton";
 import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import type { WorkspaceProject } from "@/lib/chat-types";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -89,71 +88,6 @@ const pricingPlans: PricingPlan[] = [
 
 const backgroundColor = "var(--site-bg)";
 const foregroundColor = "var(--site-text)";
-
-type ViewerSession = {
-  authenticated?: boolean;
-};
-
-type TimelineSummary = {
-  id: string;
-  summary: string;
-  createdAt: string;
-};
-
-type HeroProjectState = {
-  authenticated: boolean;
-  loading: boolean;
-  project: WorkspaceProject | null;
-  timelineEvent: TimelineSummary | null;
-};
-
-function formatRelativeTime(isoDate: string) {
-  const timestamp = new Date(isoDate).getTime();
-  if (Number.isNaN(timestamp)) {
-    return "recently";
-  }
-
-  const diffMs = Date.now() - timestamp;
-  const diffMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-  }
-
-  const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-  }
-
-  const diffDays = Math.round(diffHours / 24);
-  if (diffDays < 7) {
-    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-  }
-
-  const diffWeeks = Math.round(diffDays / 7);
-  if (diffWeeks < 5) {
-    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
-  }
-
-  const diffMonths = Math.round(diffDays / 30);
-  return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ago`;
-}
-
-function hasMeaningfulProjectActivity(project: WorkspaceProject) {
-  return (
-    Number(project.chatCount || 0) > 0 ||
-    Number(project.fileCount || 0) > 0 ||
-    Number(project.memoryCount || 0) > 0
-  );
-}
-
-function formatProjectMemory(project: WorkspaceProject) {
-  if (project.memoryCount > 0) {
-    return `${project.memoryCount} saved item${project.memoryCount === 1 ? "" : "s"}`;
-  }
-
-  return "No saved memory yet";
-}
 
 function NavLinkList({ className = "", onNavigate }: { className?: string; onNavigate?: () => void }) {
   return (
@@ -254,12 +188,6 @@ function SecondaryButton({
 export function PremiumHomepage({ initialSection }: { initialSection?: "pricing" }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [heroProjectState, setHeroProjectState] = useState<HeroProjectState>({
-    authenticated: false,
-    loading: true,
-    project: null,
-    timelineEvent: null
-  });
 
   useEffect(() => {
     function onScroll() {
@@ -287,85 +215,6 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
     return () => window.cancelAnimationFrame(frame);
   }, [initialSection]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadHeroProject() {
-      try {
-        const viewerResponse = await fetch("/api/auth/profile", { cache: "no-store" });
-        const viewer = (await viewerResponse.json()) as ViewerSession;
-
-        if (!viewer?.authenticated) {
-          if (!cancelled) {
-            setHeroProjectState({
-              authenticated: false,
-              loading: false,
-              project: null,
-              timelineEvent: null
-            });
-          }
-          return;
-        }
-
-        const projectsResponse = await fetch("/api/projects", { cache: "no-store" });
-        const projectsPayload = (await projectsResponse.json()) as WorkspaceProject[];
-        const projects = Array.isArray(projectsPayload) ? projectsPayload : [];
-        const recentProject =
-          projects
-            .filter(hasMeaningfulProjectActivity)
-            .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())[0] || null;
-
-        if (!recentProject) {
-          if (!cancelled) {
-            setHeroProjectState({
-              authenticated: true,
-              loading: false,
-              project: null,
-              timelineEvent: null
-            });
-          }
-          return;
-        }
-
-        let timelineEvent: TimelineSummary | null = null;
-        const timelineResponse = await fetch(`/api/tool-logs?projectId=${encodeURIComponent(recentProject.id)}&limit=1`, {
-          cache: "no-store"
-        });
-
-        if (timelineResponse.ok) {
-          const payload = (await timelineResponse.json()) as TimelineSummary[] | null;
-          if (Array.isArray(payload) && payload.length) {
-            timelineEvent = payload[0] || null;
-          }
-        }
-
-        if (!cancelled) {
-          setHeroProjectState({
-            authenticated: true,
-            loading: false,
-            project: recentProject,
-            timelineEvent
-          });
-        }
-      } catch {
-        if (!cancelled) {
-          setHeroProjectState({
-            authenticated: false,
-            loading: false,
-            project: null,
-            timelineEvent: null
-          });
-        }
-      }
-    }
-
-    void loadHeroProject();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor, color: foregroundColor }}>
@@ -454,74 +303,63 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
               </div>
             </div>
 
-            <div className="flex h-full flex-col justify-between gap-8 rounded-[32px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-6 md:p-8">
-              <div className="space-y-3">
+            <div className="flex h-full flex-col justify-center rounded-[32px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-6 md:p-8">
+              <div className="mx-auto flex w-full max-w-[400px] flex-col items-center text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--site-text)]/45">
-                  Continue Project
+                  Continue your project
                 </p>
-                <div className="space-y-4">
-                  <div className="rounded-[24px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface-strong)] p-5">
-                    {heroProjectState.loading ? (
-                      <div className="space-y-4">
-                        <p className="text-lg font-semibold text-[color:var(--site-text)]">Checking recent project…</p>
-                        <p className="text-sm leading-7 text-[color:var(--site-text)]/62">
-                          Looking for real project activity so Xeivora can continue from the latest saved context.
-                        </p>
-                      </div>
-                    ) : heroProjectState.project ? (
-                      <div className="space-y-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-lg font-semibold text-[color:var(--site-text)]">{heroProjectState.project.name}</p>
-                            <p className="mt-1 text-sm text-[color:var(--site-text)]/56">
-                              Last active: {formatRelativeTime(heroProjectState.project.updatedAt)}
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-[color:var(--site-accent-soft)] px-3 py-1 text-xs font-medium text-[color:var(--site-accent)]">
-                            Continue ready
-                          </span>
-                        </div>
-                        <div className="grid gap-3">
-                          <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/42 p-4">
-                            <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--site-text)]/42">Project Memory</p>
-                            <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/72">
-                              {formatProjectMemory(heroProjectState.project)}
-                            </p>
-                          </div>
-                          <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/42 p-4">
-                            <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--site-text)]/42">Timeline</p>
-                            <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/72">
-                              {heroProjectState.timelineEvent?.summary || "No timeline events yet"}
-                            </p>
-                          </div>
-                        </div>
-                        <PrimaryButton className="w-full sm:w-auto" href={`/chat?project=${encodeURIComponent(heroProjectState.project.id)}`}>
-                          Continue Project
-                          <ArrowRight className="h-4 w-4" />
-                        </PrimaryButton>
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        <div>
-                          <p className="text-lg font-semibold text-[color:var(--site-text)]">No project yet</p>
-                          <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/62">
-                            Create your first project to start preserving conversations, files, decisions, and progress.
-                          </p>
-                        </div>
-                        <PrimaryButton className="w-full sm:w-auto" href={heroProjectState.authenticated ? "/dashboard" : "/signup"}>
-                          Create Project
-                          <ArrowRight className="h-4 w-4" />
-                        </PrimaryButton>
-                      </div>
-                    )}
+                <h2 className="mt-4 font-[Georgia,'Times_New_Roman',serif] text-3xl tracking-[-0.04em] text-[color:var(--site-text)] md:text-[2.25rem]">
+                  Continue your project
+                </h2>
+                <p className="mt-3 max-w-[340px] text-sm leading-7 text-[color:var(--site-text)]/62">
+                  Sign in to keep your conversations, files, memory, timeline, and progress connected.
+                </p>
+
+                <div className="mt-8 w-full rounded-[26px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface-strong)] p-5 md:p-6">
+                  <Link
+                    className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[16px] border border-[color:var(--site-border)] bg-[color:var(--site-bg)] text-sm font-medium text-[color:var(--site-text)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[color:var(--site-ghost-hover)]"
+                    href="/api/auth/google"
+                  >
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] text-[11px] font-semibold text-[color:var(--site-text)]">
+                      G
+                    </span>
+                    Continue with Google
+                  </Link>
+
+                  <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-[color:var(--site-text)]/38">
+                    <span className="h-px flex-1 bg-[color:var(--site-border-soft)]" />
+                    OR
+                    <span className="h-px flex-1 bg-[color:var(--site-border-soft)]" />
                   </div>
 
-                  <div className="rounded-[24px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-5">
-                    <div className="flex items-center gap-3 text-sm text-[color:var(--site-text)]/68">
-                      <div className="h-2.5 w-2.5 rounded-full bg-[color:var(--site-accent)]" />
-                      The project remembers what happened before you got here.
-                    </div>
-                  </div>
+                  <input
+                    className="h-12 w-full rounded-[16px] border border-[color:var(--site-border)] bg-[color:var(--site-bg)] px-4 text-sm text-[color:var(--site-text)] outline-none transition placeholder:text-[color:var(--site-text)]/36 focus:border-[color:var(--site-accent)]"
+                    placeholder="Enter your email"
+                    type="email"
+                  />
+
+                  <PrimaryButton className="mt-4 h-12 w-full justify-center" href="/login">
+                    Continue with email
+                  </PrimaryButton>
+
+                  <p className="mt-4 text-xs leading-6 text-[color:var(--site-text)]/46">
+                    By continuing, you agree to Xeivora&apos;s{" "}
+                    <Link className="text-[color:var(--site-accent)] transition hover:opacity-80" href="#">
+                      Terms
+                    </Link>{" "}
+                    and{" "}
+                    <Link className="text-[color:var(--site-accent)] transition hover:opacity-80" href="#">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+
+                  <p className="mt-3 text-sm text-[color:var(--site-text)]/58">
+                    New here?{" "}
+                    <Link className="font-medium text-[color:var(--site-accent)] transition hover:opacity-80" href="/signup">
+                      Start free
+                    </Link>
+                  </p>
                 </div>
               </div>
             </div>
