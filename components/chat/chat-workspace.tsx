@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Code2,
   Command,
+  Copy,
   Download,
   Ellipsis,
   ExternalLink,
@@ -58,7 +59,6 @@ import {
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode, RefObject } from "react";
 
-import AutoSwitchBanner from "@/components/AutoSwitchBanner";
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { MessageErrorBoundary } from "@/components/chat/message-error-boundary";
 import { OrbitLogo, XeivoraGlyph } from "@/components/orbit-logo";
@@ -77,7 +77,6 @@ import type {
   ChatToolExecution,
   IntegrationConnectionSummary,
   IntegrationProvider,
-  ModelSwitch,
   ModelKey,
   OrchestrationStep,
   ProviderKey,
@@ -85,6 +84,7 @@ import type {
   StreamContinuityPayload,
   StreamEvent,
   UploadedFileSummary,
+  WorkspacePreviewPayload,
   WorkspacePreviewVersion,
   WorkspaceProject
 } from "@/lib/chat-types";
@@ -313,7 +313,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [messageFeedback, setMessageFeedback] = useState<Record<string, "good" | "bad">>({});
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("simple_chat");
-  const [autoSwitchNotice, setAutoSwitchNotice] = useState<ModelSwitch | null>(null);
   const [modelPulseActive, setModelPulseActive] = useState(false);
   const [toolExecutionsByMessageId, setToolExecutionsByMessageId] = useState<Record<string, ChatToolExecution[]>>({});
   const [livePreviewOpen, setLivePreviewOpen] = useState(false);
@@ -360,6 +359,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const activeProviderRef = useRef<ProviderKey>("simulation");
+  const persistedPreviewSignatureRef = useRef<string | null>(null);
+  const hydratedPreviewSignatureRef = useRef<string | null>(null);
 
   const messages = activeSession?.messages ?? [];
   const hasMessages = messages.length > 0;
@@ -375,20 +376,17 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     () => messages.filter((message) => message.role === "assistant").slice(-1)[0] || null,
     [messages]
   );
-  const continuityChain =
-    continuityStatus.finalProviderChain.length > 0
-      ? continuityStatus.finalProviderChain
-      : continuityStatus.providerChain;
-  const currentModelSummary = formatModelSummary(
-    continuityStatus.currentProvider,
-    continuityStatus.currentModel,
-    "Instant"
-  );
-  const fallbackSummary = formatFallbackSummary(
-    continuityStatus.fallbackProvider,
-    continuityStatus.fallbackModel,
-    continuityChain
-  );
+  const latestLivePreview = livePreviewVersions[0] || null;
+  const livePreviewDraftPayload = useMemo(() => {
+    if (!livePreviewOpen || !lastAssistantMessage?.content) {
+      return null;
+    }
+
+    return extractPreviewPayloadFromContent(lastAssistantMessage.content);
+  }, [lastAssistantMessage?.content, livePreviewOpen]);
+  const effectiveLivePreviewPayload = livePreviewDraftPayload || latestLivePreview?.previewPayload || null;
+  const currentModelSummary = continuityStatus.memoryPreserved ? "Project memory active" : "Project memory syncing";
+  const fallbackSummary = latestLivePreview ? `Preview v${latestLivePreview.versionNumber}` : "Preview standby";
   const systemIndicatorLive =
     showContinuityPanel || workflowMode !== "simple_chat" || continuityStatus.checkpointSaved || isStreaming;
   const connectedProviders = useMemo(() => {
@@ -415,7 +413,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const livePreviewDocked = livePreviewOpen && viewportWidth >= 1280;
   const livePreviewSheetSide = viewportWidth >= 768 ? "right" : "bottom";
   const livePreviewDesktopWidth = viewportWidth ? Math.max(400, Math.min(560, Math.round(viewportWidth * 0.38))) : 460;
-  const latestLivePreview = livePreviewVersions[0] || null;
   const showDesktopFilePreview = isDesktop && Boolean(activeFile) && !livePreviewDocked;
   const searchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
@@ -496,14 +493,203 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   }, [livePreviewOpen, livePreviewProjectId, livePreviewSessionId]);
 
   useEffect(() => {
-    if (!latestLivePreview) {
+    if (!effectiveLivePreviewPayload) {
       setLivePreviewFrameLoading(false);
       return;
     }
 
     setLivePreviewFrameError(null);
-    setLivePreviewFrameLoading(true);
-  }, [latestLivePreview?.id, latestLivePreview?.updatedAt, livePreviewRefreshKey]);
+    setLivePreviewFrameLoading(effectiveLivePreviewPayload.renderMode === "html");
+  }, [effectiveLivePreviewPayload?.srcDoc, effectiveLivePreviewPayload?.reason, effectiveLivePreviewPayload?.renderMode, livePreviewRefreshKey]);
+
+  useEffect(() => {
+    if (!livePreviewOpen || !effectiveLivePreviewPayload || latestLivePreview || !lastAssistantMessage?.id) {
+      return undefined;
+    }
+
+    if (!livePreviewProjectId && !livePreviewSessionId) {
+      return undefined;
+    }
+
+    const signature = JSON.stringify({
+      projectId: livePreviewProjectId,
+      sessionId: livePreviewSessionId,
+      messageId: lastAssistantMessage.id,
+      renderMode: effectiveLivePreviewPayload.renderMode,
+      srcDoc: effectiveLivePreviewPayload.srcDoc,
+      sourceCode: effectiveLivePreviewPayload.sourceCode,
+      language: effectiveLivePreviewPayload.language,
+      reason: effectiveLivePreviewPayload.reason
+    });
+
+    if (hydratedPreviewSignatureRef.current === signature) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      hydratedPreviewSignatureRef.current = signature;
+      setLivePreviewFrameError(null);
+
+      void (async () => {
+        try {
+          const params = new URLSearchParams();
+          if (livePreviewProjectId) {
+            params.set("projectId", livePreviewProjectId);
+          }
+          if (livePreviewSessionId) {
+            params.set("sessionId", livePreviewSessionId);
+          }
+          params.set("limit", "1");
+
+          const existingResponse = await fetch(`/api/previews?${params.toString()}`, { cache: "no-store" });
+          if (!existingResponse.ok) {
+            throw new Error("Xeivora could not load the latest preview checkpoints.");
+          }
+
+          const existingPayload = (await existingResponse.json()) as WorkspacePreviewVersion[];
+          const existingPreview = Array.isArray(existingPayload) ? existingPayload[0] || null : null;
+
+          if (existingPreview) {
+            const needsPayloadRefresh =
+              !existingPreview.previewPayload ||
+              existingPreview.previewPayload.srcDoc !== effectiveLivePreviewPayload.srcDoc ||
+              existingPreview.previewPayload.reason !== effectiveLivePreviewPayload.reason ||
+              existingPreview.previewPayload.sourceCode !== effectiveLivePreviewPayload.sourceCode;
+
+            if (!needsPayloadRefresh) {
+              setLivePreviewVersions((current) => mergePreviewVersions(current, [existingPreview]));
+              setLivePreviewInitializing(false);
+              setLivePreviewError(null);
+              return;
+            }
+
+            const patchResponse = await fetch(`/api/previews/${existingPreview.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                previewPayload: effectiveLivePreviewPayload,
+                summary:
+                  effectiveLivePreviewPayload.renderMode === "html"
+                    ? "Preview checkpoint created"
+                    : existingPreview.summary
+              })
+            });
+
+            if (!patchResponse.ok) {
+              throw new Error("Xeivora could not attach this live preview checkpoint.");
+            }
+
+            const updatedPreview = (await patchResponse.json()) as WorkspacePreviewVersion;
+            setLivePreviewVersions((current) => mergePreviewVersions(current, [updatedPreview]));
+            setLivePreviewInitializing(false);
+            setLivePreviewError(null);
+            return;
+          }
+
+          const createResponse = await fetch("/api/previews", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId: livePreviewProjectId,
+              sessionId: livePreviewSessionId,
+              title: "Preview checkpoint",
+              summary:
+                effectiveLivePreviewPayload.renderMode === "html"
+                  ? "Preview checkpoint created"
+                  : "Live Preview opened. Waiting for renderable output.",
+              routePath: "/",
+              changedFiles: [],
+              previewPayload: effectiveLivePreviewPayload
+            })
+          });
+
+          if (!createResponse.ok) {
+            throw new Error("Xeivora could not create this live preview checkpoint.");
+          }
+
+          const createdPreview = (await createResponse.json()) as WorkspacePreviewVersion;
+          setLivePreviewVersions((current) => mergePreviewVersions(current, [createdPreview]));
+          setLivePreviewInitializing(false);
+          setLivePreviewError(null);
+        } catch (nextError) {
+          hydratedPreviewSignatureRef.current = null;
+          setLivePreviewError(
+            nextError instanceof Error ? nextError.message : "Xeivora could not create this live preview checkpoint."
+          );
+        }
+      })();
+    }, isStreaming ? 350 : 40);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    effectiveLivePreviewPayload,
+    isStreaming,
+    lastAssistantMessage?.id,
+    latestLivePreview,
+    livePreviewOpen,
+    livePreviewProjectId,
+    livePreviewSessionId
+  ]);
+
+  useEffect(() => {
+    if (!livePreviewOpen || !latestLivePreview || !lastAssistantMessage?.id || !effectiveLivePreviewPayload) {
+      return undefined;
+    }
+
+    const signature = JSON.stringify({
+      previewId: latestLivePreview.id,
+      messageId: lastAssistantMessage.id,
+      renderMode: effectiveLivePreviewPayload.renderMode,
+      srcDoc: effectiveLivePreviewPayload.srcDoc,
+      sourceCode: effectiveLivePreviewPayload.sourceCode,
+      language: effectiveLivePreviewPayload.language,
+      reason: effectiveLivePreviewPayload.reason
+    });
+
+    if (persistedPreviewSignatureRef.current === signature) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      persistedPreviewSignatureRef.current = signature;
+      void (async () => {
+        try {
+          const response = await fetch(`/api/previews/${latestLivePreview.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              previewPayload: effectiveLivePreviewPayload,
+              summary:
+                effectiveLivePreviewPayload.renderMode === "html"
+                  ? "Preview checkpoint created"
+                  : latestLivePreview.summary
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error("Xeivora could not attach this live preview checkpoint.");
+          }
+
+          const updated = (await response.json()) as WorkspacePreviewVersion;
+          setLivePreviewVersions((current) => mergePreviewVersions(current, [updated]));
+          setLivePreviewError(null);
+        } catch (nextError) {
+          persistedPreviewSignatureRef.current = null;
+          setLivePreviewError(
+            nextError instanceof Error ? nextError.message : "Xeivora could not attach this live preview checkpoint."
+          );
+        }
+      })();
+    }, isStreaming ? 450 : 80);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    effectiveLivePreviewPayload,
+    isStreaming,
+    lastAssistantMessage?.id,
+    latestLivePreview,
+    livePreviewOpen
+  ]);
 
   useEffect(() => {
     if (!isDesktop || typeof window === "undefined" || !window.xeivora) {
@@ -532,6 +718,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   useEffect(() => {
     const sessionId = searchParams.get("session");
     const projectId = searchParams.get("project");
+    const shouldOpenPreviewFromQuery = searchParams.get("preview") === "1";
     if (sessionId) {
       void loadSession(sessionId).catch(() => {
         // Ignore deep-link load failures and keep the workspace usable.
@@ -539,6 +726,12 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     }
     if (!sessionId && projectId) {
       setSelectedProjectId(projectId);
+    }
+    if (shouldOpenPreviewFromQuery) {
+      openLivePreview({
+        projectId,
+        sessionId
+      });
     }
   }, [searchParams]);
 
@@ -701,7 +894,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       const nextVersions = Array.isArray(payload) ? payload : [];
       setLivePreviewVersions(nextVersions);
       if (nextVersions.length > 0) {
-        setLivePreviewInitializing(false);
+        setLivePreviewInitializing(!Boolean(nextVersions[0]?.previewPayload));
       }
       setLivePreviewError(null);
     } catch (nextError) {
@@ -761,6 +954,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           summary: latestLivePreview.summary,
           routePath: latestLivePreview.routePath,
           changedFiles: latestLivePreview.changedFiles,
+          previewPayload: effectiveLivePreviewPayload || latestLivePreview.previewPayload || null,
           notes: latestLivePreview.notes
         })
       });
@@ -778,6 +972,29 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       );
     } finally {
       setLivePreviewSavingVersion(false);
+    }
+  }
+
+  function openPreviewInNewTab(
+    preview: WorkspacePreviewVersion,
+    payload: WorkspacePreviewPayload | null
+  ) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (payload?.renderMode === "html" && payload.srcDoc) {
+      const nextWindow = window.open("", "_blank", "noopener,noreferrer");
+      if (nextWindow) {
+        nextWindow.document.open();
+        nextWindow.document.write(payload.srcDoc);
+        nextWindow.document.close();
+        return;
+      }
+    }
+
+    if (preview.routePath) {
+      window.open(preview.routePath, "_blank", "noopener,noreferrer");
     }
   }
 
@@ -897,7 +1114,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setOrchestrationSteps([]);
       setShowContinuityPanel(false);
       setWorkflowMode("simple_chat");
-      setAutoSwitchNotice(null);
       setError(null);
       setMobileSidebarOpen(false);
       setSessionMenuOpenId(null);
@@ -934,7 +1150,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       setOrchestrationSteps([]);
       setShowContinuityPanel(false);
       setWorkflowMode("simple_chat");
-      setAutoSwitchNotice(null);
       setMobileSidebarOpen(false);
       setSessionMenuOpenId(null);
       setEditingSessionId(null);
@@ -953,7 +1168,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     setSelectedProjectId(null);
     setRouteLabel("Xeivora is ready");
     setOrchestrationSteps([]);
-    setAutoSwitchNotice(null);
     setShowContinuityPanel(false);
     setWorkflowMode("simple_chat");
     setMobileSidebarOpen(false);
@@ -1047,7 +1261,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           setOrchestrationSteps([]);
           setShowContinuityPanel(false);
           setWorkflowMode("simple_chat");
-          setAutoSwitchNotice(null);
         }
       });
       setSessionMenuOpenId(null);
@@ -1645,7 +1858,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               projectId: previewVersions[0]?.projectId || selectedProjectId || session.projectId || null,
               sessionId: previewVersions[0]?.sessionId || session.id
             });
-            setLivePreviewInitializing(false);
+            setLivePreviewInitializing(!Boolean(previewVersions[0]?.previewPayload));
             setLivePreviewFrameError(null);
 
             if (previewVersions.length > 0) {
@@ -1669,23 +1882,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         }
 
         if (typedEvent.type === "continuity") {
-          const previousProvider = activeProviderRef.current;
           setActiveProvider(typedEvent.payload.currentProvider);
           setContinuityStatus(typedEvent.payload);
-
-          if (
-            previousProvider &&
-            previousProvider !== "simulation" &&
-            typedEvent.payload.currentProvider !== previousProvider
-          ) {
-            setAutoSwitchNotice({
-              fromModel: providerToSwitchModel(previousProvider),
-              toModel: providerToSwitchModel(typedEvent.payload.currentProvider),
-              reason: normalizeSwitchReason(typedEvent.payload.tokenRateStatus),
-              contextPreserved: typedEvent.payload.memoryPreserved,
-              decisionsRestored: estimateDecisionsRestored(messages.length)
-            });
-          }
 
           activeProviderRef.current = typedEvent.payload.currentProvider;
         }
@@ -1954,7 +2152,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 {hasMessages ? (
                   <ChatThreadView
                     activeDesktopFilePath={activeFile}
-                    autoSwitchNotice={autoSwitchNotice}
                     composerRef={composerRef}
                     copiedResponseId={copiedResponseId}
                     desktopRightInset={livePreviewDocked ? livePreviewDesktopWidth : 0}
@@ -2067,24 +2264,27 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                   loading={livePreviewLoading}
                   onApprove={(previewId) => void updateLivePreviewStatus(previewId, "approved")}
                   onClose={() => setLivePreviewOpen(false)}
-                  onExternalOpen={(routePath) => {
-                    if (typeof window !== "undefined") {
-                      window.open(routePath, "_blank", "noopener,noreferrer");
-                    }
+                  onCopySource={async (code) => {
+                    await navigator.clipboard.writeText(code);
+                  }}
+                  onExternalOpen={(preview, payload) => {
+                    openPreviewInNewTab(preview, payload);
                   }}
                   onFrameLoad={() => setLivePreviewFrameLoading(false)}
                   onFrameError={() => {
                     setLivePreviewFrameLoading(false);
-                    setLivePreviewFrameError("Xeivora could not render this preview yet.");
+                    setLivePreviewFrameError("Preview could not render this output.");
                   }}
                   onMarkDeployReady={(previewId) => void updateLivePreviewStatus(previewId, "deploy_ready")}
                   onRefresh={() => {
                     setLivePreviewRefreshKey((value) => value + 1);
+                    setLivePreviewFrameError(null);
                     void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
                   }}
                   onSaveVersion={() => void saveLivePreviewVersion()}
                   previewProjectName={projects.find((project) => project.id === livePreviewProjectId)?.name || "Live Preview"}
                   refreshKey={livePreviewRefreshKey}
+                  renderPayload={effectiveLivePreviewPayload}
                   savingVersion={livePreviewSavingVersion}
                   updatingId={livePreviewUpdatingId}
                 />
@@ -2118,24 +2318,27 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     loading={livePreviewLoading}
                     onApprove={(previewId) => void updateLivePreviewStatus(previewId, "approved")}
                     onClose={() => setLivePreviewOpen(false)}
-                    onExternalOpen={(routePath) => {
-                      if (typeof window !== "undefined") {
-                        window.open(routePath, "_blank", "noopener,noreferrer");
-                      }
+                    onCopySource={async (code) => {
+                      await navigator.clipboard.writeText(code);
+                    }}
+                    onExternalOpen={(preview, payload) => {
+                      openPreviewInNewTab(preview, payload);
                     }}
                     onFrameLoad={() => setLivePreviewFrameLoading(false)}
                     onFrameError={() => {
                       setLivePreviewFrameLoading(false);
-                      setLivePreviewFrameError("Xeivora could not render this preview yet.");
+                      setLivePreviewFrameError("Preview could not render this output.");
                     }}
                     onMarkDeployReady={(previewId) => void updateLivePreviewStatus(previewId, "deploy_ready")}
                     onRefresh={() => {
                       setLivePreviewRefreshKey((value) => value + 1);
+                      setLivePreviewFrameError(null);
                       void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
                     }}
                     onSaveVersion={() => void saveLivePreviewVersion()}
                     previewProjectName={projects.find((project) => project.id === livePreviewProjectId)?.name || "Live Preview"}
                     refreshKey={livePreviewRefreshKey}
+                    renderPayload={effectiveLivePreviewPayload}
                     savingVersion={livePreviewSavingVersion}
                     updatingId={livePreviewUpdatingId}
                   />
@@ -2911,6 +3114,7 @@ function LivePreviewPanel({
   loading,
   onApprove,
   onClose,
+  onCopySource,
   onExternalOpen,
   onFrameError,
   onFrameLoad,
@@ -2919,6 +3123,7 @@ function LivePreviewPanel({
   onSaveVersion,
   previewProjectName,
   refreshKey,
+  renderPayload,
   savingVersion,
   updatingId
 }: {
@@ -2931,7 +3136,8 @@ function LivePreviewPanel({
   loading: boolean;
   onApprove: (previewId: string) => void;
   onClose: () => void;
-  onExternalOpen: (routePath: string) => void;
+  onCopySource: (code: string) => void;
+  onExternalOpen: (preview: WorkspacePreviewVersion, payload: WorkspacePreviewPayload | null) => void;
   onFrameError: () => void;
   onFrameLoad: () => void;
   onMarkDeployReady: (previewId: string) => void;
@@ -2939,10 +3145,21 @@ function LivePreviewPanel({
   onSaveVersion: () => void;
   previewProjectName: string;
   refreshKey: number;
+  renderPayload: WorkspacePreviewPayload | null;
   savingVersion: boolean;
   updatingId: string | null;
 }) {
   const previewStatusLabel = latestPreview ? formatPreviewStatusLabel(latestPreview.status) : "Standby";
+  const renderLabel = renderPayload?.entryLabel || latestPreview?.routePath || "preview.html";
+  const showRenderableFrame = renderPayload?.renderMode === "html" && Boolean(renderPayload?.srcDoc);
+  const showUnsupportedState = renderPayload?.renderMode === "unsupported";
+  const copyableSource = renderPayload?.sourceCode || null;
+  const hasRenderablePreview = showRenderableFrame || showUnsupportedState;
+  const previewMessage =
+    renderPayload?.reason ||
+    frameError ||
+    error ||
+    (latestPreview ? "Preview could not render this output." : "Start a coding task and a live preview will appear here.");
 
   return (
     <aside
@@ -2981,7 +3198,7 @@ function LivePreviewPanel({
               <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
             </div>
             <div className="min-w-0 flex-1 truncate rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-1.5 text-[11px] text-[var(--xv-chat-muted)]">
-              {latestPreview?.routePath || "/preview"}
+              {renderLabel}
             </div>
             <button
               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
@@ -2990,10 +3207,10 @@ function LivePreviewPanel({
             >
               <RefreshCcw className="h-4 w-4" />
             </button>
-            {latestPreview?.routePath ? (
+            {latestPreview ? (
               <button
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
-                onClick={() => onExternalOpen(latestPreview.routePath)}
+                onClick={() => onExternalOpen(latestPreview, renderPayload)}
                 type="button"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -3002,17 +3219,70 @@ function LivePreviewPanel({
           </div>
 
           <div className="relative min-h-0 flex-1 bg-[var(--xv-chat-panel)]">
-            {latestPreview ? (
+            {latestPreview || hasRenderablePreview ? (
               <>
-                <iframe
-                  className="h-full w-full bg-white"
-                  key={`${latestPreview.id}-${latestPreview.updatedAt}-${refreshKey}`}
-                  onError={onFrameError}
-                  onLoad={onFrameLoad}
-                  src={latestPreview.routePath}
-                  title={`Live preview for ${previewProjectName}`}
-                />
-                {frameLoading ? (
+                {showRenderableFrame ? (
+                  <iframe
+                    className="h-full w-full bg-white"
+                    key={`${latestPreview?.id || "draft"}-${latestPreview?.updatedAt || "now"}-${refreshKey}-${renderPayload?.srcDoc?.length || 0}`}
+                    onError={onFrameError}
+                    onLoad={onFrameLoad}
+                    sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts"
+                    srcDoc={renderPayload?.srcDoc || ""}
+                    title={`Live preview for ${previewProjectName}`}
+                  />
+                ) : initializing || loading ? (
+                  <div className="flex h-full items-center justify-center p-6">
+                    <div className="max-w-[280px] text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
+                        <LoaderCircle className="h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
+                      </div>
+                      <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">
+                        Generating your live preview…
+                      </div>
+                      <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
+                        Xeivora is turning this coding checkpoint into a visible project preview.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center p-5">
+                    <div className="w-full max-w-[320px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-5 text-center shadow-[var(--xv-chat-shadow)]">
+                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]">
+                        <Code2 className="h-5 w-5 text-[var(--xv-chat-accent)]" />
+                      </div>
+                      <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">
+                        {showUnsupportedState ? "Preview available for HTML/CSS/JS output." : "Preview could not render this output."}
+                      </div>
+                      <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
+                        {showUnsupportedState
+                          ? renderPayload?.reason || "React preview compilation coming next."
+                          : previewMessage}
+                      </p>
+                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                          onClick={onRefresh}
+                          type="button"
+                        >
+                          <RefreshCcw className="h-3.5 w-3.5" />
+                          <span>Retry</span>
+                        </button>
+                        {copyableSource ? (
+                          <button
+                            className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                            onClick={() => onCopySource(copyableSource)}
+                            type="button"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            <span>Copy code</span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {showRenderableFrame && frameLoading ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(14,11,8,0.16)] backdrop-blur-[2px]">
                     <div className="rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center shadow-[var(--xv-chat-shadow)]">
                       <LoaderCircle className="mx-auto h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
@@ -3020,10 +3290,31 @@ function LivePreviewPanel({
                     </div>
                   </div>
                 ) : null}
-                {frameError ? (
+                {showRenderableFrame && frameError ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(14,11,8,0.18)] p-5 backdrop-blur-[2px]">
-                    <div className="max-w-[280px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center text-[13px] leading-6 text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]">
-                      {frameError}
+                    <div className="max-w-[320px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center text-[13px] leading-6 text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]">
+                      <div className="font-medium">Preview could not render this output.</div>
+                      <div className="mt-2 text-[var(--xv-chat-muted)]">{previewMessage}</div>
+                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                          onClick={onRefresh}
+                          type="button"
+                        >
+                          <RefreshCcw className="h-3.5 w-3.5" />
+                          <span>Retry</span>
+                        </button>
+                        {copyableSource ? (
+                          <button
+                            className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                            onClick={() => onCopySource(copyableSource)}
+                            type="button"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            <span>Copy code</span>
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -3060,12 +3351,16 @@ function LivePreviewPanel({
             <div className="text-[12px] font-medium text-[var(--xv-chat-text)]">
               {latestPreview
                 ? `Version ${latestPreview.versionNumber} · ${previewStatusLabel}`
-                : "Waiting for the first preview checkpoint"}
+                : hasRenderablePreview
+                  ? "Preview ready · Saving checkpoint"
+                  : "Waiting for the first preview checkpoint"}
             </div>
             <div className="mt-1 text-[11px] text-[var(--xv-chat-muted)]">
               {latestPreview
                 ? `${latestPreview.title} · ${formatRelativeTime(latestPreview.updatedAt)}`
-                : "The project remembers visual progress alongside chat, files, and timeline."}
+                : hasRenderablePreview
+                  ? "Xeivora is attaching this visual checkpoint to the project timeline."
+                  : "The project remembers visual progress alongside chat, files, and timeline."}
             </div>
           </div>
 
@@ -3770,9 +4065,9 @@ function ChatTopbar({
                   </div>
 
                   <div className="space-y-2.5 text-sm">
-                    <StatusRow label="Current model" value={currentModelSummary} />
-                    <StatusRow label="Next fallback" value={fallbackSummary} />
-                    <StatusRow label="Project Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
+                    <StatusRow label="Project Memory" value={currentModelSummary} />
+                    <StatusRow label="Preview state" value={fallbackSummary} />
+                    <StatusRow label="Continuity" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
                     <StatusRow
                       label="Context"
                       value={continuityStatus.contextCompressed ? "Compressed" : "Preserved"}
@@ -4002,7 +4297,6 @@ function ChatHomeView({
 
 function ChatThreadView({
   activeDesktopFilePath,
-  autoSwitchNotice,
   composerRef,
   copiedResponseId,
   desktopRightInset = 0,
@@ -4038,7 +4332,6 @@ function ChatThreadView({
   voiceState
 }: {
   activeDesktopFilePath: string | null;
-  autoSwitchNotice: ModelSwitch | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   copiedResponseId: string | null;
   desktopRightInset?: number;
@@ -4078,13 +4371,11 @@ function ChatThreadView({
       <div className="min-h-0 flex-1 overflow-y-auto" ref={messagesRef}>
         <div className="mx-auto flex w-full max-w-[900px] flex-col gap-5 px-5 pb-[140px] pt-6 sm:px-8 lg:px-10">
           {error ? <ErrorBanner message={error} /> : null}
-          {autoSwitchNotice ? <AutoSwitchBanner switchData={autoSwitchNotice} /> : null}
 
           <AnimatePresence initial={false}>
             {messages.map((message) => {
               const isAssistant = message.role === "assistant";
               const isLatestAssistant = lastAssistantMessage?.id === message.id;
-              const assistantModelLabel = getAssistantModelLabel(message.modelKey, message.provider);
               const toolExecutions = toolExecutionsByMessageId[message.id] || [];
               const showDocumentWriterLogoOnly =
                 !message.content.trim() &&
@@ -4147,11 +4438,7 @@ function ChatThreadView({
                     >
                       <AvatarBubble />
                       <div className="min-w-0 max-w-[85%] flex-1">
-                        <div className="mb-1 flex items-center gap-1.5 text-[13px] font-medium text-[var(--xv-chat-text)]">
-                          <span className="text-[var(--xv-chat-text)]">Xeivora</span>
-                          <span className="text-[var(--xv-chat-muted)]">·</span>
-                          <span className="text-[var(--xv-chat-muted)]">{assistantModelLabel}</span>
-                        </div>
+                        <div className="mb-1 text-[13px] font-medium text-[var(--xv-chat-text)]">Xeivora</div>
 
                         {toolExecutions.length ? (
                           <ToolExecutionGroup
@@ -4223,9 +4510,6 @@ function ChatThreadView({
                                 </button>
                               </>
                             ) : null}
-                            <span className="rounded-full border border-[var(--xv-chat-border)] px-2 py-0.5 text-[10px] text-[var(--xv-chat-muted)]">
-                              {assistantModelLabel}
-                            </span>
                             {canApplyAssistantCode ? (
                               <button
                                 className="text-[12px] text-[var(--xv-chat-accent)] transition hover:text-[var(--xv-chat-text)]"
@@ -5061,6 +5345,163 @@ function looksLikeCodeContinuationPrompt(prompt = "") {
   return codingKeywords.test(lower) || (projectSurfaceKeywords.test(lower) && actionKeywords.test(lower));
 }
 
+function normalizePreviewPayloadInput(value: unknown): WorkspacePreviewPayload | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const payload = value as Partial<WorkspacePreviewPayload>;
+  if (payload.renderMode !== "html" && payload.renderMode !== "unsupported") {
+    return null;
+  }
+
+  return {
+    renderMode: payload.renderMode,
+    srcDoc: typeof payload.srcDoc === "string" ? payload.srcDoc : null,
+    sourceCode: typeof payload.sourceCode === "string" ? payload.sourceCode : null,
+    language: typeof payload.language === "string" ? payload.language : null,
+    reason: typeof payload.reason === "string" ? payload.reason : null,
+    entryLabel: typeof payload.entryLabel === "string" ? payload.entryLabel : null
+  };
+}
+
+type PreviewCodeBlock = {
+  code: string;
+  language: string;
+};
+
+function extractPreviewCodeBlocks(content: string): PreviewCodeBlock[] {
+  const blocks: PreviewCodeBlock[] = [];
+  const pattern = /```([\w.+-]*)\n([\s\S]*?)```/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(content)) !== null) {
+    blocks.push({
+      language: (match[1] || "text").toLowerCase(),
+      code: (match[2] || "").trim()
+    });
+  }
+
+  return blocks.filter((block) => block.code);
+}
+
+function buildPreviewSrcDoc({
+  html,
+  css,
+  javascript
+}: {
+  html: string;
+  css?: string;
+  javascript?: string;
+}) {
+  const styleTag = css ? `<style>${css}</style>` : "";
+  const scriptTag = javascript ? `<script>${javascript}<\/script>` : "";
+
+  if (/<html[\s>]/i.test(html) || /<!doctype/i.test(html)) {
+    return html
+      .replace("</head>", `${styleTag}</head>`)
+      .replace("</body>", `${scriptTag}</body>`);
+  }
+
+  return [
+    "<!doctype html>",
+    "<html>",
+    "<head>",
+    '<meta charset="utf-8" />',
+    '<meta name="viewport" content="width=device-width, initial-scale=1" />',
+    styleTag,
+    "</head>",
+    "<body>",
+    html,
+    scriptTag,
+    "</body>",
+    "</html>"
+  ].join("");
+}
+
+function extractPreviewPayloadFromContent(content: string): WorkspacePreviewPayload | null {
+  const normalized = `${content || ""}`.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const codeBlocks = extractPreviewCodeBlocks(normalized);
+  const htmlBlock = codeBlocks.find((block) => ["html", "htm"].includes(block.language));
+  const cssBlock = codeBlocks.find((block) => block.language === "css");
+  const jsBlock = codeBlocks.find((block) => ["javascript", "js"].includes(block.language));
+  const reactBlock = codeBlocks.find((block) =>
+    ["jsx", "tsx", "react", "typescript", "ts"].includes(block.language) ||
+    /(?:export\s+default|return\s*\(|useState|useEffect|className=|from\s+["']react["'])/.test(block.code)
+  );
+
+  if (htmlBlock) {
+    const sourceCode = [htmlBlock, cssBlock, jsBlock]
+      .filter(Boolean)
+      .map((block) => `\`\`\`${block?.language}\n${block?.code}\n\`\`\``)
+      .join("\n\n");
+
+    return {
+      renderMode: "html",
+      entryLabel: "index.html",
+      language: "html",
+      sourceCode,
+      srcDoc: buildPreviewSrcDoc({
+        html: htmlBlock.code,
+        css: cssBlock?.code,
+        javascript: jsBlock?.code
+      })
+    };
+  }
+
+  if (!htmlBlock && jsBlock && /document\.|window\.|createElement|innerHTML|querySelector|appendChild/.test(jsBlock.code)) {
+    return {
+      renderMode: "html",
+      entryLabel: "preview.js",
+      language: "javascript",
+      sourceCode: `\`\`\`javascript\n${jsBlock.code}\n\`\`\``,
+      srcDoc: buildPreviewSrcDoc({
+        html: '<div id="app"></div>',
+        css: cssBlock?.code,
+        javascript: jsBlock.code
+      })
+    };
+  }
+
+  if (!codeBlocks.length && /<(main|section|div|article|html|body|style|script)[\s>]/i.test(normalized)) {
+    return {
+      renderMode: "html",
+      entryLabel: "index.html",
+      language: "html",
+      sourceCode: normalized,
+      srcDoc: buildPreviewSrcDoc({ html: normalized })
+    };
+  }
+
+  if (reactBlock) {
+    return {
+      renderMode: "unsupported",
+      entryLabel: reactBlock.language || "component.tsx",
+      language: reactBlock.language || "tsx",
+      sourceCode: `\`\`\`${reactBlock.language}\n${reactBlock.code}\n\`\`\``,
+      reason: "Preview available for HTML/CSS/JS output. React preview compilation coming next."
+    };
+  }
+
+  if (!codeBlocks.length) {
+    return null;
+  }
+
+  return {
+    renderMode: "unsupported",
+    entryLabel: "preview",
+    language: codeBlocks[0]?.language || "text",
+    sourceCode: codeBlocks
+      .map((block) => `\`\`\`${block.language}\n${block.code}\n\`\`\``)
+      .join("\n\n") || normalized,
+    reason: "Preview could not render this output. Xeivora can render HTML, CSS, and JavaScript right now."
+  };
+}
+
 function getExecutionPreviewVersion(execution: ChatToolExecution): WorkspacePreviewVersion | null {
   const raw = execution.payload?.previewVersion;
   if (!raw || typeof raw !== "object") {
@@ -5079,6 +5520,7 @@ function getExecutionPreviewVersion(execution: ChatToolExecution): WorkspacePrev
     deployedAt: preview.deployedAt || null,
     id: preview.id,
     notes: preview.notes || null,
+    previewPayload: normalizePreviewPayloadInput(preview.previewPayload),
     projectId: preview.projectId || null,
     routePath: preview.routePath,
     sessionId: preview.sessionId || null,
@@ -5127,59 +5569,6 @@ function getLastUserPrompt(session: ChatSession | null) {
   return session?.messages.filter((message) => message.role === "user").slice(-1)[0]?.content ?? "";
 }
 
-function formatProviderLabel(provider: ProviderKey | string | null) {
-  if (!provider) {
-    return "Standby";
-  }
-
-  const labels: Record<string, string> = {
-    openai: "GPT-4o",
-    anthropic: "Claude",
-    google: "Gemini",
-    gemini: "Gemini",
-    ollama: "Ollama",
-    simulation: "Xeivora Auto"
-  };
-
-  return labels[provider] ?? provider;
-}
-
-function providerToSwitchModel(provider: ProviderKey | string | null) {
-  if (!provider) {
-    return "claude";
-  }
-
-  const map: Record<string, string> = {
-    anthropic: "claude",
-    openai: "gpt-4o",
-    google: "gemini",
-    gemini: "gemini",
-    ollama: "ollama"
-  };
-
-  return map[provider] || "claude";
-}
-
-function normalizeSwitchReason(tokenRateStatus: string) {
-  if (/token/i.test(tokenRateStatus)) {
-    return "Token limit reached";
-  }
-
-  if (/retrying/i.test(tokenRateStatus)) {
-    return "Provider retry triggered";
-  }
-
-  if (/switching/i.test(tokenRateStatus) || /fallback/i.test(tokenRateStatus)) {
-    return "Capacity limit reached";
-  }
-
-  return "Provider handoff triggered";
-}
-
-function estimateDecisionsRestored(messageCount: number) {
-  return Math.max(5, Math.min(19, Math.ceil(messageCount / 2) + 4));
-}
-
 function getInitials(value: string) {
   return (
     value
@@ -5216,17 +5605,17 @@ type ModelPillData = {
 function getTopbarModelMeta(
   presetId: ModelPickerId,
   modelKey: ModelKey,
-  resolvedModel?: string | null
+  _resolvedModel?: string | null
 ): ModelPillData {
   const preset = modelPickerOptions.find((option) => option.id === presetId);
   if (preset && preset.id !== "auto") {
-    return { dotColor: preset.dotColor, label: preset.shortLabel };
+    return { dotColor: preset.dotColor, label: "Xeivora" };
   }
 
   const map: Record<ModelKey, ModelPillData> = {
-    claude: { dotColor: coralAccent, label: resolvedModel || "Xeivora" },
-    "gpt-4o": { dotColor: "#16a34a", label: resolvedModel || "Xeivora" },
-    gemini: { dotColor: "#2563eb", label: resolvedModel || "Xeivora" },
+    claude: { dotColor: coralAccent, label: "Xeivora" },
+    "gpt-4o": { dotColor: "#16a34a", label: "Xeivora" },
+    gemini: { dotColor: "#2563eb", label: "Xeivora" },
     "orbit-auto": { dotColor: coralAccent, label: "Xeivora" }
   };
 
@@ -5263,59 +5652,6 @@ function providerToModelKey(provider: ProviderKey): ModelKey {
   }
 
   return "orbit-auto";
-}
-
-function getAssistantModelLabel(modelKey?: ModelKey, provider?: ProviderKey) {
-  if (provider === "anthropic") {
-    return "Claude 3.5";
-  }
-
-  if (provider === "openai") {
-    return "GPT-4o";
-  }
-
-  if (provider === "google" || provider === "gemini") {
-    return "Gemini";
-  }
-
-  if (modelKey === "gpt-4o") {
-    return "GPT-4o";
-  }
-
-  if (modelKey === "gemini") {
-    return "Gemini";
-  }
-
-  return "Claude 3.5";
-}
-
-function formatModelSummary(provider: ProviderKey | null, model: string | null | undefined, fallbackLabel: string) {
-  if (provider && model) {
-    return `${formatProviderLabel(provider)} ${model}`.trim();
-  }
-
-  if (provider) {
-    return formatProviderLabel(provider);
-  }
-
-  return fallbackLabel;
-}
-
-function formatFallbackSummary(
-  fallbackProvider: ProviderKey | null,
-  fallbackModel: string | null | undefined,
-  continuityChain: ProviderKey[]
-) {
-  if (fallbackProvider && fallbackModel) {
-    return `${formatProviderLabel(fallbackProvider)} ${fallbackModel}`.trim();
-  }
-
-  if (fallbackProvider) {
-    return formatProviderLabel(fallbackProvider);
-  }
-
-  const nextProvider = continuityChain.find((provider) => provider !== "simulation");
-  return nextProvider ? formatProviderLabel(nextProvider) : "Standby";
 }
 
 function workflowModeLabel(mode: WorkflowMode) {

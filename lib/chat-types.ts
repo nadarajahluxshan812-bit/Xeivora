@@ -131,10 +131,20 @@ export type WorkspacePreviewVersion = {
   routePath: string;
   changedFiles: string[];
   notes?: string | null;
+  previewPayload?: WorkspacePreviewPayload | null;
   approvedAt?: string | null;
   deployedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type WorkspacePreviewPayload = {
+  renderMode: "html" | "unsupported";
+  srcDoc?: string | null;
+  sourceCode?: string | null;
+  language?: string | null;
+  reason?: string | null;
+  entryLabel?: string | null;
 };
 
 export type UploadedFileSummary = {

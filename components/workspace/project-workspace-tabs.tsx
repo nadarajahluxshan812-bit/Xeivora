@@ -43,6 +43,10 @@ export function ProjectWorkspaceTabs({
     <div className={cn("overflow-x-auto", className)}>
       <div className="inline-flex min-w-full items-center gap-1 rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-card)] p-1">
         {tabs.map((tab) => {
+          const href =
+            tab.key === "preview"
+              ? `${withQuery("/chat", projectId, sessionId)}${projectId || sessionId ? "&" : "?"}preview=1`
+              : withQuery(tab.href, projectId, sessionId);
           const className = cn(
             "inline-flex h-9 items-center rounded-[10px] px-3 text-[12px] font-medium transition",
             active === tab.key
@@ -64,7 +68,7 @@ export function ProjectWorkspaceTabs({
           }
 
           return (
-            <Link className={className} href={withQuery(tab.href, projectId, sessionId)} key={tab.key}>
+            <Link className={className} href={href} key={tab.key}>
               {tab.label}
             </Link>
           );

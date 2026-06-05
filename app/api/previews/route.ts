@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     status: body?.status,
     routePath: body?.routePath,
     changedFiles: body?.changedFiles,
+    previewPayload: body?.previewPayload,
     notes: body?.notes
   });
 

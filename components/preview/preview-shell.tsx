@@ -72,6 +72,7 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
   const latestPreview = previews[0] || null;
   const previewSrc = latestPreview?.routePath || "/";
+  const previewPayload = latestPreview?.previewPayload || null;
 
   const previewStatusLabel = useMemo(() => {
     if (!latestPreview) {
@@ -121,14 +122,31 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
               </div>
               <div className="flex items-center gap-2">
                 <WorkspaceBadge tone="learning">Auto-refresh on</WorkspaceBadge>
-                <a
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
-                  href={previewSrc}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
+                {previewPayload?.renderMode === "html" && previewPayload.srcDoc ? (
+                  <button
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
+                    onClick={() => {
+                      const nextWindow = window.open("", "_blank", "noopener,noreferrer");
+                      if (nextWindow) {
+                        nextWindow.document.open();
+                        nextWindow.document.write(previewPayload.srcDoc || "");
+                        nextWindow.document.close();
+                      }
+                    }}
+                    type="button"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <a
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
+                    href={previewSrc}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
                 <button
                   className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
                   onClick={() => setRefreshKey((value) => value + 1)}
@@ -142,12 +160,24 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
             {latestPreview ? (
               <div className="bg-[var(--site-panel)] p-4">
                 <div className="overflow-hidden rounded-[16px] border border-[color:var(--site-border)] bg-[var(--site-bg)]">
-                  <iframe
-                    className="h-[680px] w-full bg-white"
-                    key={`${latestPreview.id}-${refreshKey}`}
-                    src={previewSrc}
-                    title={`Preview Version ${latestPreview.versionNumber}`}
-                  />
+                  {previewPayload?.renderMode === "html" && previewPayload.srcDoc ? (
+                    <iframe
+                      className="h-[680px] w-full bg-white"
+                      key={`${latestPreview.id}-${refreshKey}-${previewPayload.srcDoc.length}`}
+                      sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts"
+                      srcDoc={previewPayload.srcDoc}
+                      title={`Preview Version ${latestPreview.versionNumber}`}
+                    />
+                  ) : (
+                    <div className="flex h-[680px] items-center justify-center p-8 text-center">
+                      <div>
+                        <div className="text-[18px] font-medium text-[var(--site-text)]">Preview could not render this output.</div>
+                        <p className="mt-3 max-w-[420px] text-[14px] leading-7 text-[var(--site-subtle)]">
+                          {previewPayload?.reason || "Xeivora can currently render HTML, CSS, and JavaScript preview output here."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
