@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowRight, BrainCircuit, FileClock, FolderKanban, Menu, PlayCircle } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -553,15 +552,115 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                 ))}
               </div>
               <div className="p-3 md:p-4">
-                <Image
-                  alt="Xeivora project workspace showing project, chat, files, timeline, memory, and preview in one place."
-                  className="h-auto w-full rounded-[20px] border border-[color:var(--site-border-soft)]"
-                  height={1912}
-                  priority
-                  quality={95}
-                  src="/xeivora-project-demo.jpg"
-                  width={2940}
-                />
+                <div className="overflow-hidden rounded-[20px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)]">
+                  <div className="flex items-center justify-between gap-4 border-b border-[color:var(--site-border-soft)] px-4 py-3 md:px-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--site-accent)]/75" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--site-text)]/18" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[color:var(--site-text)]/18" />
+                      </div>
+                      <span className="text-sm font-medium text-[color:var(--site-text)]">Xeivora project workspace</span>
+                    </div>
+                    <span className="rounded-full border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/50 px-3 py-1 text-xs text-[color:var(--site-text)]/58">
+                      Continue ready
+                    </span>
+                  </div>
+
+                  <div className="grid gap-0 lg:grid-cols-[230px_minmax(0,1fr)]">
+                    <aside className="border-b border-[color:var(--site-border-soft)] bg-[color:var(--site-surface-strong)] p-4 lg:border-b-0 lg:border-r">
+                      <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-4">
+                        <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Continue Project</div>
+                        <div className="mt-2 text-base font-semibold text-[color:var(--site-text)]">Xeivora Core</div>
+                        <div className="mt-1 text-xs text-[color:var(--site-text)]/58">Resume from the latest checkpoint.</div>
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        {["Chats", "Projects", "Project Memory", "Files", "Timeline", "Preview"].map((item, index) => (
+                          <div
+                            className={cn(
+                              "rounded-[14px] border px-3 py-2 text-sm",
+                              index === 2
+                                ? "border-[color:var(--site-accent)] bg-[color:var(--site-accent-soft)] text-[color:var(--site-accent)]"
+                                : "border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] text-[color:var(--site-text)]/66"
+                            )}
+                            key={item}
+                          >
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    </aside>
+
+                    <div className="p-4 md:p-5">
+                      <div className="flex flex-wrap gap-2">
+                        {["Chat", "Files", "Timeline", "Memory", "Preview"].map((tab, index) => (
+                          <span
+                            className={cn(
+                              "rounded-full border px-3 py-1.5 text-xs font-medium",
+                              index === 0
+                                ? "border-[color:var(--site-accent)] bg-[color:var(--site-accent-soft)] text-[color:var(--site-accent)]"
+                                : "border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/30 text-[color:var(--site-text)]/58"
+                            )}
+                            key={tab}
+                          >
+                            {tab}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                        <div className="rounded-[20px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-4">
+                          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Project Memory</div>
+                          <div className="mt-3 space-y-2 text-sm leading-7 text-[color:var(--site-text)]/72">
+                            <div className="rounded-[14px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-3 py-2">
+                              Requirements preserved
+                            </div>
+                            <div className="rounded-[14px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-3 py-2">
+                              Decisions attached to the project
+                            </div>
+                            <div className="rounded-[14px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-3 py-2">
+                              Progress ready to resume
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-[20px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-4">
+                          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Preview</div>
+                          <div className="mt-3 rounded-[16px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-3">
+                            <div className="h-24 rounded-[12px] border border-dashed border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/45" />
+                            <div className="mt-3 text-sm text-[color:var(--site-text)]/68">Latest visual checkpoint ready for review.</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-4">
+                          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Timeline</div>
+                          <div className="mt-3 space-y-2 text-sm text-[color:var(--site-text)]/72">
+                            {["Created login page", "Updated sidebar", "Saved memory checkpoint"].map((item) => (
+                              <div className="flex items-start gap-3" key={item}>
+                                <span className="mt-2 h-2 w-2 rounded-full bg-[color:var(--site-accent)]" />
+                                <span>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-4">
+                          <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Files</div>
+                          <div className="mt-3 space-y-2 text-sm text-[color:var(--site-text)]/72">
+                            {["requirements.md", "sidebar.tsx", "timeline-notes.txt"].map((item) => (
+                              <div className="rounded-[14px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-3 py-2" key={item}>
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
