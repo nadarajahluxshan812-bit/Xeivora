@@ -103,45 +103,6 @@ const navItems: SidebarItem[] = [
   { label: "Settings", icon: Settings2, href: "/settings" }
 ];
 
-const welcomeSuggestions: SuggestionCard[] = [
-  {
-    label: "Resume Project",
-    detail: "Pick up where the work stopped",
-    icon: Pencil,
-    prompt: "Resume my project from the last saved context and continue the next best step."
-  },
-  {
-    label: "Project Memory",
-    detail: "Review saved decisions and notes",
-    icon: BrainCircuit,
-    prompt: "Show me the important project memory, decisions, and open threads I need before continuing."
-  },
-  {
-    label: "Continue Coding Work",
-    detail: "Any language, any framework",
-    icon: Code2,
-    prompt: "Continue the coding work from the last checkpoint without losing the previous context."
-  },
-  {
-    label: "Summarise Previous Work",
-    detail: "Recap progress and next steps",
-    icon: Search,
-    prompt: "Summarise the previous work, what decisions were made, and what should happen next."
-  },
-  {
-    label: "Switch Model With Context",
-    detail: "Carry everything forward cleanly",
-    icon: RefreshCcw,
-    prompt: "Switch to the best model for this task and preserve all project context."
-  },
-  {
-    label: "View Project Timeline",
-    detail: "See the sequence of work so far",
-    icon: FolderOpen,
-    prompt: "Show me the project timeline so I can see what happened, what changed, and what comes next."
-  }
-];
-
 const modelPickerOptions = [
   {
     id: "auto",
@@ -224,13 +185,6 @@ type SidebarItem = {
   soon?: boolean;
 };
 
-type SuggestionCard = {
-  detail: string;
-  icon: LucideIcon;
-  label: string;
-  prompt: string;
-};
-
 type ModelPickerOption = (typeof modelPickerOptions)[number];
 type ModelPickerId = ModelPickerOption["id"];
 
@@ -244,6 +198,14 @@ type DesktopApplyDraft = {
   nextContent: string;
   targetPath: string;
 };
+
+function hasProjectContinuity(project: WorkspaceProject) {
+  return (
+    Number(project.chatCount || 0) > 0 ||
+    Number(project.fileCount || 0) > 0 ||
+    Number(project.memoryCount || 0) > 0
+  );
+}
 type DesktopCommandResult = {
   command: string;
   error?: string | null;
@@ -1796,6 +1758,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                   />
                 ) : (
                   <ChatHomeView
+                    activeProject={
+                      (selectedProjectId
+                        ? projects.find((project) => project.id === selectedProjectId) || null
+                        : activeSession?.projectId
+                          ? projects.find((project) => project.id === activeSession.projectId) || null
+                          : null) || null
+                    }
                     composerRef={composerRef}
                     projects={projects}
                     desktopToolBar={
@@ -1825,10 +1794,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     onStop={stopGenerating}
                     onStopVoiceCapture={stopVoiceCapture}
                     onToggleIntegration={handleToggleIntegration}
-                    onSuggestion={(value) => {
-                      setPrompt(value);
-                      void handleSend(false, value);
-                    }}
                     prompt={prompt}
                     sessionFiles={sessionFiles}
                     voiceState={voiceState}
@@ -3220,6 +3185,7 @@ function ChatTopbar({
 }
 
 function ChatHomeView({
+  activeProject,
   composerRef,
   projects,
   desktopToolBar,
@@ -3238,11 +3204,11 @@ function ChatHomeView({
   connectedIntegrations,
   enabledIntegrationProviders,
   onToggleIntegration,
-  onSuggestion,
   prompt,
   sessionFiles,
   voiceState
 }: {
+  activeProject: WorkspaceProject | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   projects: WorkspaceProject[];
   desktopToolBar?: ReactNode;
@@ -3261,7 +3227,6 @@ function ChatHomeView({
   connectedIntegrations: IntegrationConnectionSummary[];
   enabledIntegrationProviders: IntegrationProvider[];
   onToggleIntegration: (provider: IntegrationProvider) => void;
-  onSuggestion: (value: string) => void;
   prompt: string;
   sessionFiles: UploadedFileSummary[];
   voiceState: VoiceState;
@@ -3269,7 +3234,9 @@ function ChatHomeView({
   const router = useRouter();
   const recentProject = useMemo(
     () =>
-      [...projects].sort(
+      [...projects]
+        .filter(hasProjectContinuity)
+        .sort(
         (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
       )[0] || null,
     [projects]
@@ -3279,133 +3246,110 @@ function ChatHomeView({
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex min-h-[calc(100vh-170px)] w-full max-w-[960px] flex-col items-center justify-center px-5 pb-10 pt-8">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="flex h-12 w-12 items-center justify-center"
-            initial={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-          >
-            <XeivoraGlyph size={40} />
-          </motion.div>
-
-          <motion.h1
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 text-center text-[22px] font-medium tracking-[-0.01em] text-[var(--xv-chat-text)]"
-            initial={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.2, ease: "easeOut", delay: 0.02 }}
-          >
-            Continue your work
-          </motion.h1>
-
-          <motion.p
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-2 max-w-[560px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
-            initial={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
-          >
-            Continue any project across Claude, GPT, Gemini, DeepSeek, and local models. Xeivora automatically remembers conversations, decisions, files, and progress.
-          </motion.p>
-
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 w-full max-w-[520px]"
-            initial={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
-          >
-            <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">
-              Continue Recent Project
-            </div>
-            <div className="rounded-[18px] border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] p-4 shadow-[var(--xv-chat-shadow)]">
-              {recentProject ? (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="text-[16px] font-medium text-[var(--xv-chat-text)]">{recentProject.name}</div>
-                    <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">
-                      Last active {formatRelativeTime(recentProject.updatedAt)}
-                    </div>
-                    <div className="mt-2 inline-flex items-center rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1 text-[11px] text-[var(--xv-chat-accent)]">
-                      Claude → GPT transition available
-                    </div>
-                  </div>
-                  <button
-                    className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[var(--xv-chat-accent)] px-4 py-2.5 text-[13px] font-medium text-white transition hover:brightness-95"
-                    onClick={() => router.push(`/chat?project=${encodeURIComponent(recentProject.id)}`)}
-                    type="button"
-                  >
-                    Continue Project
-                    <ArrowUp className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="text-[16px] font-medium text-[var(--xv-chat-text)]">No recent project yet</div>
-                    <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">
-                      Create a project once, then Xeivora will remember where the work stopped.
-                    </div>
-                  </div>
-                  <button
-                    className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[var(--xv-chat-accent)] px-4 py-2.5 text-[13px] font-medium text-white transition hover:brightness-95"
-                    onClick={() => router.push("/dashboard")}
-                    type="button"
-                  >
-                    Continue Project
-                    <ArrowUp className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {connectedIntegrations.length ? (
+          {activeProject ? (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 flex max-w-[620px] flex-wrap items-center justify-center gap-2"
+              className="w-full max-w-[560px] text-center"
               initial={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.2, ease: "easeOut", delay: 0.06 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              {connectedIntegrations.map((integration) => {
-                const enabled = enabledIntegrationProviders.includes(integration.provider);
-
-                return (
-                  <button
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-[11px] font-medium transition",
-                      enabled
-                        ? "border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-inline-code-bg)] text-[var(--xv-chat-text)]"
-                        : "border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
-                    )}
-                    key={integration.provider}
-                    onClick={() => onToggleIntegration(integration.provider)}
-                    type="button"
-                  >
-                    {integration.label}
-                  </button>
-                );
-              })}
+              <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">
+                Current project
+              </div>
+              <h1 className="mt-3 text-[28px] font-medium tracking-[-0.02em] text-[var(--xv-chat-text)]">
+                {activeProject.name}
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[12px] text-[var(--xv-chat-muted)]">
+                <span className="rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1">
+                  Last active {formatRelativeTime(activeProject.updatedAt)}
+                </span>
+                <span className="rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1">
+                  {activeProject.memoryCount} memory
+                </span>
+                <span className="rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1">
+                  {activeProject.fileCount} files
+                </span>
+                <span className="rounded-full border border-[var(--xv-chat-border)] px-2.5 py-1">
+                  {activeProject.chatCount} chats
+                </span>
+              </div>
             </motion.div>
-          ) : null}
+          ) : (
+            <>
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className="flex h-12 w-12 items-center justify-center"
+                initial={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <XeivoraGlyph size={40} />
+              </motion.div>
+
+              <motion.h1
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 text-center text-[28px] font-medium tracking-[-0.02em] text-[var(--xv-chat-text)]"
+                initial={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.2, ease: "easeOut", delay: 0.02 }}
+              >
+                What would you like to work on?
+              </motion.h1>
+
+              <motion.p
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 max-w-[420px] text-center text-[14px] font-light leading-[1.6] text-[var(--xv-chat-muted)]"
+                initial={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.2, ease: "easeOut", delay: 0.04 }}
+              >
+                Start a project or continue an existing one.
+              </motion.p>
+
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-2"
+                initial={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
+              >
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-4 py-2 text-[13px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                  onClick={() =>
+                    router.push(
+                      recentProject ? `/chat?project=${encodeURIComponent(recentProject.id)}` : "/dashboard"
+                    )
+                  }
+                  type="button"
+                >
+                  Continue Project
+                </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-4 py-2 text-[13px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                  onClick={() =>
+                    router.push(recentProject ? `/memory?project=${encodeURIComponent(recentProject.id)}` : "/memory")
+                  }
+                  type="button"
+                >
+                  Open Memory
+                </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-4 py-2 text-[13px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                  onClick={() =>
+                    router.push(recentProject ? `/timeline?project=${encodeURIComponent(recentProject.id)}` : "/timeline")
+                  }
+                  type="button"
+                >
+                  View Timeline
+                </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-4 py-2 text-[13px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                  onClick={() => router.push("/dashboard")}
+                  type="button"
+                >
+                  Create Project
+                </button>
+              </motion.div>
+            </>
+          )}
 
           {error ? <ErrorBanner className="mt-6 w-full max-w-[660px]" message={error} /> : null}
-
-          <div className="mt-6 grid w-full max-w-[520px] grid-cols-2 gap-2">
-            {welcomeSuggestions.map((suggestion) => (
-              <button
-                className="group rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-[14px] text-left transition hover:border-[var(--xv-chat-border-strong)] hover:bg-[var(--xv-chat-ghost-bg)]"
-                key={suggestion.label}
-                onClick={() => onSuggestion(suggestion.prompt)}
-                type="button"
-              >
-                <div className="text-[var(--xv-chat-accent)]">
-                  <suggestion.icon className="h-4 w-4" />
-                </div>
-                <h3 className="mt-2 text-[13px] font-medium text-[var(--xv-chat-text)]">{suggestion.label}</h3>
-                <p className="mt-1 text-[12px] font-light leading-[1.4] text-[var(--xv-chat-muted)]">
-                  {suggestion.detail}
-                </p>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
