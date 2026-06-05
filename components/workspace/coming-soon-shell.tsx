@@ -51,7 +51,7 @@ export function ComingSoonShell({
               <Link href="/memory">
                 <WorkspaceButton variant="secondary">
                   <BrainCircuit className="h-4 w-4" />
-                  Open Project Brain
+                  Open Project Memory
                 </WorkspaceButton>
               </Link>
             </div>
@@ -88,7 +88,7 @@ export function ComingSoonShell({
           <div>
             <div className="text-[15px] font-medium text-[var(--site-text)]">Keep momentum in the meantime</div>
             <p className="mt-2 text-[13px] leading-6 text-[var(--site-subtle)]">
-              Use Projects and Project Brain to continue work, save key context, and pick up exactly where you stopped.
+              Use Projects and Project Memory to continue work, save key context, and pick up exactly where you stopped.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">

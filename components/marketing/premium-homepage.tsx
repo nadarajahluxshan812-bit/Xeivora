@@ -9,13 +9,15 @@ import type { ReactNode } from "react";
 import { OrbitLogo } from "@/components/orbit-logo";
 import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import type { WorkspaceProject } from "@/lib/chat-types";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Product", href: "#product" },
   { label: "Problem", href: "#problem" },
   { label: "Solution", href: "#solution" },
-  { label: "Features", href: "#features" }
+  { label: "Features", href: "#features" },
+  { label: "Pricing", href: "#pricing" }
 ] as const;
 
 const featureCards = [
@@ -37,7 +39,7 @@ const featureCards = [
 ] as const;
 
 const fragmentedItems = ["Chat", "Files", "Notes", "Repositories", "AI Tools"] as const;
-const projectTags = ["Project", "Timeline", "Memory", "Continue Project"] as const;
+const projectTabs = ["Project workspace", "Chat", "Files", "Timeline", "Memory", "Preview"] as const;
 const footerLinks = [
   { label: "Privacy", href: "#" },
   { label: "Terms", href: "#" },
@@ -45,8 +47,103 @@ const footerLinks = [
   { label: "Twitter", href: "#" }
 ] as const;
 
+const pricingPlans = [
+  {
+    name: "Free",
+    summary: "For trying Xeivora.",
+    price: "Coming soon",
+    cta: "Start free",
+    href: "/signup",
+    featured: false,
+    bullets: ["Limited projects", "Project Memory", "Timeline", "Continue Project"]
+  },
+  {
+    name: "Pro",
+    summary: "For builders using AI every day.",
+    price: "Coming soon",
+    cta: "Get Pro",
+    href: "/pricing",
+    featured: true,
+    bullets: ["More projects", "Larger project memory", "Files", "Preview workspace", "Priority access"]
+  },
+  {
+    name: "Team",
+    summary: "For teams building together.",
+    price: "Coming soon",
+    cta: "Contact us",
+    href: "/contact",
+    featured: false,
+    bullets: ["Shared projects", "Team memory", "Team timeline", "Collaboration", "Admin controls"]
+  }
+] as const;
+
 const backgroundColor = "var(--site-bg)";
 const foregroundColor = "var(--site-text)";
+
+type ViewerSession = {
+  authenticated?: boolean;
+};
+
+type TimelineSummary = {
+  id: string;
+  summary: string;
+  createdAt: string;
+};
+
+type HeroProjectState = {
+  authenticated: boolean;
+  loading: boolean;
+  project: WorkspaceProject | null;
+  timelineEvent: TimelineSummary | null;
+};
+
+function formatRelativeTime(isoDate: string) {
+  const timestamp = new Date(isoDate).getTime();
+  if (Number.isNaN(timestamp)) {
+    return "recently";
+  }
+
+  const diffMs = Date.now() - timestamp;
+  const diffMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  }
+
+  const diffWeeks = Math.round(diffDays / 7);
+  if (diffWeeks < 5) {
+    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
+  }
+
+  const diffMonths = Math.round(diffDays / 30);
+  return `${diffMonths} month${diffMonths === 1 ? "" : "s"} ago`;
+}
+
+function hasMeaningfulProjectActivity(project: WorkspaceProject) {
+  return (
+    Number(project.chatCount || 0) > 0 ||
+    Number(project.fileCount || 0) > 0 ||
+    Number(project.memoryCount || 0) > 0
+  );
+}
+
+function formatProjectMemory(project: WorkspaceProject) {
+  if (project.memoryCount > 0) {
+    return `${project.memoryCount} saved item${project.memoryCount === 1 ? "" : "s"}`;
+  }
+
+  return "No saved memory yet";
+}
 
 function NavLinkList({ className = "", onNavigate }: { className?: string; onNavigate?: () => void }) {
   return (
@@ -147,6 +244,12 @@ function SecondaryButton({
 export function PremiumHomepage({ initialSection }: { initialSection?: "pricing" }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [heroProjectState, setHeroProjectState] = useState<HeroProjectState>({
+    authenticated: false,
+    loading: true,
+    project: null,
+    timelineEvent: null
+  });
 
   useEffect(() => {
     function onScroll() {
@@ -174,6 +277,85 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
     return () => window.cancelAnimationFrame(frame);
   }, [initialSection]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHeroProject() {
+      try {
+        const viewerResponse = await fetch("/api/auth/profile", { cache: "no-store" });
+        const viewer = (await viewerResponse.json()) as ViewerSession;
+
+        if (!viewer?.authenticated) {
+          if (!cancelled) {
+            setHeroProjectState({
+              authenticated: false,
+              loading: false,
+              project: null,
+              timelineEvent: null
+            });
+          }
+          return;
+        }
+
+        const projectsResponse = await fetch("/api/projects", { cache: "no-store" });
+        const projectsPayload = (await projectsResponse.json()) as WorkspaceProject[];
+        const projects = Array.isArray(projectsPayload) ? projectsPayload : [];
+        const recentProject =
+          projects
+            .filter(hasMeaningfulProjectActivity)
+            .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())[0] || null;
+
+        if (!recentProject) {
+          if (!cancelled) {
+            setHeroProjectState({
+              authenticated: true,
+              loading: false,
+              project: null,
+              timelineEvent: null
+            });
+          }
+          return;
+        }
+
+        let timelineEvent: TimelineSummary | null = null;
+        const timelineResponse = await fetch(`/api/tool-logs?projectId=${encodeURIComponent(recentProject.id)}&limit=1`, {
+          cache: "no-store"
+        });
+
+        if (timelineResponse.ok) {
+          const payload = (await timelineResponse.json()) as TimelineSummary[] | null;
+          if (Array.isArray(payload) && payload.length) {
+            timelineEvent = payload[0] || null;
+          }
+        }
+
+        if (!cancelled) {
+          setHeroProjectState({
+            authenticated: true,
+            loading: false,
+            project: recentProject,
+            timelineEvent
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setHeroProjectState({
+            authenticated: false,
+            loading: false,
+            project: null,
+            timelineEvent: null
+          });
+        }
+      }
+    }
+
+    void loadHeroProject();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor, color: foregroundColor }}>
@@ -269,29 +451,59 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                 </p>
                 <div className="space-y-4">
                   <div className="rounded-[24px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface-strong)] p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-lg font-semibold text-[color:var(--site-text)]">Xeivora</p>
-                        <p className="mt-1 text-sm text-[color:var(--site-text)]/56">Last active 15 minutes ago</p>
-                      </div>
-                      <span className="rounded-full bg-[color:var(--site-accent-soft)] px-3 py-1 text-xs font-medium text-[color:var(--site-accent)]">
-                        Memory ready
-                      </span>
-                    </div>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/42 p-4">
-                        <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--site-text)]/42">Project Brain</p>
-                        <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/72">
-                          Decisions, files, and summaries are already attached.
+                    {heroProjectState.loading ? (
+                      <div className="space-y-4">
+                        <p className="text-lg font-semibold text-[color:var(--site-text)]">Checking recent project…</p>
+                        <p className="text-sm leading-7 text-[color:var(--site-text)]/62">
+                          Looking for real project activity so Xeivora can continue from the latest saved context.
                         </p>
                       </div>
-                      <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/42 p-4">
-                        <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--site-text)]/42">Timeline</p>
-                        <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/72">
-                          Resume from the latest checkpoint without re-explaining the work.
-                        </p>
+                    ) : heroProjectState.project ? (
+                      <div className="space-y-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-lg font-semibold text-[color:var(--site-text)]">{heroProjectState.project.name}</p>
+                            <p className="mt-1 text-sm text-[color:var(--site-text)]/56">
+                              Last active: {formatRelativeTime(heroProjectState.project.updatedAt)}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-[color:var(--site-accent-soft)] px-3 py-1 text-xs font-medium text-[color:var(--site-accent)]">
+                            Continue ready
+                          </span>
+                        </div>
+                        <div className="grid gap-3">
+                          <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/42 p-4">
+                            <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--site-text)]/42">Project Memory</p>
+                            <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/72">
+                              {formatProjectMemory(heroProjectState.project)}
+                            </p>
+                          </div>
+                          <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/42 p-4">
+                            <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--site-text)]/42">Timeline</p>
+                            <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/72">
+                              {heroProjectState.timelineEvent?.summary || "No timeline events yet"}
+                            </p>
+                          </div>
+                        </div>
+                        <PrimaryButton className="w-full sm:w-auto" href={`/chat?project=${encodeURIComponent(heroProjectState.project.id)}`}>
+                          Continue Project
+                          <ArrowRight className="h-4 w-4" />
+                        </PrimaryButton>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-5">
+                        <div>
+                          <p className="text-lg font-semibold text-[color:var(--site-text)]">No project yet</p>
+                          <p className="mt-2 text-sm leading-7 text-[color:var(--site-text)]/62">
+                            Create your first project to start preserving conversations, files, decisions, and progress.
+                          </p>
+                        </div>
+                        <PrimaryButton className="w-full sm:w-auto" href={heroProjectState.authenticated ? "/dashboard" : "/signup"}>
+                          Create Project
+                          <ArrowRight className="h-4 w-4" />
+                        </PrimaryButton>
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-[24px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-5">
@@ -307,9 +519,13 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         </SectionFrame>
 
         <SectionFrame className="pt-28 md:pt-36" id="product">
-          <SectionHeading align="center" description={undefined} title="Continue any project instantly." />
+          <SectionHeading
+            align="center"
+            description="Projects, memory, timeline, files, and preview stay connected in one workspace."
+            title="See Xeivora in action"
+          />
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            {projectTags.map((tag) => (
+            {projectTabs.map((tag) => (
               <span
                 className="rounded-full border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-4 py-2 text-sm font-medium text-[color:var(--site-text)]/74"
                 key={tag}
@@ -320,15 +536,34 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
           </div>
 
           <div className="mt-10 overflow-hidden rounded-[34px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-3 shadow-[0_28px_80px_rgba(0,0,0,0.08)] md:p-5">
-            <Image
-              alt="Xeivora project workspace showing continuity, project brain, and timeline."
-              className="h-auto w-full rounded-[24px] border border-[color:var(--site-border-soft)]"
-              height={1912}
-              priority
-              quality={95}
-              src="/xeivora-project-demo.jpg"
-              width={2940}
-            />
+            <div className="rounded-[24px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/26">
+              <div className="flex flex-wrap gap-2 border-b border-[color:var(--site-border-soft)] px-4 py-4 md:px-5">
+                {projectTabs.map((tab, index) => (
+                  <span
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs font-medium",
+                      index === 0
+                        ? "border-[color:var(--site-accent)] bg-[color:var(--site-accent-soft)] text-[color:var(--site-accent)]"
+                        : "border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] text-[color:var(--site-text)]/62"
+                    )}
+                    key={tab}
+                  >
+                    {tab}
+                  </span>
+                ))}
+              </div>
+              <div className="p-3 md:p-4">
+                <Image
+                  alt="Xeivora project workspace showing project, chat, files, timeline, memory, and preview in one place."
+                  className="h-auto w-full rounded-[20px] border border-[color:var(--site-border-soft)]"
+                  height={1912}
+                  priority
+                  quality={95}
+                  src="/xeivora-project-demo.jpg"
+                  width={2940}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="mx-auto mt-8 max-w-[720px] text-center text-base leading-8 text-[color:var(--site-text)]/66 md:text-lg">
@@ -405,15 +640,73 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         </SectionFrame>
 
         <SectionFrame className="pt-28 md:pt-36" id="pricing">
-          <div className="rounded-[38px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-6 py-16 text-center md:px-12 md:py-20">
-            <div className="mx-auto max-w-[760px] space-y-6">
-              <h2 className="font-[Georgia,'Times_New_Roman',serif] text-4xl tracking-[-0.05em] text-[color:var(--site-text)] md:text-6xl">
+          <div className="space-y-12">
+            <SectionHeading
+              align="center"
+              description="Choose the Xeivora plan that fits how much project context you want to preserve."
+              title="Simple pricing for continuous work"
+            />
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              {pricingPlans.map((plan) => (
+                <div
+                  className={cn(
+                    "rounded-[30px] border bg-[color:var(--site-surface)] p-8",
+                    plan.featured
+                      ? "border-[color:var(--site-accent)] shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
+                      : "border-[color:var(--site-border-soft)]"
+                  )}
+                  key={plan.name}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-[Georgia,'Times_New_Roman',serif] text-3xl tracking-[-0.04em] text-[color:var(--site-text)]">
+                        {plan.name}
+                      </h3>
+                      {plan.featured ? (
+                        <span className="rounded-full bg-[color:var(--site-accent-soft)] px-3 py-1 text-xs font-medium text-[color:var(--site-accent)]">
+                          Recommended
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm leading-7 text-[color:var(--site-text)]/66">{plan.summary}</p>
+                    <p className="text-sm font-medium uppercase tracking-[0.22em] text-[color:var(--site-text)]/45">{plan.price}</p>
+                  </div>
+
+                  <div className="mt-8 space-y-3">
+                    {plan.bullets.map((bullet) => (
+                      <div className="flex items-start gap-3 text-sm leading-7 text-[color:var(--site-text)]/72" key={bullet}>
+                        <span className="mt-2 h-2 w-2 rounded-full bg-[color:var(--site-accent)]" />
+                        <span>{bullet}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8">
+                    {plan.featured ? (
+                      <PrimaryButton className="w-full justify-center" href={plan.href}>
+                        {plan.cta}
+                      </PrimaryButton>
+                    ) : (
+                      <SecondaryButton className="w-full justify-center" href={plan.href}>
+                        {plan.cta}
+                      </SecondaryButton>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-[30px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] px-6 py-10 text-center">
+              <h3 className="font-[Georgia,'Times_New_Roman',serif] text-3xl tracking-[-0.04em] text-[color:var(--site-text)] md:text-4xl">
                 Build. Leave. Return. Continue.
-              </h2>
-              <PrimaryButton className="px-8 py-4 text-base" href="/signup">
-                Start Building
-                <ArrowRight className="h-4 w-4" />
-              </PrimaryButton>
+              </h3>
+              <div className="mt-6">
+                <PrimaryButton className="px-8 py-4 text-base" href="/signup">
+                  Start Building
+                  <ArrowRight className="h-4 w-4" />
+                </PrimaryButton>
+              </div>
             </div>
           </div>
         </SectionFrame>

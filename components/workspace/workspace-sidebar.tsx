@@ -61,7 +61,7 @@ export type WorkspaceSidebarProps = {
 const navItems = [
   { label: "Chats", icon: MessageSquareText, href: "/chat" },
   { label: "Projects", icon: FolderKanban, href: "/dashboard" },
-  { label: "Project Brain", icon: BrainCircuit, href: "/memory" },
+  { label: "Project Memory", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows", soon: true },
   { label: "Agents", icon: Bot, href: "/agents", soon: true },
   { label: "Simulate", icon: Target, href: "/simulate", soon: true },

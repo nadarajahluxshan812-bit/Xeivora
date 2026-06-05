@@ -88,7 +88,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
         icon: FileText
       },
       {
-        label: "Project Brain items",
+        label: "Project Memory items",
         value: projects.reduce((sum, project) => sum + Number(project.memoryCount || 0), 0),
         icon: BrainCircuit
       }
@@ -110,7 +110,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
     return [
       `${leadProject.chatCount} context threads preserved`,
-      `${leadProject.memoryCount} Project Brain entries available`,
+      `${leadProject.memoryCount} Project Memory entries available`,
       `${leadProject.fileCount} files attached to the workspace`
     ];
   }, [leadProject]);
@@ -126,7 +126,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        description: "Workspace for chats, files, Project Brain, and continuity checkpoints.",
+        description: "Workspace for chats, files, Project Memory, and continuity checkpoints.",
         color: "#c96442"
       })
     });
@@ -244,7 +244,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                     type="button"
                   >
                     <BrainCircuit className="h-4 w-4" />
-                    Open Project Brain
+                    Open Project Memory
                   </button>
                 </div>
               </div>
@@ -282,7 +282,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                       <div className="mt-5 rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4">
                         <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">Recommended next step</div>
                         <p className="mt-2 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
-                          Reopen the latest continuity thread, review the saved Project Brain decisions, and continue the next implementation step without rebuilding context.
+                          Reopen the latest continuity thread, review the saved Project Memory decisions, and continue the next implementation step without rebuilding context.
                         </p>
                       </div>
                     </div>
@@ -323,7 +323,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
               </h2>
               <div className="mt-5 space-y-3 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
                 <p>Projects are the center of Xeivora. Chats, files, summaries, and decisions stay attached to the same work.</p>
-                <p>Project Brain keeps the context you should never have to reconstruct: goals, technical choices, progress, and next steps.</p>
+                <p>Project Memory keeps the context you should never have to reconstruct: goals, technical choices, progress, and next steps.</p>
                 <p>When you return later, the workspace tells you what happened, what changed, and where to continue.</p>
               </div>
             </section>
@@ -415,7 +415,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                               Files <strong className="font-medium text-[var(--site-text)]">{project.fileCount}</strong>
                             </span>
                             <span>
-                              Project Brain <strong className="font-medium text-[var(--site-text)]">{project.memoryCount}</strong>
+                              Project Memory <strong className="font-medium text-[var(--site-text)]">{project.memoryCount}</strong>
                             </span>
                           </div>
                         </div>
@@ -531,7 +531,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
               onClick: () => handleContinueProject(leadProject?.id || null)
             },
             {
-              title: "Project Brain",
+              title: "Project Memory",
               description: "Review saved context",
               icon: BrainCircuit,
               onClick: () => router.push("/memory")
@@ -703,7 +703,7 @@ function normalizeActivityTitle(summary: string, tool: string) {
 
   const map: Record<string, string> = {
     file_analysis: "File uploaded",
-    save_memory: "Project Brain updated",
+    save_memory: "Project Memory updated",
     create_project: "New project created"
   };
 

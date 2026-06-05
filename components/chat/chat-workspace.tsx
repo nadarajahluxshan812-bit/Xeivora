@@ -95,7 +95,7 @@ const coralAccent = "var(--xv-chat-accent)";
 const navItems: SidebarItem[] = [
   { label: "Chats", icon: MessageSquareText, href: "/chat" },
   { label: "Projects", icon: FolderKanban, href: "/dashboard" },
-  { label: "Project Brain", icon: BrainCircuit, href: "/memory" },
+  { label: "Project Memory", icon: BrainCircuit, href: "/memory" },
   { label: "Workflows", icon: Workflow, href: "/workflows", soon: true },
   { label: "Agents", icon: Bot, href: "/agents", soon: true },
   { label: "Simulate", icon: Target, href: "/simulate", soon: true },
@@ -111,7 +111,7 @@ const welcomeSuggestions: SuggestionCard[] = [
     prompt: "Resume my project from the last saved context and continue the next best step."
   },
   {
-    label: "Project Brain",
+    label: "Project Memory",
     detail: "Review saved decisions and notes",
     icon: BrainCircuit,
     prompt: "Show me the important project memory, decisions, and open threads I need before continuing."
@@ -3192,7 +3192,7 @@ function ChatTopbar({
                   <div className="space-y-2.5 text-sm">
                     <StatusRow label="Current model" value={currentModelSummary} />
                     <StatusRow label="Next fallback" value={fallbackSummary} />
-                    <StatusRow label="Project Brain" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
+                    <StatusRow label="Project Memory" value={continuityStatus.memoryPreserved ? "Active" : "Syncing"} />
                     <StatusRow
                       label="Context"
                       value={continuityStatus.contextCompressed ? "Compressed" : "Preserved"}

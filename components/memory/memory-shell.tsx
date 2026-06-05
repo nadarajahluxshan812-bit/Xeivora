@@ -76,7 +76,7 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
   }
 
   return (
-    <WorkspacePageShell statusLabel="Project Brain" viewer={viewer}>
+    <WorkspacePageShell statusLabel="Project Memory" viewer={viewer}>
       <div className="space-y-10">
         <WorkspacePageHero
           actions={
@@ -96,15 +96,15 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           <WorkspaceCard className="p-6">
             <WorkspaceSectionTitle>{activeProject.name}</WorkspaceSectionTitle>
             <p className="mt-3 max-w-[42rem] text-sm leading-7 text-[var(--site-subtle)]">
-              Project Brain is the permanent memory of this project. It keeps decisions, files, goals, progress, and next actions available whenever you continue the work.
+              Project Memory is the permanent memory of this project. It keeps decisions, files, goals, progress, and next actions available whenever you continue the work.
             </p>
           </WorkspaceCard>
         ) : null}
 
         <WorkspaceCard className="p-6">
-          <WorkspaceSectionTitle>What Project Brain stores</WorkspaceSectionTitle>
+          <WorkspaceSectionTitle>What Project Memory stores</WorkspaceSectionTitle>
           <p className="mt-3 max-w-[42rem] text-sm leading-7 text-[var(--site-subtle)]">
-            Project Brain is Xeivora&apos;s permanent memory of your work. It keeps the parts of a project that should survive model switches and long gaps between sessions.
+            Project Memory is Xeivora&apos;s permanent memory of your work. It keeps the parts of a project that should survive long gaps between sessions.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {[

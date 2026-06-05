@@ -65,7 +65,7 @@ const sections = [
   { key: "profile", label: "Profile" },
   { key: "appearance", label: "Appearance" },
   { key: "models", label: "Models" },
-  { key: "memory", label: "Project Brain" },
+  { key: "memory", label: "Project Memory" },
   { key: "integrations", label: "Integrations" },
   { key: "billing", label: "Billing" },
   { key: "api-keys", label: "API Keys" }
@@ -517,13 +517,13 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
             {activeSection === "memory" ? (
               <WorkspaceCard>
                 <div className="border-b border-[color:var(--site-border)] pb-4">
-                  <WorkspaceSectionTitle>Project Brain</WorkspaceSectionTitle>
+                  <WorkspaceSectionTitle>Project Memory</WorkspaceSectionTitle>
                 </div>
                 <div className="mt-6 space-y-4">
                   <PreferenceToggleRow
                     checked={settings?.memoryEnabled ?? true}
                     description="Allow Xeivora to preserve reusable project memory across chats."
-                    label="Enable Project Brain across chats"
+                    label="Enable Project Memory across chats"
                     onToggle={() => void persistSettings({ memoryEnabled: !(settings?.memoryEnabled ?? true) })}
                   />
 
@@ -539,10 +539,10 @@ export function SettingsShell({ initialUser }: SettingsShellProps) {
                         </button>
                       </div>
                     ))}
-                    {!memories.length ? <div className="text-sm text-[var(--site-subtle)]">No Project Brain entries yet.</div> : null}
+                    {!memories.length ? <div className="text-sm text-[var(--site-subtle)]">No Project Memory entries yet.</div> : null}
                   </div>
 
-                  <WorkspaceButton onClick={() => void handleClearMemory()} variant="danger">Clear Project Brain</WorkspaceButton>
+                  <WorkspaceButton onClick={() => void handleClearMemory()} variant="danger">Clear Project Memory</WorkspaceButton>
                 </div>
               </WorkspaceCard>
             ) : null}
