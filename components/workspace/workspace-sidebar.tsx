@@ -134,6 +134,7 @@ export function WorkspaceSidebar({
   const [integrations, setIntegrations] = useState<IntegrationConnectionSummary[]>([]);
   const [query, setQuery] = useState(searchQuery);
   const [sessionMenuOpenId, setSessionMenuOpenId] = useState<string | null>(null);
+  const [soonNotice, setSoonNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessions.length && !recentSections?.length) {
@@ -158,6 +159,15 @@ export function WorkspaceSidebar({
   useEffect(() => {
     setQuery(searchQuery);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (!soonNotice) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setSoonNotice(null), 1000);
+    return () => window.clearTimeout(timeout);
+  }, [soonNotice]);
 
   useEffect(() => {
     if (!sessionMenuOpenId) {
@@ -301,9 +311,13 @@ export function WorkspaceSidebar({
     router.push(`/chat?session=${encodeURIComponent(sessionId)}`);
   }
 
+  function handleSoonItemClick() {
+    setSoonNotice("Available soon");
+  }
+
   return (
     <aside className="hidden min-h-screen w-[232px] shrink-0 border-r border-[color:var(--site-border)] bg-[var(--site-panel)] text-[var(--site-text)] md:flex">
-      <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
+      <div className="relative flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
         <div className="mb-2 flex items-center justify-between gap-3 px-1.5">
           <Link
             className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[var(--site-accent-soft)]"
@@ -336,24 +350,34 @@ export function WorkspaceSidebar({
             const isActive = pathname === item.href;
 
             return (
-              <Link
-                className={cn(
-                  "flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] transition",
-                  isActive
-                    ? "bg-[var(--site-card)] font-medium text-[var(--site-text)]"
-                    : "text-[var(--site-muted)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
-                )}
-                href={item.href}
-                key={item.label}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
-                {"soon" in item && item.soon ? (
+              "soon" in item && item.soon ? (
+                <button
+                  className="flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] text-[var(--site-muted)] transition hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
+                  key={item.label}
+                  onClick={handleSoonItemClick}
+                  type="button"
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
                   <span className="ml-auto rounded-full border border-[color:var(--site-border)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[var(--site-subtle)]">
                     Soon
                   </span>
-                ) : null}
-              </Link>
+                </button>
+              ) : (
+                <Link
+                  className={cn(
+                    "flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] transition",
+                    isActive
+                      ? "bg-[var(--site-card)] font-medium text-[var(--site-text)]"
+                      : "text-[var(--site-muted)] hover:bg-[var(--site-accent-soft)] hover:text-[var(--site-text)]"
+                  )}
+                  href={item.href}
+                  key={item.label}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              )
             );
           })}
         </nav>
@@ -479,6 +503,20 @@ export function WorkspaceSidebar({
             </button>
           </div>
         </div>
+
+        <AnimatePresence>
+          {soonNotice ? (
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[color:var(--site-border-strong)] bg-[var(--site-card)] px-3 py-1.5 text-[11px] font-medium text-[var(--site-text)] shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+              exit={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+            >
+              {soonNotice}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
     </aside>
   );

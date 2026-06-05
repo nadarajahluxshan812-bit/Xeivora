@@ -1958,13 +1958,28 @@ function SidebarContent({
   const profileName = viewer?.name || workspaceName;
   const profilePlan = viewer?.plan || "Pro";
   const profileEmail = viewer?.email || "luxshan@xeivora.com";
+  const [soonNotice, setSoonNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!soonNotice) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setSoonNotice(null), 1000);
+    return () => window.clearTimeout(timeout);
+  }, [soonNotice]);
+
+  const handleSoonItemClick = () => {
+    setSoonNotice("Available soon");
+  };
+
   const handleContinueProject = () => {
     onDismiss?.();
     router.push("/dashboard");
   };
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
+    <div className="relative flex h-screen w-full flex-col overflow-hidden px-[10px] py-3">
       <div className="mb-2 flex items-center justify-between gap-3 px-1.5">
         <Link
           className="flex min-w-0 items-center gap-2 rounded-xl px-1 py-1 text-left transition hover:bg-[var(--xv-chat-ghost-bg)]"
@@ -2012,7 +2027,13 @@ function SidebarContent({
         <>
           <nav className="grid gap-[1px] border-b border-[var(--xv-chat-border)] pb-2" aria-label="Workspace navigation">
             {navItems.map((item) => (
-              <SidebarNavItem item={item} key={item.label} onDismiss={onDismiss} pathname={pathname} />
+              <SidebarNavItem
+                item={item}
+                key={item.label}
+                onDismiss={onDismiss}
+                onSoonClick={handleSoonItemClick}
+                pathname={pathname}
+              />
             ))}
           </nav>
 
@@ -2199,30 +2220,70 @@ function SidebarContent({
               </AnimatePresence>
             </div>
           </div>
+
+          <AnimatePresence>
+            {soonNotice ? (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]"
+                exit={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.16, ease: "easeOut" }}
+              >
+                {soonNotice}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </>
       ) : (
         <>
           <div className="grid gap-1">
-            {navItems.map((item) => (
-              <Link
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-2xl transition",
-                  pathname === item.href
-                    ? "bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)]"
-                    : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
-                )}
-                href={item.href}
-                key={item.label}
-                title={item.label}
-              >
-                <item.icon className="h-4 w-4" />
-              </Link>
-            ))}
+            {navItems.map((item) =>
+              item.soon ? (
+                <button
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+                  key={item.label}
+                  onClick={handleSoonItemClick}
+                  title={`${item.label} available soon`}
+                  type="button"
+                >
+                  <item.icon className="h-4 w-4" />
+                </button>
+              ) : (
+                <Link
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-2xl transition",
+                    pathname === item.href
+                      ? "bg-[var(--xv-chat-surface)] text-[var(--xv-chat-text)]"
+                      : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-surface)] hover:text-[var(--xv-chat-text)]"
+                  )}
+                  href={item.href}
+                  key={item.label}
+                  title={item.label}
+                >
+                  <item.icon className="h-4 w-4" />
+                </Link>
+              )
+            )}
           </div>
           <div className="flex-1" />
           <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[var(--xv-chat-accent)] text-sm font-semibold text-white">
             {getInitials(profileName)}
           </div>
+
+          <AnimatePresence>
+            {soonNotice ? (
+              <motion.div
+                animate={{ opacity: 1, y: 0 }}
+                className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[var(--xv-chat-border-strong)] bg-[var(--xv-chat-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]"
+                exit={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.16, ease: "easeOut" }}
+              >
+                {soonNotice}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </>
       )}
     </div>
@@ -2232,13 +2293,33 @@ function SidebarContent({
 function SidebarNavItem({
   item,
   onDismiss,
+  onSoonClick,
   pathname
 }: {
   item: SidebarItem;
   onDismiss?: () => void;
+  onSoonClick: () => void;
   pathname: string;
 }) {
   const isActive = pathname === item.href;
+
+  if (item.soon) {
+    return (
+      <button
+        className="flex h-10 items-center gap-2 rounded-[10px] px-2.5 text-[13px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+        onClick={() => {
+          onSoonClick();
+        }}
+        type="button"
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        <span>{item.label}</span>
+        <span className="ml-auto rounded-full border border-[var(--xv-chat-border)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">
+          Soon
+        </span>
+      </button>
+    );
+  }
 
   return (
     <Link
@@ -2253,11 +2334,6 @@ function SidebarNavItem({
     >
       <item.icon className="h-4 w-4 shrink-0" />
       <span>{item.label}</span>
-      {item.soon ? (
-        <span className="ml-auto rounded-full border border-[var(--xv-chat-border)] px-1.5 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">
-          Soon
-        </span>
-      ) : null}
     </Link>
   );
 }
