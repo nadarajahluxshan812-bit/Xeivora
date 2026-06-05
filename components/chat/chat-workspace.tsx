@@ -382,8 +382,11 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       return null;
     }
 
-    return extractPreviewPayloadFromContent(lastAssistantMessage.content);
-  }, [lastAssistantMessage?.content, livePreviewOpen]);
+    return extractPreviewPayloadFromContent(
+      lastAssistantMessage.content,
+      getLastUserPrompt(activeSession)
+    );
+  }, [activeSession, lastAssistantMessage?.content, livePreviewOpen]);
   const effectiveLivePreviewPayload = livePreviewDraftPayload || latestLivePreview?.previewPayload || null;
   const currentModelSummary = continuityStatus.memoryPreserved ? "Project memory active" : "Project memory syncing";
   const fallbackSummary = latestLivePreview ? `Preview v${latestLivePreview.versionNumber}` : "Preview standby";
@@ -499,7 +502,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     }
 
     setLivePreviewFrameError(null);
-    setLivePreviewFrameLoading(effectiveLivePreviewPayload.renderMode === "html");
+    setLivePreviewFrameLoading(effectiveLivePreviewPayload.renderMode === "browser");
   }, [effectiveLivePreviewPayload?.srcDoc, effectiveLivePreviewPayload?.reason, effectiveLivePreviewPayload?.renderMode, livePreviewRefreshKey]);
 
   useEffect(() => {
@@ -515,11 +518,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       projectId: livePreviewProjectId,
       sessionId: livePreviewSessionId,
       messageId: lastAssistantMessage.id,
-      renderMode: effectiveLivePreviewPayload.renderMode,
-      srcDoc: effectiveLivePreviewPayload.srcDoc,
-      sourceCode: effectiveLivePreviewPayload.sourceCode,
-      language: effectiveLivePreviewPayload.language,
-      reason: effectiveLivePreviewPayload.reason
+      payload: effectiveLivePreviewPayload
     });
 
     if (hydratedPreviewSignatureRef.current === signature) {
@@ -551,10 +550,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
           if (existingPreview) {
             const needsPayloadRefresh =
-              !existingPreview.previewPayload ||
-              existingPreview.previewPayload.srcDoc !== effectiveLivePreviewPayload.srcDoc ||
-              existingPreview.previewPayload.reason !== effectiveLivePreviewPayload.reason ||
-              existingPreview.previewPayload.sourceCode !== effectiveLivePreviewPayload.sourceCode;
+              JSON.stringify(existingPreview.previewPayload || null) !== JSON.stringify(effectiveLivePreviewPayload);
 
             if (!needsPayloadRefresh) {
               setLivePreviewVersions((current) => mergePreviewVersions(current, [existingPreview]));
@@ -568,10 +564,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 previewPayload: effectiveLivePreviewPayload,
-                summary:
-                  effectiveLivePreviewPayload.renderMode === "html"
-                    ? "Preview checkpoint created"
-                    : existingPreview.summary
+                summary: "Preview checkpoint created"
               })
             });
 
@@ -593,10 +586,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               projectId: livePreviewProjectId,
               sessionId: livePreviewSessionId,
               title: "Preview checkpoint",
-              summary:
-                effectiveLivePreviewPayload.renderMode === "html"
-                  ? "Preview checkpoint created"
-                  : "Live Preview opened. Waiting for renderable output.",
+              summary: "Preview checkpoint created",
               routePath: "/",
               changedFiles: [],
               previewPayload: effectiveLivePreviewPayload
@@ -639,11 +629,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     const signature = JSON.stringify({
       previewId: latestLivePreview.id,
       messageId: lastAssistantMessage.id,
-      renderMode: effectiveLivePreviewPayload.renderMode,
-      srcDoc: effectiveLivePreviewPayload.srcDoc,
-      sourceCode: effectiveLivePreviewPayload.sourceCode,
-      language: effectiveLivePreviewPayload.language,
-      reason: effectiveLivePreviewPayload.reason
+      payload: effectiveLivePreviewPayload
     });
 
     if (persistedPreviewSignatureRef.current === signature) {
@@ -659,10 +645,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               previewPayload: effectiveLivePreviewPayload,
-              summary:
-                effectiveLivePreviewPayload.renderMode === "html"
-                  ? "Preview checkpoint created"
-                  : latestLivePreview.summary
+              summary: "Preview checkpoint created"
             })
           });
 
@@ -983,14 +966,18 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       return;
     }
 
-    if (payload?.renderMode === "html" && payload.srcDoc) {
-      const nextWindow = window.open("", "_blank", "noopener,noreferrer");
-      if (nextWindow) {
-        nextWindow.document.open();
-        nextWindow.document.write(payload.srcDoc);
-        nextWindow.document.close();
-        return;
-      }
+    const nextWindow = window.open("", "_blank", "noopener,noreferrer");
+    if (nextWindow) {
+      nextWindow.document.open();
+      nextWindow.document.write(
+        buildPreviewExternalDocument(
+          preview,
+          payload,
+          "Preview could not render this output."
+        )
+      );
+      nextWindow.document.close();
+      return;
     }
 
     if (preview.routePath) {
@@ -2137,9 +2124,9 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             />
           </div>
 
-          <div className="min-h-0 flex-1 pt-[8px]">
+          <div className="min-h-0 flex-1 overflow-hidden pt-[8px]">
             <div
-              className={cn("flex h-full min-h-0", livePreviewDocked || showDesktopFilePreview ? "xl:grid" : "")}
+              className={cn("flex h-full min-h-0 overflow-hidden", livePreviewDocked || showDesktopFilePreview ? "xl:grid" : "")}
               style={
                 livePreviewDocked
                   ? { gridTemplateColumns: `minmax(0, 1fr) ${livePreviewDesktopWidth}px` }
@@ -2148,7 +2135,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     : undefined
               }
             >
-              <div className="min-h-0 min-w-0 flex-1">
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
                 {hasMessages ? (
                   <ChatThreadView
                     activeDesktopFilePath={activeFile}
@@ -3104,6 +3091,222 @@ function SessionMenuButton({
   );
 }
 
+function escapePreviewHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatPreviewModeLabel(mode: WorkspacePreviewPayload["renderMode"] | null | undefined) {
+  switch (mode) {
+    case "browser":
+      return "Browser preview";
+    case "react":
+      return "Component preview";
+    case "terminal":
+      return "Terminal output";
+    case "api":
+      return "API preview";
+    case "database":
+      return "Database preview";
+    case "markdown":
+      return "Markdown preview";
+    case "pdf":
+      return "PDF preview";
+    case "slides":
+      return "Slides preview";
+    case "image":
+      return "Image preview";
+    case "video":
+      return "Video preview";
+    case "code":
+      return "Code preview";
+    default:
+      return "Preview ready";
+  }
+}
+
+function buildPreviewExternalDocument(
+  preview: WorkspacePreviewVersion,
+  payload: WorkspacePreviewPayload | null,
+  fallbackMessage: string
+) {
+  if (payload?.renderMode === "browser" && payload.srcDoc) {
+    return payload.srcDoc;
+  }
+
+  const title = escapePreviewHtml(preview.title || "Xeivora Preview");
+  const modeLabel = escapePreviewHtml(formatPreviewModeLabel(payload?.renderMode));
+  const entryLabel = escapePreviewHtml(payload?.entryLabel || preview.routePath || "preview");
+  const reason = escapePreviewHtml(payload?.reason || fallbackMessage);
+  const sourceCode = payload?.sourceCode ? escapePreviewHtml(payload.sourceCode) : "";
+  const stdout = payload?.stdout ? escapePreviewHtml(payload.stdout) : "";
+  const stderr = payload?.stderr ? escapePreviewHtml(payload.stderr) : "";
+  const markdown = payload?.markdown ? escapePreviewHtml(payload.markdown) : "";
+  const sampleRequest = payload?.sampleRequest ? escapePreviewHtml(payload.sampleRequest) : "";
+  const sampleResponse = payload?.sampleResponse ? escapePreviewHtml(payload.sampleResponse) : "";
+  const endpointsMarkup = payload?.endpoints?.length
+    ? `<div class="pills">${payload.endpoints
+        .map(
+          (endpoint) =>
+            `<span class="pill"><strong>${escapePreviewHtml(endpoint.method)}</strong> ${escapePreviewHtml(endpoint.path)}</span>`
+        )
+        .join("")}</div>`
+    : "";
+  const tablesMarkup = payload?.tables?.length
+    ? payload.tables
+        .map((table) => {
+          const headers = table.columns.map((column) => `<th>${escapePreviewHtml(column.name)}</th>`).join("");
+          const rows = (table.rows?.length ? table.rows : [{}]).map((row) => {
+            const cells = table.columns
+              .map((column) => `<td>${escapePreviewHtml(`${row[column.name] ?? "—"}`)}</td>`)
+              .join("");
+            return `<tr>${cells}</tr>`;
+          });
+
+          return `<section class="panel"><h3>${escapePreviewHtml(table.name)}</h3><table><thead><tr>${headers}</tr></thead><tbody>${rows.join(
+            ""
+          )}</tbody></table></section>`;
+        })
+        .join("")
+    : "";
+
+  let bodyMarkup = `<section class="panel"><p>${reason}</p></section>`;
+
+  switch (payload?.renderMode) {
+    case "react":
+      bodyMarkup = `<section class="panel"><h3>Component shell</h3><p>${reason}</p></section>${
+        sourceCode ? `<section class="panel"><pre>${sourceCode}</pre></section>` : ""
+      }`;
+      break;
+    case "terminal":
+      bodyMarkup = `<section class="panel"><div class="muted">$ ${escapePreviewHtml(payload.command || "run")}</div><pre>${stdout || "Execution preview prepared."}</pre>${
+        stderr ? `<div class="error">${stderr}</div>` : ""
+      }</section>${sourceCode ? `<section class="panel"><pre>${sourceCode}</pre></section>` : ""}`;
+      break;
+    case "api":
+      bodyMarkup = `<section class="panel"><h3>Endpoints</h3>${endpointsMarkup || "<p>No endpoints inferred yet.</p>"}</section>${
+        sampleRequest ? `<section class="panel"><h3>Sample request</h3><pre>${sampleRequest}</pre></section>` : ""
+      }${sampleResponse ? `<section class="panel"><h3>Sample response</h3><pre>${sampleResponse}</pre></section>` : ""}${
+        sourceCode ? `<section class="panel"><h3>Source</h3><pre>${sourceCode}</pre></section>` : ""
+      }`;
+      break;
+    case "database":
+      bodyMarkup = `${tablesMarkup || `<section class="panel"><p>${reason}</p></section>`}${
+        payload.query ? `<section class="panel"><h3>Query</h3><pre>${escapePreviewHtml(payload.query)}</pre></section>` : ""
+      }`;
+      break;
+    case "markdown":
+      bodyMarkup = `<section class="panel"><pre>${markdown || sourceCode || reason}</pre></section>`;
+      break;
+    case "pdf":
+    case "slides":
+    case "image":
+    case "video":
+      bodyMarkup = `<section class="panel"><h3>${modeLabel}</h3><p>${reason}</p></section>${
+        sourceCode ? `<section class="panel"><pre>${sourceCode}</pre></section>` : ""
+      }`;
+      break;
+    case "code":
+      bodyMarkup = `<section class="panel"><p>${reason}</p></section>${
+        sourceCode ? `<section class="panel"><pre>${sourceCode}</pre></section>` : ""
+      }`;
+      break;
+    default:
+      break;
+  }
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        background: #050505;
+        color: rgba(255,255,255,0.92);
+        padding: 24px;
+      }
+      .shell {
+        max-width: 1040px;
+        margin: 0 auto;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: rgba(255,255,255,0.68);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .panel {
+        margin-top: 16px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 18px;
+        background: #0a0a0a;
+        padding: 18px;
+      }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      h1, h3, p { margin: 0; }
+      h1 { margin-top: 14px; font-size: 28px; }
+      h3 { margin-bottom: 10px; font-size: 14px; }
+      p, .muted { color: rgba(255,255,255,0.72); line-height: 1.7; }
+      .muted { font-size: 13px; }
+      .error { margin-top: 12px; color: #f87171; }
+      .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: #111111;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 12px;
+      }
+      th {
+        color: rgba(255,255,255,0.72);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="eyebrow">${modeLabel} · ${entryLabel}</div>
+      <h1>${title}</h1>
+      ${bodyMarkup}
+    </div>
+  </body>
+</html>`;
+}
+
 function LivePreviewPanel({
   compact = false,
   error,
@@ -3150,22 +3353,352 @@ function LivePreviewPanel({
   updatingId: string | null;
 }) {
   const previewStatusLabel = latestPreview ? formatPreviewStatusLabel(latestPreview.status) : "Standby";
-  const renderLabel = renderPayload?.entryLabel || latestPreview?.routePath || "preview.html";
-  const showRenderableFrame = renderPayload?.renderMode === "html" && Boolean(renderPayload?.srcDoc);
-  const showUnsupportedState = renderPayload?.renderMode === "unsupported";
-  const copyableSource = renderPayload?.sourceCode || null;
-  const hasRenderablePreview = showRenderableFrame || showUnsupportedState;
+  const renderMode = renderPayload?.renderMode ?? null;
+  const renderTypeLabel = formatPreviewModeLabel(renderMode);
+  const renderLabel = renderPayload?.entryLabel || latestPreview?.routePath || "preview";
+  const showRenderableFrame = renderMode === "browser" && Boolean(renderPayload?.srcDoc);
+  const copyableSource =
+    renderPayload?.sourceCode ||
+    renderPayload?.markdown ||
+    renderPayload?.query ||
+    renderPayload?.stdout ||
+    null;
+  const hasRenderablePreview = Boolean(renderPayload) || Boolean(latestPreview);
   const previewMessage =
     renderPayload?.reason ||
     frameError ||
     error ||
     (latestPreview ? "Preview could not render this output." : "Start a coding task and a live preview will appear here.");
+  const actionButtonClass =
+    "inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]";
+
+  function renderPreviewContent(): ReactNode {
+    if (showRenderableFrame) {
+      return (
+        <>
+          <iframe
+            className="h-full w-full bg-white"
+            key={`${latestPreview?.id || "draft"}-${latestPreview?.updatedAt || "now"}-${refreshKey}-${renderPayload?.srcDoc?.length || 0}`}
+            onError={onFrameError}
+            onLoad={onFrameLoad}
+            sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts"
+            srcDoc={renderPayload?.srcDoc || ""}
+            title={`Live preview for ${previewProjectName}`}
+          />
+          {frameLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(0,0,0,0.18)] backdrop-blur-[2px]">
+              <div className="rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center shadow-[var(--xv-chat-shadow)]">
+                <LoaderCircle className="mx-auto h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
+                <div className="mt-3 text-[13px] font-medium text-[var(--xv-chat-text)]">Updating preview…</div>
+              </div>
+            </div>
+          ) : null}
+          {frameError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(0,0,0,0.2)] p-5 backdrop-blur-[2px]">
+              <div className="max-w-[340px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center text-[13px] leading-6 text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]">
+                <div className="font-medium">Preview could not render this output.</div>
+                <div className="mt-2 text-[var(--xv-chat-muted)]">{previewMessage}</div>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button className={actionButtonClass} onClick={onRefresh} type="button">
+                    <RefreshCcw className="h-3.5 w-3.5" />
+                    <span>Retry</span>
+                  </button>
+                  {copyableSource ? (
+                    <button
+                      className={actionButtonClass}
+                      onClick={() => onCopySource(copyableSource)}
+                      type="button"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy code</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </>
+      );
+    }
+
+    if (initializing || loading) {
+      return (
+        <div className="flex h-full items-center justify-center p-6">
+          <div className="max-w-[300px] text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
+              <LoaderCircle className="h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
+            </div>
+            <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">Generating your live preview…</div>
+            <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
+              Xeivora is choosing the most useful preview mode for this coding checkpoint.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!renderPayload) {
+      return (
+        <div className="flex h-full items-center justify-center p-6">
+          <div className="max-w-[280px] text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
+              <Laptop className="h-5 w-5 text-[var(--xv-chat-accent)]" />
+            </div>
+            <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">Preview will appear here</div>
+            <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
+              Start a coding or documentation task and Xeivora will render the output in the most useful format.
+            </p>
+            {error ? <p className="mt-3 text-[12px] text-[#ef4444]">{error}</p> : null}
+          </div>
+        </div>
+      );
+    }
+
+    if (renderMode === "react") {
+      return (
+        <div className="h-full overflow-y-auto p-5">
+          <div className="space-y-4">
+            <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 shadow-[var(--xv-chat-shadow)]">
+              <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">Component preview shell</div>
+              <div className="mt-3 rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-panel)] p-5">
+                <div className="rounded-[14px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)] px-4 py-3 text-[13px] text-[var(--xv-chat-text)]">
+                  <div className="font-medium">React output detected</div>
+                  <p className="mt-2 leading-6 text-[var(--xv-chat-muted)]">
+                    {renderPayload.reason || "Xeivora saved the component and prepared a shell preview for this checkpoint."}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {copyableSource ? (
+              <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 shadow-[var(--xv-chat-shadow)]">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">Source</div>
+                  <button className={actionButtonClass} onClick={() => onCopySource(copyableSource)} type="button">
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy code</span>
+                  </button>
+                </div>
+                <pre className="overflow-x-auto rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] p-4 text-[12px] leading-6 text-[var(--xv-chat-text)]">
+                  <code>{copyableSource}</code>
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
+
+    if (renderMode === "terminal") {
+      return (
+        <div className="h-full overflow-y-auto p-5">
+          <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[#020202] shadow-[var(--xv-chat-shadow)]">
+            <div className="border-b border-[var(--xv-chat-border)] px-4 py-3 text-[12px] text-[var(--xv-chat-muted)]">
+              $ {renderPayload.command || "run"}
+            </div>
+            <div className="space-y-4 p-4 font-mono text-[12px] leading-6 text-white">
+              <pre className="whitespace-pre-wrap">{renderPayload.stdout || "Execution preview prepared."}</pre>
+              {renderPayload.stderr ? (
+                <div className="rounded-[14px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] p-3 text-[#fca5a5]">
+                  <pre className="whitespace-pre-wrap">{renderPayload.stderr}</pre>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {copyableSource ? (
+            <div className="mt-4 flex justify-end">
+              <button className={actionButtonClass} onClick={() => onCopySource(copyableSource)} type="button">
+                <Copy className="h-3.5 w-3.5" />
+                <span>Copy code</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (renderMode === "api") {
+      return (
+        <div className="h-full overflow-y-auto p-5">
+          <div className="space-y-4">
+            <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 shadow-[var(--xv-chat-shadow)]">
+              <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">Endpoints</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {renderPayload.endpoints?.length ? (
+                  renderPayload.endpoints.map((endpoint) => (
+                    <div
+                      className="inline-flex items-center gap-2 rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-panel)] px-3 py-1.5 text-[12px] text-[var(--xv-chat-text)]"
+                      key={`${endpoint.method}-${endpoint.path}`}
+                    >
+                      <span className="font-medium text-[var(--xv-chat-accent)]">{endpoint.method}</span>
+                      <span>{endpoint.path}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-[13px] leading-6 text-[var(--xv-chat-muted)]">
+                    {renderPayload.reason || "Xeivora inferred an API preview from the generated output."}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 shadow-[var(--xv-chat-shadow)]">
+                <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">Sample request</div>
+                <pre className="overflow-x-auto rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] p-4 text-[12px] leading-6 text-[var(--xv-chat-text)]">
+                  <code>{renderPayload.sampleRequest || "No request body required."}</code>
+                </pre>
+              </div>
+              <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 shadow-[var(--xv-chat-shadow)]">
+                <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">Sample response</div>
+                <pre className="overflow-x-auto rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] p-4 text-[12px] leading-6 text-[var(--xv-chat-text)]">
+                  <code>{renderPayload.sampleResponse || "{\"status\":\"ok\"}"}</code>
+                </pre>
+              </div>
+            </div>
+
+            {copyableSource ? (
+              <div className="flex justify-end">
+                <button className={actionButtonClass} onClick={() => onCopySource(copyableSource)} type="button">
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy code</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
+
+    if (renderMode === "database") {
+      return (
+        <div className="h-full overflow-y-auto p-5">
+          <div className="space-y-4">
+            {renderPayload.tables?.length ? (
+              renderPayload.tables.map((table) => (
+                <div
+                  className="overflow-hidden rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] shadow-[var(--xv-chat-shadow)]"
+                  key={table.name}
+                >
+                  <div className="border-b border-[var(--xv-chat-border)] px-5 py-4">
+                    <div className="text-[14px] font-medium text-[var(--xv-chat-text)]">{table.name}</div>
+                    <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">Schema preview</div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-[12px] text-[var(--xv-chat-text)]">
+                      <thead className="bg-[var(--xv-chat-panel)] text-[var(--xv-chat-muted)]">
+                        <tr>
+                          {table.columns.map((column) => (
+                            <th className="px-4 py-3 font-medium" key={column.name}>
+                              {column.name}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(table.rows?.length ? table.rows : [{}]).map((row, rowIndex) => (
+                          <tr className="border-t border-[var(--xv-chat-border)]" key={`${table.name}-row-${rowIndex}`}>
+                            {table.columns.map((column) => (
+                              <td className="px-4 py-3 text-[var(--xv-chat-muted)]" key={`${table.name}-${column.name}`}>
+                                {`${row[column.name] ?? "—"}`}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 text-[13px] leading-6 text-[var(--xv-chat-muted)] shadow-[var(--xv-chat-shadow)]">
+                {previewMessage}
+              </div>
+            )}
+
+            {renderPayload.query ? (
+              <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5 shadow-[var(--xv-chat-shadow)]">
+                <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)]">Query</div>
+                <pre className="overflow-x-auto rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] p-4 text-[12px] leading-6 text-[var(--xv-chat-text)]">
+                  <code>{renderPayload.query}</code>
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
+
+    if (renderMode === "markdown") {
+      return (
+        <div className="h-full overflow-y-auto p-5">
+          <div className="rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-6 shadow-[var(--xv-chat-shadow)]">
+            <ChatMarkdown content={renderPayload.markdown || renderPayload.sourceCode || previewMessage} />
+          </div>
+        </div>
+      );
+    }
+
+    if (renderMode === "pdf" || renderMode === "slides" || renderMode === "image" || renderMode === "video") {
+      return (
+        <div className="flex h-full items-center justify-center p-5">
+          <div className="w-full max-w-[360px] rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-6 text-center shadow-[var(--xv-chat-shadow)]">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]">
+              <FileText className="h-5 w-5 text-[var(--xv-chat-accent)]" />
+            </div>
+            <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">{renderTypeLabel}</div>
+            <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">{previewMessage}</p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <button className={actionButtonClass} onClick={onRefresh} type="button">
+                <RefreshCcw className="h-3.5 w-3.5" />
+                <span>Retry</span>
+              </button>
+              {copyableSource ? (
+                <button className={actionButtonClass} onClick={() => onCopySource(copyableSource)} type="button">
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy code</span>
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex h-full items-center justify-center p-5">
+        <div className="w-full max-w-[360px] rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-6 text-center shadow-[var(--xv-chat-shadow)]">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]">
+            <Code2 className="h-5 w-5 text-[var(--xv-chat-accent)]" />
+          </div>
+          <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">Preview could not render this output.</div>
+          <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">{previewMessage}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <button className={actionButtonClass} onClick={onRefresh} type="button">
+              <RefreshCcw className="h-3.5 w-3.5" />
+              <span>Retry</span>
+            </button>
+            {copyableSource ? (
+              <button className={actionButtonClass} onClick={() => onCopySource(copyableSource)} type="button">
+                <Copy className="h-3.5 w-3.5" />
+                <span>Copy code</span>
+              </button>
+            ) : null}
+          </div>
+          {copyableSource ? (
+            <pre className="mt-4 max-h-[220px] overflow-auto rounded-[16px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] p-4 text-left text-[12px] leading-6 text-[var(--xv-chat-text)]">
+              <code>{copyableSource}</code>
+            </pre>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <aside
       className={cn(
-        "flex min-h-0 flex-col border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]",
-        compact ? "h-full" : "border-l"
+        "flex h-full min-h-0 flex-col overflow-hidden border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]",
+        compact ? "h-full" : "border-l xl:sticky xl:top-0"
       )}
     >
       <div className="border-b border-[var(--xv-chat-border)] px-4 py-3">
@@ -3175,8 +3708,10 @@ function LivePreviewPanel({
               Live Preview
             </div>
             <div className="mt-1 truncate text-[15px] font-medium text-[var(--xv-chat-text)]">{previewProjectName}</div>
-            <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">
-              While AI codes, the project updates live.
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--xv-chat-muted)]">
+              <span>{renderTypeLabel}</span>
+              <span>•</span>
+              <span>While AI codes, the project updates live.</span>
             </div>
           </div>
           <button
@@ -3192,13 +3727,16 @@ function LivePreviewPanel({
       <div className="min-h-0 flex-1 p-3">
         <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] shadow-[var(--xv-chat-shadow)]">
           <div className="flex items-center gap-3 border-b border-[var(--xv-chat-border)] px-4 py-3">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-            </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+          </div>
             <div className="min-w-0 flex-1 truncate rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-1.5 text-[11px] text-[var(--xv-chat-muted)]">
               {renderLabel}
+            </div>
+            <div className="hidden rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-panel)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)] xl:inline-flex">
+              {renderTypeLabel}
             </div>
             <button
               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
@@ -3219,128 +3757,7 @@ function LivePreviewPanel({
           </div>
 
           <div className="relative min-h-0 flex-1 bg-[var(--xv-chat-panel)]">
-            {latestPreview || hasRenderablePreview ? (
-              <>
-                {showRenderableFrame ? (
-                  <iframe
-                    className="h-full w-full bg-white"
-                    key={`${latestPreview?.id || "draft"}-${latestPreview?.updatedAt || "now"}-${refreshKey}-${renderPayload?.srcDoc?.length || 0}`}
-                    onError={onFrameError}
-                    onLoad={onFrameLoad}
-                    sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts"
-                    srcDoc={renderPayload?.srcDoc || ""}
-                    title={`Live preview for ${previewProjectName}`}
-                  />
-                ) : initializing || loading ? (
-                  <div className="flex h-full items-center justify-center p-6">
-                    <div className="max-w-[280px] text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
-                        <LoaderCircle className="h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
-                      </div>
-                      <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">
-                        Generating your live preview…
-                      </div>
-                      <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
-                        Xeivora is turning this coding checkpoint into a visible project preview.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center p-5">
-                    <div className="w-full max-w-[320px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-5 text-center shadow-[var(--xv-chat-shadow)]">
-                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]">
-                        <Code2 className="h-5 w-5 text-[var(--xv-chat-accent)]" />
-                      </div>
-                      <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">
-                        {showUnsupportedState ? "Preview available for HTML/CSS/JS output." : "Preview could not render this output."}
-                      </div>
-                      <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
-                        {showUnsupportedState
-                          ? renderPayload?.reason || "React preview compilation coming next."
-                          : previewMessage}
-                      </p>
-                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                        <button
-                          className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
-                          onClick={onRefresh}
-                          type="button"
-                        >
-                          <RefreshCcw className="h-3.5 w-3.5" />
-                          <span>Retry</span>
-                        </button>
-                        {copyableSource ? (
-                          <button
-                            className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
-                            onClick={() => onCopySource(copyableSource)}
-                            type="button"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            <span>Copy code</span>
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {showRenderableFrame && frameLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(14,11,8,0.16)] backdrop-blur-[2px]">
-                    <div className="rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center shadow-[var(--xv-chat-shadow)]">
-                      <LoaderCircle className="mx-auto h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
-                      <div className="mt-3 text-[13px] font-medium text-[var(--xv-chat-text)]">Updating preview…</div>
-                    </div>
-                  </div>
-                ) : null}
-                {showRenderableFrame && frameError ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(14,11,8,0.18)] p-5 backdrop-blur-[2px]">
-                    <div className="max-w-[320px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center text-[13px] leading-6 text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]">
-                      <div className="font-medium">Preview could not render this output.</div>
-                      <div className="mt-2 text-[var(--xv-chat-muted)]">{previewMessage}</div>
-                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                        <button
-                          className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
-                          onClick={onRefresh}
-                          type="button"
-                        >
-                          <RefreshCcw className="h-3.5 w-3.5" />
-                          <span>Retry</span>
-                        </button>
-                        {copyableSource ? (
-                          <button
-                            className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
-                            onClick={() => onCopySource(copyableSource)}
-                            type="button"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            <span>Copy code</span>
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <div className="flex h-full items-center justify-center p-6">
-                <div className="max-w-[280px] text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
-                    {initializing || loading ? (
-                      <LoaderCircle className="h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
-                    ) : (
-                      <Laptop className="h-5 w-5 text-[var(--xv-chat-accent)]" />
-                    )}
-                  </div>
-                  <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">
-                    {initializing || loading ? "Generating your live preview…" : "Preview will appear here"}
-                  </div>
-                  <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
-                    {initializing || loading
-                      ? "Xeivora is creating a coding checkpoint so you can watch the UI change without leaving chat."
-                      : "Start or continue a coding task and Xeivora will keep the visual progress here."}
-                  </p>
-                  {error ? <p className="mt-3 text-[12px] text-[#ef4444]">{error}</p> : null}
-                </div>
-              </div>
-            )}
+            {renderPreviewContent()}
           </div>
         </div>
       </div>
@@ -5337,12 +5754,16 @@ function groupSessions(sessions: ChatSessionSummary[]) {
 function looksLikeCodeContinuationPrompt(prompt = "") {
   const lower = `${prompt}`.toLowerCase();
   const codingKeywords =
-    /\b(code|debug|bug|fix|refactor|implement|function|component|frontend|backend|api|database|schema|sql|next\.?js|react|typescript|javascript|python|tailwind|css|html)\b/;
+    /\b(code|debug|bug|fix|refactor|implement|function|component|frontend|backend|api|database|schema|sql|next\.?js|react|typescript|javascript|python|tailwind|css|html|cli|terminal|script|readme|markdown|documentation|pdf|slide|slides|ppt|image|video)\b/;
   const projectSurfaceKeywords =
     /\b(login|sign in|signup|sign up|auth|authentication|dashboard|sidebar|composer|message|conversation|page|screen|layout|header|footer|form|modal|preview|timeline|memory)\b/;
   const actionKeywords = /\b(build|create|add|update|change|continue|resume|fix|debug|refactor|implement|ship)\b/;
 
-  return codingKeywords.test(lower) || (projectSurfaceKeywords.test(lower) && actionKeywords.test(lower));
+  return (
+    codingKeywords.test(lower) ||
+    (projectSurfaceKeywords.test(lower) && actionKeywords.test(lower)) ||
+    /\b(write|draft|generate|prepare)\b.*\b(readme|markdown|documentation)\b/.test(lower)
+  );
 }
 
 function normalizePreviewPayloadInput(value: unknown): WorkspacePreviewPayload | null {
@@ -5351,17 +5772,104 @@ function normalizePreviewPayloadInput(value: unknown): WorkspacePreviewPayload |
   }
 
   const payload = value as Partial<WorkspacePreviewPayload>;
-  if (payload.renderMode !== "html" && payload.renderMode !== "unsupported") {
+  const rawRenderMode =
+    typeof (value as { renderMode?: unknown }).renderMode === "string"
+      ? ((value as { renderMode?: string }).renderMode ?? null)
+      : null;
+  const renderMode =
+    rawRenderMode === "html"
+      ? "browser"
+      : rawRenderMode === "unsupported"
+        ? "code"
+        : rawRenderMode;
+  if (
+    renderMode !== "browser" &&
+    renderMode !== "react" &&
+    renderMode !== "terminal" &&
+    renderMode !== "api" &&
+    renderMode !== "database" &&
+    renderMode !== "markdown" &&
+    renderMode !== "pdf" &&
+    renderMode !== "slides" &&
+    renderMode !== "image" &&
+    renderMode !== "video" &&
+    renderMode !== "code"
+  ) {
     return null;
   }
 
+  const normalizedEndpoints = Array.isArray(payload.endpoints)
+    ? payload.endpoints.reduce<Array<{ method: string; path: string; description?: string | null }>>((acc, endpoint) => {
+        if (!endpoint || typeof endpoint !== "object" || !endpoint.method || !endpoint.path) {
+          return acc;
+        }
+
+        acc.push({
+          method: `${endpoint.method}`.toUpperCase(),
+          path: `${endpoint.path}`,
+          description: typeof endpoint.description === "string" ? endpoint.description : null
+        });
+        return acc;
+      }, [])
+    : null;
+
+  const normalizedTables = Array.isArray(payload.tables)
+    ? payload.tables.reduce<
+        Array<{
+          name: string;
+          columns: Array<{ name: string; type: string }>;
+          rows?: Array<Record<string, string | number | null>>;
+        }>
+      >((acc, table) => {
+        if (!table || typeof table !== "object" || !table.name || !Array.isArray(table.columns)) {
+          return acc;
+        }
+
+        const columns = table.columns.reduce<Array<{ name: string; type: string }>>((columnAcc, column) => {
+          if (!column || typeof column !== "object" || !column.name || !column.type) {
+            return columnAcc;
+          }
+
+          columnAcc.push({ name: `${column.name}`, type: `${column.type}` });
+          return columnAcc;
+        }, []);
+
+        acc.push({
+          name: `${table.name}`,
+          columns,
+          rows: Array.isArray(table.rows)
+            ? (table.rows.filter((row) => row && typeof row === "object") as Array<Record<string, string | number | null>>)
+            : []
+        });
+        return acc;
+      }, [])
+    : null;
+
   return {
-    renderMode: payload.renderMode,
+    renderMode,
     srcDoc: typeof payload.srcDoc === "string" ? payload.srcDoc : null,
     sourceCode: typeof payload.sourceCode === "string" ? payload.sourceCode : null,
     language: typeof payload.language === "string" ? payload.language : null,
     reason: typeof payload.reason === "string" ? payload.reason : null,
-    entryLabel: typeof payload.entryLabel === "string" ? payload.entryLabel : null
+    entryLabel: typeof payload.entryLabel === "string" ? payload.entryLabel : null,
+    command: typeof payload.command === "string" ? payload.command : null,
+    stdout: typeof payload.stdout === "string" ? payload.stdout : null,
+    stderr: typeof payload.stderr === "string" ? payload.stderr : null,
+    exitCode: typeof payload.exitCode === "number" ? payload.exitCode : null,
+    endpoints: normalizedEndpoints,
+    sampleRequest: typeof payload.sampleRequest === "string" ? payload.sampleRequest : null,
+    sampleResponse: typeof payload.sampleResponse === "string" ? payload.sampleResponse : null,
+    tables: normalizedTables,
+    query: typeof payload.query === "string" ? payload.query : null,
+    markdown: typeof payload.markdown === "string" ? payload.markdown : null,
+    mediaType:
+      payload.mediaType === "image" ||
+      payload.mediaType === "video" ||
+      payload.mediaType === "pdf" ||
+      payload.mediaType === "slides"
+        ? payload.mediaType
+        : null,
+    mediaUrl: typeof payload.mediaUrl === "string" ? payload.mediaUrl : null
   };
 }
 
@@ -5370,9 +5878,13 @@ type PreviewCodeBlock = {
   language: string;
 };
 
+type PreviewDetectionMode = WorkspacePreviewPayload["renderMode"];
+
+type PreviewSqlTable = NonNullable<WorkspacePreviewPayload["tables"]>[number];
+
 function extractPreviewCodeBlocks(content: string): PreviewCodeBlock[] {
   const blocks: PreviewCodeBlock[] = [];
-  const pattern = /```([\w.+-]*)\n([\s\S]*?)```/g;
+  const pattern = /```([\w.+-]*)[ \t]*\r?\n([\s\S]*?)```/g;
   let match: RegExpExecArray | null;
 
   while ((match = pattern.exec(content)) !== null) {
@@ -5419,7 +5931,291 @@ function buildPreviewSrcDoc({
   ].join("");
 }
 
-function extractPreviewPayloadFromContent(content: string): WorkspacePreviewPayload | null {
+function getPreviewSourceCode(blocks: PreviewCodeBlock[]) {
+  return (
+    blocks
+      .map((block) => `\`\`\`${block.language}\n${block.code}\n\`\`\``)
+      .join("\n\n") || null
+  );
+}
+
+function inferPreviewEntryLabel(language: string, fallback = "preview") {
+  const map: Record<string, string> = {
+    html: "index.html",
+    css: "styles.css",
+    javascript: "preview.js",
+    js: "preview.js",
+    jsx: "component.jsx",
+    react: "component.jsx",
+    ts: "preview.ts",
+    tsx: "component.tsx",
+    typescript: "component.tsx",
+    python: "main.py",
+    py: "main.py",
+    sql: "schema.sql",
+    markdown: "README.md",
+    md: "README.md",
+    bash: "script.sh",
+    shell: "script.sh",
+    sh: "script.sh",
+    json: "response.json"
+  };
+
+  return map[language] || fallback;
+}
+
+function inferTerminalCommand(language: string, prompt = "") {
+  const lower = prompt.toLowerCase();
+  if (language === "python" || language === "py") {
+    return "python main.py";
+  }
+  if (language === "bash" || language === "shell" || language === "sh") {
+    return "bash script.sh";
+  }
+  if (language === "typescript" || language === "ts") {
+    return lower.includes("node") ? "tsx main.ts" : "ts-node main.ts";
+  }
+  return "node index.js";
+}
+
+function inferTerminalOutput(code: string, prompt = "", language = "text") {
+  const lowerPrompt = prompt.toLowerCase();
+  const printMatches = [...code.matchAll(/(?:print|console\.log)\((["'`])([\s\S]*?)\1\)/g)]
+    .map((match) => match[2]?.trim())
+    .filter(Boolean);
+
+  if (printMatches.length) {
+    return printMatches.join("\n");
+  }
+
+  if (/\bcalculator\b/.test(lowerPrompt)) {
+    return [
+      "Calculator script ready.",
+      language.startsWith("python") ? "Example run: python main.py" : `Example run: ${inferTerminalCommand(language, prompt)}`,
+      "12 + 7 = 19"
+    ].join("\n");
+  }
+
+  if (/\b(todo|task)\b/.test(lowerPrompt)) {
+    return "Script ready.\nSample output: 3 tasks loaded.\n- Buy milk\n- Ship preview\n- Review timeline";
+  }
+
+  return "Execution preview prepared.\nRun locally to continue with interactive input.";
+}
+
+function inferApiEndpoints(code: string, prompt = "") {
+  const endpoints: Array<{ method: string; path: string; description?: string | null }> = [];
+  const pattern = /\b(get|post|put|patch|delete)\s*\(\s*["'`]([^"'`]+)["'`]/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(code)) !== null) {
+    endpoints.push({
+      method: match[1].toUpperCase(),
+      path: match[2],
+      description: null
+    });
+  }
+
+  const decoratorPattern = /@(get|post|put|patch|delete)\(\s*["']([^"']+)["']/gi;
+  while ((match = decoratorPattern.exec(code)) !== null) {
+    endpoints.push({
+      method: match[1].toUpperCase(),
+      path: match[2],
+      description: null
+    });
+  }
+
+  if (!endpoints.length && /\btodo\b/.test(prompt.toLowerCase())) {
+    return [
+      { method: "GET", path: "/api/todos", description: "List todos" },
+      { method: "POST", path: "/api/todos", description: "Create todo" },
+      { method: "PATCH", path: "/api/todos/:id", description: "Update todo state" }
+    ];
+  }
+
+  return endpoints.slice(0, 8);
+}
+
+function inferApiSampleRequest(prompt = "", endpoints: Array<{ method: string; path: string }>) {
+  const endpoint = endpoints[1] || endpoints[0];
+  if (!endpoint) {
+    return null;
+  }
+
+  if (endpoint.method === "POST") {
+    if (/\btodo\b/.test(prompt.toLowerCase())) {
+      return JSON.stringify({ title: "Ship preview panel", completed: false }, null, 2);
+    }
+
+    return JSON.stringify({ name: "Example payload" }, null, 2);
+  }
+
+  return null;
+}
+
+function inferApiSampleResponse(prompt = "", endpoints: Array<{ method: string; path: string }>) {
+  if (/\btodo\b/.test(prompt.toLowerCase())) {
+    return JSON.stringify(
+      {
+        data: [
+          { id: "todo_1", title: "Ship preview panel", completed: false },
+          { id: "todo_2", title: "Persist project memory", completed: true }
+        ]
+      },
+      null,
+      2
+    );
+  }
+
+  const endpoint = endpoints[0];
+  if (!endpoint) {
+    return JSON.stringify({ status: "ok" }, null, 2);
+  }
+
+  return JSON.stringify({ status: "ok", endpoint: endpoint.path }, null, 2);
+}
+
+function buildSampleRows(columns: PreviewSqlTable["columns"]) {
+  const row: Record<string, string | number | null> = {};
+  columns.slice(0, 6).forEach((column, index) => {
+    const typeLower = column.type.toLowerCase();
+    if (/int|numeric|decimal|float|double/.test(typeLower)) {
+      row[column.name] = index + 1;
+    } else if (/bool/.test(typeLower)) {
+      row[column.name] = index % 2 === 0 ? "true" : "false";
+    } else if (/date|time/.test(typeLower)) {
+      row[column.name] = "2026-06-05";
+    } else if (/uuid|id/.test(typeLower)) {
+      row[column.name] = `${column.name}_${index + 1}`;
+    } else {
+      row[column.name] = `${column.name} value`;
+    }
+  });
+
+  return [row];
+}
+
+function parseSqlTables(sql: string): PreviewSqlTable[] {
+  const tables: PreviewSqlTable[] = [];
+  const tablePattern = /create\s+table\s+(?:if\s+not\s+exists\s+)?("?[\w-]+"?)\s*\(([\s\S]*?)\);/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = tablePattern.exec(sql)) !== null) {
+    const tableName = match[1].replace(/"/g, "");
+    const body = match[2] || "";
+    const columns = body
+      .split(",")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const cleaned = line.replace(/\s+/g, " ");
+        const tokens = cleaned.split(" ");
+        const name = tokens[0]?.replace(/"/g, "");
+        const type = tokens[1];
+        if (!name || !type || /^(primary|foreign|unique|constraint)$/i.test(name)) {
+          return null;
+        }
+
+        return { name, type };
+      })
+      .filter(Boolean) as PreviewSqlTable["columns"];
+
+    tables.push({
+      name: tableName,
+      columns,
+      rows: buildSampleRows(columns)
+    });
+  }
+
+  return tables.slice(0, 6);
+}
+
+function looksLikeMarkdownDocument(text: string) {
+  return /^#\s/m.test(text) || /(?:^- |\n- |\n\d+\.)/.test(text);
+}
+
+function detectPreviewMode({
+  codeBlocks,
+  normalized,
+  userPrompt
+}: {
+  codeBlocks: PreviewCodeBlock[];
+  normalized: string;
+  userPrompt: string;
+}): PreviewDetectionMode | null {
+  const promptLower = userPrompt.toLowerCase();
+  const htmlBlock = codeBlocks.find((block) => ["html", "htm"].includes(block.language));
+  const jsBlock = codeBlocks.find((block) => ["javascript", "js"].includes(block.language));
+  const reactBlock = codeBlocks.find((block) =>
+    ["jsx", "tsx", "react", "typescript", "ts"].includes(block.language) ||
+    /(?:export\s+default|return\s*\(|useState|useEffect|className=|from\s+["']react["'])/.test(block.code)
+  );
+  const terminalBlock = codeBlocks.find((block) =>
+    ["python", "py", "bash", "shell", "sh", "javascript", "js", "typescript", "ts"].includes(block.language)
+  );
+  const sqlBlock = codeBlocks.find((block) => block.language === "sql" || /\bcreate\s+table\b/i.test(block.code));
+  const markdownBlock = codeBlocks.find((block) => ["markdown", "md"].includes(block.language));
+
+  if (/\b(pdf|reportlab|pdfkit|jspdf)\b/.test(promptLower)) {
+    return "pdf";
+  }
+
+  if (/\b(slide|slides|ppt|pptx|powerpoint)\b/.test(promptLower)) {
+    return "slides";
+  }
+
+  if (/\b(video|ffmpeg|moviepy|mp4)\b/.test(promptLower)) {
+    return "video";
+  }
+
+  if (/\b(image|poster|illustration|logo|artwork)\b/.test(promptLower)) {
+    return "image";
+  }
+
+  if (markdownBlock || (/\b(readme|markdown|documentation)\b/.test(promptLower) && looksLikeMarkdownDocument(normalized))) {
+    return "markdown";
+  }
+
+  if (sqlBlock || /\b(database|sql|schema|migration|table)\b/.test(promptLower)) {
+    return "database";
+  }
+
+  if (/\b(api|backend|server|endpoint|rest)\b/.test(promptLower) || /(?:app|router)\.(get|post|put|patch|delete)\(/i.test(normalized)) {
+    return "api";
+  }
+
+  if (htmlBlock) {
+    return "browser";
+  }
+
+  if (!htmlBlock && jsBlock && /document\.|window\.|createElement|innerHTML|querySelector|appendChild/.test(jsBlock.code)) {
+    return "browser";
+  }
+
+  if (!codeBlocks.length && /<(main|section|div|article|html|body|style|script)[\s>]/i.test(normalized)) {
+    return "browser";
+  }
+
+  if (reactBlock) {
+    return "react";
+  }
+
+  if (terminalBlock || /\b(cli|terminal|script|python|node)\b/.test(promptLower)) {
+    return "terminal";
+  }
+
+  if (codeBlocks.length) {
+    return "code";
+  }
+
+  if (looksLikeMarkdownDocument(normalized)) {
+    return "markdown";
+  }
+
+  return null;
+}
+
+function extractPreviewPayloadFromContent(content: string, userPrompt = ""): WorkspacePreviewPayload | null {
   const normalized = `${content || ""}`.trim();
   if (!normalized) {
     return null;
@@ -5429,47 +6225,52 @@ function extractPreviewPayloadFromContent(content: string): WorkspacePreviewPayl
   const htmlBlock = codeBlocks.find((block) => ["html", "htm"].includes(block.language));
   const cssBlock = codeBlocks.find((block) => block.language === "css");
   const jsBlock = codeBlocks.find((block) => ["javascript", "js"].includes(block.language));
-  const reactBlock = codeBlocks.find((block) =>
-    ["jsx", "tsx", "react", "typescript", "ts"].includes(block.language) ||
-    /(?:export\s+default|return\s*\(|useState|useEffect|className=|from\s+["']react["'])/.test(block.code)
-  );
+  const mode = detectPreviewMode({
+    codeBlocks,
+    normalized,
+    userPrompt
+  });
 
-  if (htmlBlock) {
+  if (!mode) {
+    return null;
+  }
+
+  if (mode === "browser") {
     const sourceCode = [htmlBlock, cssBlock, jsBlock]
       .filter(Boolean)
       .map((block) => `\`\`\`${block?.language}\n${block?.code}\n\`\`\``)
       .join("\n\n");
 
-    return {
-      renderMode: "html",
-      entryLabel: "index.html",
-      language: "html",
-      sourceCode,
-      srcDoc: buildPreviewSrcDoc({
-        html: htmlBlock.code,
-        css: cssBlock?.code,
-        javascript: jsBlock?.code
-      })
-    };
-  }
+    if (htmlBlock) {
+      return {
+        renderMode: "browser",
+        entryLabel: "index.html",
+        language: "html",
+        sourceCode,
+        srcDoc: buildPreviewSrcDoc({
+          html: htmlBlock.code,
+          css: cssBlock?.code,
+          javascript: jsBlock?.code
+        })
+      };
+    }
 
-  if (!htmlBlock && jsBlock && /document\.|window\.|createElement|innerHTML|querySelector|appendChild/.test(jsBlock.code)) {
-    return {
-      renderMode: "html",
-      entryLabel: "preview.js",
-      language: "javascript",
-      sourceCode: `\`\`\`javascript\n${jsBlock.code}\n\`\`\``,
-      srcDoc: buildPreviewSrcDoc({
-        html: '<div id="app"></div>',
-        css: cssBlock?.code,
-        javascript: jsBlock.code
-      })
-    };
-  }
+    if (jsBlock) {
+      return {
+        renderMode: "browser",
+        entryLabel: "preview.js",
+        language: "javascript",
+        sourceCode: `\`\`\`javascript\n${jsBlock.code}\n\`\`\``,
+        srcDoc: buildPreviewSrcDoc({
+          html: '<div id="app"></div>',
+          css: cssBlock?.code,
+          javascript: jsBlock.code
+        })
+      };
+    }
 
-  if (!codeBlocks.length && /<(main|section|div|article|html|body|style|script)[\s>]/i.test(normalized)) {
     return {
-      renderMode: "html",
+      renderMode: "browser",
       entryLabel: "index.html",
       language: "html",
       sourceCode: normalized,
@@ -5477,28 +6278,96 @@ function extractPreviewPayloadFromContent(content: string): WorkspacePreviewPayl
     };
   }
 
-  if (reactBlock) {
+  if (mode === "react") {
+    const block = codeBlocks.find((entry) => ["jsx", "tsx", "react", "typescript", "ts"].includes(entry.language)) || codeBlocks[0];
     return {
-      renderMode: "unsupported",
-      entryLabel: reactBlock.language || "component.tsx",
-      language: reactBlock.language || "tsx",
-      sourceCode: `\`\`\`${reactBlock.language}\n${reactBlock.code}\n\`\`\``,
-      reason: "Preview available for HTML/CSS/JS output. React preview compilation coming next."
+      renderMode: "react",
+      entryLabel: inferPreviewEntryLabel(block?.language || "tsx", "component.tsx"),
+      language: block?.language || "tsx",
+      sourceCode: getPreviewSourceCode(block ? [block] : codeBlocks) || normalized,
+      reason: "React preview shell loaded. Full runtime compilation is the next upgrade."
     };
   }
 
-  if (!codeBlocks.length) {
-    return null;
+  if (mode === "terminal") {
+    const block =
+      codeBlocks.find((entry) => ["python", "py", "bash", "shell", "sh", "javascript", "js", "typescript", "ts"].includes(entry.language)) ||
+      codeBlocks[0];
+    const language = block?.language || "text";
+    const code = block?.code || normalized;
+
+    return {
+      renderMode: "terminal",
+      entryLabel: inferPreviewEntryLabel(language, "terminal"),
+      language,
+      sourceCode: getPreviewSourceCode(block ? [block] : codeBlocks) || normalized,
+      command: inferTerminalCommand(language, userPrompt),
+      stdout: inferTerminalOutput(code, userPrompt, language),
+      stderr: null,
+      exitCode: 0
+    };
+  }
+
+  if (mode === "api") {
+    const sourceCode = getPreviewSourceCode(codeBlocks) || normalized;
+    const endpoints = inferApiEndpoints(sourceCode, userPrompt);
+    return {
+      renderMode: "api",
+      entryLabel: inferPreviewEntryLabel(codeBlocks[0]?.language || "ts", "api.ts"),
+      language: codeBlocks[0]?.language || "typescript",
+      sourceCode,
+      endpoints,
+      sampleRequest: inferApiSampleRequest(userPrompt, endpoints),
+      sampleResponse: inferApiSampleResponse(userPrompt, endpoints),
+      reason: endpoints.length ? null : "Xeivora inferred an API preview from the request."
+    };
+  }
+
+  if (mode === "database") {
+    const sqlBlock = codeBlocks.find((block) => block.language === "sql") || codeBlocks[0];
+    const sql = sqlBlock?.code || normalized;
+    const tables = parseSqlTables(sql);
+    return {
+      renderMode: "database",
+      entryLabel: inferPreviewEntryLabel(sqlBlock?.language || "sql", "schema.sql"),
+      language: sqlBlock?.language || "sql",
+      sourceCode: getPreviewSourceCode(sqlBlock ? [sqlBlock] : codeBlocks) || normalized,
+      query: sql,
+      tables,
+      reason: tables.length ? null : "Xeivora saved the SQL and generated a schema preview."
+    };
+  }
+
+  if (mode === "markdown") {
+    const markdownBlock = codeBlocks.find((block) => ["markdown", "md"].includes(block.language));
+    const markdown = markdownBlock?.code || normalized;
+    return {
+      renderMode: "markdown",
+      entryLabel: inferPreviewEntryLabel(markdownBlock?.language || "md", "README.md"),
+      language: markdownBlock?.language || "markdown",
+      sourceCode: markdownBlock ? `\`\`\`${markdownBlock.language}\n${markdownBlock.code}\n\`\`\`` : markdown,
+      markdown
+    };
+  }
+
+  if (mode === "pdf" || mode === "slides" || mode === "image" || mode === "video") {
+    return {
+      renderMode: mode,
+      entryLabel: inferPreviewEntryLabel(codeBlocks[0]?.language || "txt", mode),
+      language: codeBlocks[0]?.language || "text",
+      sourceCode: getPreviewSourceCode(codeBlocks) || normalized,
+      reason: `Xeivora saved this ${mode} workflow and will show the generated asset here when it becomes available.`,
+      mediaType: mode === "slides" ? "slides" : mode === "pdf" ? "pdf" : mode,
+      mediaUrl: null
+    };
   }
 
   return {
-    renderMode: "unsupported",
-    entryLabel: "preview",
+    renderMode: "code",
+    entryLabel: inferPreviewEntryLabel(codeBlocks[0]?.language || "text", "preview"),
     language: codeBlocks[0]?.language || "text",
-    sourceCode: codeBlocks
-      .map((block) => `\`\`\`${block.language}\n${block.code}\n\`\`\``)
-      .join("\n\n") || normalized,
-    reason: "Preview could not render this output. Xeivora can render HTML, CSS, and JavaScript right now."
+    sourceCode: getPreviewSourceCode(codeBlocks) || normalized,
+    reason: "Preview mode is not available yet for this language, but the code is saved to the project files."
   };
 }
 

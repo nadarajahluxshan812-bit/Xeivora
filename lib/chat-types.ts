@@ -139,12 +139,46 @@ export type WorkspacePreviewVersion = {
 };
 
 export type WorkspacePreviewPayload = {
-  renderMode: "html" | "unsupported";
+  renderMode:
+    | "browser"
+    | "react"
+    | "terminal"
+    | "api"
+    | "database"
+    | "markdown"
+    | "pdf"
+    | "slides"
+    | "image"
+    | "video"
+    | "code";
   srcDoc?: string | null;
   sourceCode?: string | null;
   language?: string | null;
   reason?: string | null;
   entryLabel?: string | null;
+  command?: string | null;
+  stdout?: string | null;
+  stderr?: string | null;
+  exitCode?: number | null;
+  endpoints?: Array<{
+    method: string;
+    path: string;
+    description?: string | null;
+  }> | null;
+  sampleRequest?: string | null;
+  sampleResponse?: string | null;
+  tables?: Array<{
+    name: string;
+    columns: Array<{
+      name: string;
+      type: string;
+    }>;
+    rows?: Array<Record<string, string | number | null>>;
+  }> | null;
+  query?: string | null;
+  markdown?: string | null;
+  mediaType?: "image" | "video" | "pdf" | "slides" | null;
+  mediaUrl?: string | null;
 };
 
 export type UploadedFileSummary = {

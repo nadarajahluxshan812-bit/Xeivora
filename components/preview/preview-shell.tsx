@@ -122,7 +122,7 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
               </div>
               <div className="flex items-center gap-2">
                 <WorkspaceBadge tone="learning">Auto-refresh on</WorkspaceBadge>
-                {previewPayload?.renderMode === "html" && previewPayload.srcDoc ? (
+                {previewPayload?.renderMode === "browser" && previewPayload.srcDoc ? (
                   <button
                     className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
                     onClick={() => {
@@ -160,7 +160,7 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
             {latestPreview ? (
               <div className="bg-[var(--site-panel)] p-4">
                 <div className="overflow-hidden rounded-[16px] border border-[color:var(--site-border)] bg-[var(--site-bg)]">
-                  {previewPayload?.renderMode === "html" && previewPayload.srcDoc ? (
+                  {previewPayload?.renderMode === "browser" && previewPayload.srcDoc ? (
                     <iframe
                       className="h-[680px] w-full bg-white"
                       key={`${latestPreview.id}-${refreshKey}-${previewPayload.srcDoc.length}`}
@@ -168,12 +168,22 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
                       srcDoc={previewPayload.srcDoc}
                       title={`Preview Version ${latestPreview.versionNumber}`}
                     />
+                  ) : previewPayload?.markdown ? (
+                    <div className="h-[680px] overflow-y-auto p-8 text-left">
+                      <pre className="whitespace-pre-wrap text-[13px] leading-7 text-[var(--site-text)]">{previewPayload.markdown}</pre>
+                    </div>
+                  ) : previewPayload?.stdout || previewPayload?.sourceCode ? (
+                    <div className="h-[680px] overflow-y-auto p-8 text-left">
+                      <pre className="whitespace-pre-wrap rounded-[14px] border border-[color:var(--site-border)] bg-[var(--site-panel)] p-5 text-[13px] leading-7 text-[var(--site-text)]">
+                        {previewPayload.stdout || previewPayload.sourceCode}
+                      </pre>
+                    </div>
                   ) : (
                     <div className="flex h-[680px] items-center justify-center p-8 text-center">
                       <div>
                         <div className="text-[18px] font-medium text-[var(--site-text)]">Preview could not render this output.</div>
                         <p className="mt-3 max-w-[420px] text-[14px] leading-7 text-[var(--site-subtle)]">
-                          {previewPayload?.reason || "Xeivora can currently render HTML, CSS, and JavaScript preview output here."}
+                          {previewPayload?.reason || "Xeivora saved this checkpoint and is preparing the best preview mode for it."}
                         </p>
                       </div>
                     </div>
