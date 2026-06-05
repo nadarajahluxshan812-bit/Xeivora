@@ -13,7 +13,13 @@ const links = [
 
 export function MarketingNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:var(--site-border-soft)] bg-[color:rgba(var(--site-accent-rgb),0.05)] text-[color:var(--site-text)] backdrop-blur-xl">
+    <header
+      className="sticky top-0 z-40 border-b text-[color:var(--site-text)] backdrop-blur-xl"
+      style={{
+        borderColor: "var(--site-border-soft)",
+        backgroundColor: "color-mix(in srgb, var(--site-panel) 92%, transparent)"
+      }}
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
         <Link href="/">
           <OrbitLogo />
@@ -75,7 +81,13 @@ export function MarketingFooter() {
 export function MarketingPageShell({ children }: { children: ReactNode }) {
   return (
     <main className="min-h-screen bg-[color:var(--site-bg)] text-[color:var(--site-text)]">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(var(--site-accent-rgb),0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(var(--site-accent-rgb),0.1),transparent_30%),radial-gradient(circle_at_bottom,rgba(var(--site-accent-rgb),0.08),transparent_35%)]" />
+      <div
+        className="pointer-events-none fixed inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, var(--site-overlay-top), transparent 34%), radial-gradient(circle at top right, var(--site-overlay-soft), transparent 30%), radial-gradient(circle at bottom, var(--site-overlay-soft), transparent 35%)"
+        }}
+      />
       <div className="relative">
         <MarketingNav />
         {children}

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     await createProject({
       name: body?.name || "Untitled project",
       description: body?.description || "",
-      color: body?.color || "#8b5cf6",
+      color: body?.color || "#c96442",
       status: body?.status || "active"
     }),
     { status: 201 }

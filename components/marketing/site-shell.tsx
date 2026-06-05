@@ -13,11 +13,25 @@ import { MarketingBrand, NavbarActionButton, ThemeButton } from "./reference-ui"
 
 export function MarketingSiteShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#030303] text-white [font-family:var(--font-marketing-body)]">
+    <div
+      className="min-h-screen [font-family:var(--font-marketing-body)]"
+      style={{ backgroundColor: "var(--site-bg)", color: "var(--site-text)" }}
+    >
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#030303_0%,#050509_55%,#030303_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(76,29,149,0.18),transparent_34%),radial-gradient(circle_at_18%_14%,rgba(124,58,237,0.06),transparent_18%),radial-gradient(circle_at_82%_12%,rgba(59,130,246,0.05),transparent_18%)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/14 to-transparent" />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "linear-gradient(180deg, var(--site-bg) 0%, var(--site-panel) 55%, var(--site-bg) 100%)"
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at top, var(--site-overlay-top), transparent 34%), radial-gradient(circle at 18% 14%, var(--site-overlay-soft), transparent 18%), radial-gradient(circle at 82% 12%, var(--site-overlay-soft), transparent 18%)"
+          }}
+        />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--site-border)] to-transparent" />
       </div>
 
       <div className="relative z-10">
@@ -34,7 +48,13 @@ export function MarketingNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#050505]/86 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-50 border-b backdrop-blur-xl"
+        style={{
+          borderColor: "var(--site-border-soft)",
+          backgroundColor: "color-mix(in srgb, var(--site-panel) 86%, transparent)"
+        }}
+      >
         <div className="mx-auto grid h-[72px] max-w-[1440px] grid-cols-[auto,1fr,auto] items-center gap-6 px-6 sm:px-10 lg:px-12">
           <Link className="justify-self-start" href="/">
             <MarketingBrand />
@@ -46,19 +66,19 @@ export function MarketingNavbar() {
               return (
                 <Link
                   className={cn(
-                    "relative text-sm font-medium text-white/76 transition hover:text-white",
-                    active && "text-white"
+                    "relative text-sm font-medium transition hover:text-[color:var(--site-text)]",
+                    active ? "text-[color:var(--site-text)]" : "text-[color:var(--site-text)]/76"
                   )}
                   href={item.href}
                   key={item.href}
                 >
                   <span className="inline-flex items-center gap-1.5">
                     {item.label}
-                    {item.chevron ? <ChevronDown className="h-3.5 w-3.5 text-white/48" /> : null}
+                    {item.chevron ? <ChevronDown className="h-3.5 w-3.5 text-[color:var(--site-text)]/48" /> : null}
                   </span>
                   <span
                     className={cn(
-                      "absolute -bottom-[23px] left-0 h-0.5 w-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] transition-transform duration-200",
+                      "absolute -bottom-[23px] left-0 h-0.5 w-full rounded-full bg-[color:var(--site-accent)] transition-transform duration-200",
                       active ? "scale-x-100" : "scale-x-0"
                     )}
                   />
@@ -77,7 +97,12 @@ export function MarketingNavbar() {
 
           <button
             aria-label="Open navigation"
-            className="inline-flex h-11 w-11 items-center justify-center justify-self-end rounded-full border border-white/[0.1] bg-white/[0.02] text-white lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center justify-self-end rounded-full border lg:hidden"
+            style={{
+              borderColor: "var(--site-border)",
+              backgroundColor: "var(--site-ghost-bg)",
+              color: "var(--site-text)"
+            }}
             onClick={() => setMobileOpen(true)}
             type="button"
           >
@@ -87,7 +112,15 @@ export function MarketingNavbar() {
       </header>
 
       <Sheet onOpenChange={setMobileOpen} open={mobileOpen}>
-        <SheetContent className="border-white/[0.08] bg-[#050505] p-0" side="left">
+        <SheetContent
+          className="p-0"
+          side="left"
+          style={{
+            borderColor: "var(--site-border-soft)",
+            backgroundColor: "var(--site-panel)",
+            color: "var(--site-text)"
+          }}
+        >
           <div className="flex h-full flex-col px-5 py-6">
             <Link className="mb-10" href="/" onClick={() => setMobileOpen(false)}>
               <MarketingBrand />
@@ -101,15 +134,23 @@ export function MarketingNavbar() {
                     className={cn(
                       "flex h-12 items-center justify-between rounded-[16px] border px-4 text-sm font-medium transition",
                       active
-                        ? "border-[#8b5cf6]/34 bg-[#171024] text-white"
-                        : "border-transparent text-white/68 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-white"
+                        ? "text-[color:var(--site-text)]"
+                        : "border-transparent text-[color:var(--site-text)]/68 hover:text-[color:var(--site-text)]"
                     )}
+                    style={
+                      active
+                        ? { borderColor: "var(--site-accent)", backgroundColor: "var(--site-accent-soft)" }
+                        : {
+                            borderColor: "transparent",
+                            backgroundColor: "transparent"
+                          }
+                    }
                     href={item.href}
                     key={item.href}
                     onClick={() => setMobileOpen(false)}
                   >
                     <span>{item.label}</span>
-                    {item.chevron ? <ChevronDown className="h-4 w-4 text-white/42" /> : null}
+                    {item.chevron ? <ChevronDown className="h-4 w-4 text-[color:var(--site-text)]/42" /> : null}
                   </Link>
                 );
               })}

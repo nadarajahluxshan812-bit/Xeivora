@@ -95,9 +95,9 @@ export function PricingStatusBanner({ floating = false }: { floating?: boolean }
       case "error":
         return "border-red-500/30 bg-red-500/10 text-red-100";
       case "cancelled":
-        return "border-[rgba(201,100,66,0.25)] bg-[rgba(201,100,66,0.08)] text-[#f0ead8]";
+        return "border-[color:var(--site-border-strong)] bg-[color:var(--site-accent-soft)] text-[color:var(--site-text)]";
       default:
-        return "border-[rgba(201,100,66,0.25)] bg-[rgba(201,100,66,0.08)] text-[#f0ead8]";
+        return "border-[color:var(--site-border-strong)] bg-[color:var(--site-accent-soft)] text-[color:var(--site-text)]";
     }
   }, [syncState]);
 

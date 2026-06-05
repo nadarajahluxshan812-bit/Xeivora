@@ -17,25 +17,31 @@ html[data-theme="dark"] {
     "Segoe UI",
     "Helvetica Neue",
     sans-serif;
-  --site-bg: #0e0b08;
-  --site-panel: #120e0a;
-  --site-card: #1a1410;
-  --site-card-soft: rgba(181, 107, 75, 0.08);
-  --site-border: rgba(240, 234, 216, 0.12);
-  --site-border-soft: rgba(240, 234, 216, 0.08);
-  --site-border-strong: rgba(181, 107, 75, 0.28);
-  --site-text: #f0ead8;
-  --site-muted: rgba(240, 234, 216, 0.78);
-  --site-subtle: rgba(240, 234, 216, 0.52);
-  --site-outline: rgba(240, 234, 216, 0.34);
+  --site-bg: #000000;
+  --site-panel: #050505;
+  --site-card: #0a0a0a;
+  --site-card-soft: rgba(255, 255, 255, 0.03);
+  --site-surface: #0a0a0a;
+  --site-surface-strong: #111111;
+  --site-border: rgba(255, 255, 255, 0.1);
+  --site-border-soft: rgba(255, 255, 255, 0.08);
+  --site-border-strong: rgba(255, 255, 255, 0.16);
+  --site-text: #ffffff;
+  --site-muted: rgba(255, 255, 255, 0.7);
+  --site-subtle: rgba(255, 255, 255, 0.48);
+  --site-outline: rgba(255, 255, 255, 0.26);
   --site-accent: #b56b4b;
   --site-accent-strong: #9c5738;
-  --site-accent-soft: rgba(181, 107, 75, 0.14);
-  --site-accent-glow: rgba(181, 107, 75, 0.28);
+  --site-accent-soft: rgba(181, 107, 75, 0.12);
+  --site-accent-glow: rgba(181, 107, 75, 0.16);
   --site-ghost-bg: rgba(255, 255, 255, 0.02);
   --site-ghost-hover: rgba(255, 255, 255, 0.05);
   --site-inverse: #fffdf9;
   --site-accent-rgb: 181, 107, 75;
+  --site-overlay-top: rgba(255, 255, 255, 0.04);
+  --site-overlay-soft: rgba(255, 255, 255, 0.02);
+  --site-shell-glow-strong: rgba(255, 255, 255, 0.035);
+  --site-shell-glow-soft: rgba(255, 255, 255, 0.02);
   --bg: var(--site-bg);
   --surface: var(--site-panel);
   --surface-soft: var(--site-card);
@@ -72,6 +78,8 @@ html[data-theme="light"] {
   --site-panel: #fbf7f0;
   --site-card: #fffdf8;
   --site-card-soft: rgba(181, 107, 75, 0.06);
+  --site-surface: #fffdf8;
+  --site-surface-strong: #fbf7f0;
   --site-border: rgba(81, 51, 38, 0.14);
   --site-border-soft: rgba(81, 51, 38, 0.09);
   --site-border-strong: rgba(181, 107, 75, 0.24);
@@ -87,6 +95,10 @@ html[data-theme="light"] {
   --site-ghost-hover: rgba(32, 22, 17, 0.06);
   --site-inverse: #fffdf8;
   --site-accent-rgb: 175, 101, 69;
+  --site-overlay-top: rgba(var(--site-accent-rgb), 0.16);
+  --site-overlay-soft: rgba(var(--site-accent-rgb), 0.08);
+  --site-shell-glow-strong: rgba(var(--site-accent-rgb), 0.11);
+  --site-shell-glow-soft: rgba(var(--site-accent-rgb), 0.05);
   --bg: var(--site-bg);
   --surface: var(--site-panel);
   --surface-soft: var(--site-card);
@@ -118,24 +130,24 @@ html[data-theme="light"] {
 }
 
 html[data-theme="dark"] {
-  --xv-chat-bg: #0f1115;
-  --xv-chat-surface: rgba(23, 24, 28, 0.92);
-  --xv-chat-surface-soft: rgba(28, 29, 33, 0.9);
-  --xv-chat-sidebar: #111317;
-  --xv-chat-border: rgba(255, 255, 255, 0.08);
-  --xv-chat-border-strong: rgba(255, 255, 255, 0.12);
-  --xv-chat-text: #f8fafc;
-  --xv-chat-muted: #9ca3af;
-  --xv-chat-code-bg: #16181d;
-  --xv-chat-code-header-bg: rgba(255, 255, 255, 0.03);
-  --xv-chat-code-border: rgba(255, 255, 255, 0.08);
-  --xv-chat-code-text: rgba(248, 250, 252, 0.92);
-  --xv-chat-inline-code-bg: rgba(181, 107, 75, 0.18);
-  --xv-chat-inline-code-text: #f0c5b3;
+  --xv-chat-bg: #000000;
+  --xv-chat-surface: rgba(10, 10, 10, 0.96);
+  --xv-chat-surface-soft: rgba(17, 17, 17, 0.94);
+  --xv-chat-sidebar: #050505;
+  --xv-chat-border: rgba(255, 255, 255, 0.1);
+  --xv-chat-border-strong: rgba(255, 255, 255, 0.14);
+  --xv-chat-text: #ffffff;
+  --xv-chat-muted: rgba(255, 255, 255, 0.7);
+  --xv-chat-code-bg: #0a0a0a;
+  --xv-chat-code-header-bg: rgba(255, 255, 255, 0.04);
+  --xv-chat-code-border: rgba(255, 255, 255, 0.1);
+  --xv-chat-code-text: rgba(255, 255, 255, 0.92);
+  --xv-chat-inline-code-bg: rgba(201, 100, 66, 0.16);
+  --xv-chat-inline-code-text: #f4d0c2;
   --xv-chat-ghost-bg: rgba(255, 255, 255, 0.04);
   --xv-chat-ghost-bg-hover: rgba(255, 255, 255, 0.08);
-  --xv-chat-ghost-text: rgba(255, 255, 255, 0.72);
-  --xv-chat-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+  --xv-chat-ghost-text: rgba(255, 255, 255, 0.7);
+  --xv-chat-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -195,15 +207,15 @@ a {
 
 .dark {
   color-scheme: dark;
-  --bg: #000000;
-  --surface: #111111;
-  --surface-soft: #1a1a1a;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #ffffff;
-  --muted: #9ca3af;
-  --subtle: rgba(255, 255, 255, 0.42);
-  --accent: #ffffff;
-  --accent-soft: #303030;
+  --bg: var(--site-bg);
+  --surface: var(--site-panel);
+  --surface-soft: var(--site-card);
+  --border: var(--site-border);
+  --text: var(--site-text);
+  --muted: var(--site-muted);
+  --subtle: var(--site-subtle);
+  --accent: var(--site-accent);
+  --accent-soft: var(--site-card-soft);
 }
 
 .sr-only {
@@ -1882,10 +1894,10 @@ a {
 }
 
 .xv-marketing-home {
-  background: #0e0b08;
-  color: #f0ead8;
+  background: var(--site-bg);
+  color: var(--site-text);
   overflow-x: hidden;
-  scrollbar-color: #c96442 transparent;
+  scrollbar-color: var(--site-accent) transparent;
   scrollbar-width: thin;
 }
 
@@ -1895,7 +1907,7 @@ a {
 }
 
 .xv-marketing-home *::-webkit-scrollbar-thumb {
-  background: #c96442;
+  background: var(--site-accent);
   border: 0;
   border-radius: 999px;
 }
@@ -1906,7 +1918,7 @@ a {
 
 .xv-outline-text {
   color: transparent;
-  -webkit-text-stroke: 1px rgba(240, 234, 216, 0.4);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.28);
 }
 
 .xv-section-reveal {

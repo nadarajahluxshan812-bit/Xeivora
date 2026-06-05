@@ -66,15 +66,21 @@ export function AuthShell({ children, eyebrow, title, subtitle }: AuthShellProps
           className="absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(circle at top, rgba(var(--site-accent-rgb),0.14), transparent 30%), radial-gradient(circle at 18% 18%, rgba(var(--site-accent-rgb),0.06), transparent 18%), radial-gradient(circle at 82% 14%, rgba(var(--site-accent-rgb),0.03), transparent 20%), linear-gradient(180deg, var(--site-bg) 0%, var(--site-panel) 48%, var(--site-bg) 100%)"
+              "radial-gradient(circle at top, var(--site-overlay-top), transparent 30%), radial-gradient(circle at 18% 18%, var(--site-overlay-soft), transparent 18%), radial-gradient(circle at 82% 14%, var(--site-overlay-soft), transparent 20%), linear-gradient(180deg, var(--site-bg) 0%, var(--site-panel) 48%, var(--site-bg) 100%)"
           }}
         />
-        <div className="absolute left-1/2 top-[-20%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full blur-[120px]" style={{ backgroundColor: "rgba(var(--site-accent-rgb),0.11)" }} />
-        <div className="absolute bottom-[-8rem] right-[-4rem] h-[20rem] w-[20rem] rounded-full blur-[120px]" style={{ backgroundColor: "rgba(var(--site-accent-rgb),0.05)" }} />
+        <div className="absolute left-1/2 top-[-20%] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full blur-[120px]" style={{ backgroundColor: "var(--site-shell-glow-strong)" }} />
+        <div className="absolute bottom-[-8rem] right-[-4rem] h-[20rem] w-[20rem] rounded-full blur-[120px]" style={{ backgroundColor: "var(--site-shell-glow-soft)" }} />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1280px] flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between rounded-full border px-5 py-3 backdrop-blur" style={{ borderColor: authBorder, backgroundColor: "rgba(26,20,16,0.72)" }}>
+        <header
+          className="flex items-center justify-between rounded-full border px-5 py-3 backdrop-blur"
+          style={{
+            borderColor: authBorder,
+            backgroundColor: "color-mix(in srgb, var(--site-panel) 72%, transparent)"
+          }}
+        >
           <Link className="flex items-center gap-3" href="/">
             <OrbitLogo iconSize={36} nameClassName="text-[15px]" showTagline={false} />
           </Link>
@@ -203,7 +209,7 @@ export function LoginForm({ nextPath = "/chat", initialError = null }: AuthFormP
           <Link className="text-sm transition hover:opacity-80" href="/forgot-password" style={{ color: authCoral }}>
             Forgot password?
           </Link>
-          <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Session persisted</span>
+          <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--site-subtle)" }}>Session persisted</span>
         </div>
       }
       state={state}
@@ -268,7 +274,7 @@ export function SignupForm({ nextPath = "/chat", initialError = null }: AuthForm
         </p>
       }
       eyebrow="Create account"
-      footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Password-secured workspace</span>}
+      footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--site-subtle)" }}>Password-secured workspace</span>}
       state={state}
       subtitle="Create your Xeivora workspace to keep projects, files, Project Memory, previews, and progress connected."
       title="Create your workspace"
@@ -341,7 +347,7 @@ export function ForgotPasswordForm({ initialError = null }: AuthFormProps) {
             <ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
-          <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Reset links expire in 30 minutes</span>
+          <span className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--site-subtle)" }}>Reset links expire in 30 minutes</span>
         )
       }
       state={state}
@@ -415,7 +421,7 @@ export function ResetPasswordForm({ initialError = null, resetToken = null }: Au
         </p>
       }
       eyebrow="Choose a new password"
-      footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>You’ll be signed in after reset</span>}
+      footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--site-subtle)" }}>You’ll be signed in after reset</span>}
       state={state}
       subtitle="Set a new password to continue your Xeivora workspace without losing momentum."
       title="Create a new password"
@@ -527,9 +533,9 @@ function Field({
     <label className="grid gap-2">
       <span className="text-sm font-medium" style={{ color: authText }}>{label}</span>
       <input
-        className="h-14 rounded-[20px] border bg-[#1a1410] px-4 text-[15px] text-[#f0ead8] outline-none transition placeholder:text-[rgba(240,234,216,0.35)]"
+        className="h-14 rounded-[20px] border bg-[color:var(--site-card)] px-4 text-[15px] text-[color:var(--site-text)] outline-none transition placeholder:text-[color:var(--site-subtle)]"
         style={{
-          borderColor: "rgba(201,100,66,0.2)"
+          borderColor: "var(--site-border)"
         }}
         name={name}
         placeholder={placeholder}
@@ -539,7 +545,7 @@ function Field({
           event.currentTarget.style.borderColor = authCoral;
         }}
         onBlur={(event) => {
-          event.currentTarget.style.borderColor = "rgba(201,100,66,0.2)";
+          event.currentTarget.style.borderColor = "var(--site-border)";
         }}
       />
     </label>
@@ -548,10 +554,10 @@ function Field({
 
 function Divider() {
   return (
-    <div className="my-6 flex items-center gap-4 text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>
-      <div className="h-px flex-1" style={{ backgroundColor: "rgba(240,234,216,0.15)" }} />
+    <div className="my-6 flex items-center gap-4 text-xs uppercase tracking-[0.18em]" style={{ color: "var(--site-subtle)" }}>
+      <div className="h-px flex-1" style={{ backgroundColor: "var(--site-border)" }} />
       <span>or</span>
-      <div className="h-px flex-1" style={{ backgroundColor: "rgba(240,234,216,0.15)" }} />
+      <div className="h-px flex-1" style={{ backgroundColor: "var(--site-border)" }} />
     </div>
   );
 }

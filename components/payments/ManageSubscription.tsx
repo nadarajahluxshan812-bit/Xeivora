@@ -29,7 +29,7 @@ export default function ManageSubscription() {
 
   return (
     <button
-      className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[rgba(201,100,66,0.35)] bg-transparent px-4 text-sm font-medium text-[#f0ead8] transition hover:bg-[rgba(201,100,66,0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--site-border-strong)] bg-transparent px-4 text-sm font-medium text-[color:var(--site-text)] transition hover:bg-[color:var(--site-accent-soft)] disabled:cursor-not-allowed disabled:opacity-60"
       disabled={loading}
       onClick={() => void handleClick()}
       type="button"

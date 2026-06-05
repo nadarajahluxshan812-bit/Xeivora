@@ -30,7 +30,7 @@ export class MessageErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-[16px] border border-[rgba(201,100,66,0.18)] bg-[rgba(201,100,66,0.08)] px-4 py-3 text-sm text-[#f0ead8]">
+        <div className="rounded-[16px] border border-[color:var(--site-border-strong)] bg-[color:var(--site-accent-soft)] px-4 py-3 text-sm text-[color:var(--site-text)]">
           Message could not be rendered
         </div>
       );
