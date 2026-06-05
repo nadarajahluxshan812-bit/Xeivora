@@ -4,17 +4,14 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  Bot,
   BrainCircuit,
-  BriefcaseBusiness,
   Check,
   Code2,
-  FileCode2,
+  FileClock,
   Files,
-  Globe,
-  HeartPulse,
+  FolderKanban,
+  GitBranch,
   Menu,
-  Search,
   Sparkles
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -39,58 +36,58 @@ const navLinks = [
 ] as const;
 
 const tickerItems = [
+  "Continue Project",
   "Context preserved",
-  "Auto model routing",
-  "Zero restarts",
-  "Workflow memory",
-  "Local file access",
-  "Travel planning",
-  "AI education",
-  "Health module"
+  "Decisions remembered",
+  "Project Brain",
+  "Files stay attached",
+  "Timeline history",
+  "Cross-model continuity",
+  "Momentum protected"
 ] as const;
 
 const heroPillars = [
   {
     label: "Core function",
-    value: "Unified AI operating system"
+    value: "Continue projects without rebuilding context"
   },
   {
     label: "Connected models",
-    value: "Claude · GPT-4o · Gemini · Cursor"
+    value: "Claude · GPT · Gemini · DeepSeek · Local"
   },
   {
     label: "Core promise",
-    value: "Context preserved. Momentum protected."
+    value: "Conversations, files, decisions, and progress stay intact."
   }
 ] as const;
 
 const stats = [
-  { value: "6+", label: "Models" },
-  { value: "0ms", label: "Transfer" },
-  { value: "100%", label: "Context" },
-  { value: "∞", label: "Continuity" }
+  { value: "7d", label: "Context waiting" },
+  { value: "14d", label: "Decisions intact" },
+  { value: "30d", label: "Progress remembered" },
+  { value: "1 click", label: "Continue project" }
 ] as const;
 
 const workflowSteps = [
   {
     number: "01",
     title: "Start",
-    detail: "Initialize workflow"
+    detail: "Work begins inside a project"
   },
   {
     number: "02",
-    title: "Store",
-    detail: "Context is preserved"
+    title: "Remember",
+    detail: "Project Brain stores decisions and files"
   },
   {
     number: "03",
-    title: "Switch",
-    detail: "Auto model transfer"
+    title: "Resume",
+    detail: "Continue across models without reset"
   },
   {
     number: "04",
-    title: "Continue",
-    detail: "Work never stops"
+    title: "Ship",
+    detail: "Momentum survives long gaps in work"
   }
 ] as const;
 
@@ -98,59 +95,59 @@ const modelCards = [
   {
     letter: "C",
     title: "Claude 3.5",
-    detail: "Long-form reasoning, strategic writing, and deep continuity-aware analysis.",
-    status: "Live"
+    detail: "Reasoning-heavy project work continues with the same files, goals, and decision trail attached.",
+    status: "Supported"
   },
   {
     letter: "G",
     title: "GPT-4o",
-    detail: "Implementation, coding, multimodal execution, and fast conversational turns.",
-    status: "Live"
+    detail: "Implementation, coding, and visual tasks pick up from the exact same project state.",
+    status: "Supported"
   },
   {
     letter: "G",
     title: "Gemini 2.5",
-    detail: "Search-oriented thinking, high-speed summarization, and broad information recall.",
-    status: "Live"
+    detail: "Research and synthesis continue without losing decisions made in earlier sessions.",
+    status: "Supported"
   },
   {
-    letter: "C",
-    title: "Cursor",
-    detail: "Local development context, structured code operations, and execution-side assistance.",
-    status: "Connected"
+    letter: "L",
+    title: "Local models",
+    detail: "Private environments can still inherit the same project memory and continuity layer.",
+    status: "Ready"
   }
 ] as const;
 
 const featureCards = [
   {
-    title: "Workflow continuity",
-    detail: "Keep the same thread alive across long work sessions, model transfers, and retries.",
-    icon: BrainCircuit
+    title: "Continue Project",
+    detail: "Return after days or weeks and immediately see what changed, what is blocked, and what to do next.",
+    icon: FolderKanban
   },
   {
-    title: "Persistent memory",
-    detail: "Preserve facts, project decisions, and momentum so the workspace keeps learning with you.",
+    title: "Project Brain",
+    detail: "Remember requirements, architecture choices, decisions, and summaries that should survive every session.",
     icon: Sparkles
   },
   {
-    title: "Website builder",
-    detail: "Generate landing pages, product surfaces, and production-ready frontend scaffolds faster.",
-    icon: FileCode2
+    title: "Timeline",
+    detail: "Track how the project evolved across chats, files, milestones, and model handoffs.",
+    icon: FileClock
   },
   {
-    title: "Travel companion",
-    detail: "Plan itineraries, compare routes, and keep your travel research stitched into one system.",
-    icon: Globe
-  },
-  {
-    title: "AI education",
-    detail: "Turn complex topics into structured learning flows with memory and contextual recall.",
-    icon: BriefcaseBusiness
-  },
-  {
-    title: "Local file access",
-    detail: "Bring PDFs, markdown, spreadsheets, and working documents directly into the same thread.",
+    title: "Files stay attached",
+    detail: "Bring docs, code, and references into the project once and keep them connected to every future session.",
     icon: Files
+  },
+  {
+    title: "Cross-model continuity",
+    detail: "Claude, GPT, Gemini, DeepSeek, and local models can all continue from the same project memory.",
+    icon: GitBranch
+  },
+  {
+    title: "AI Workspace",
+    detail: "Chats are one part of a living project workspace built around context, progress, and momentum.",
+    icon: Code2
   }
 ] as const;
 
@@ -465,18 +462,18 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                       className="font-[Georgia,'Times New Roman',serif] text-[3.9rem] leading-[0.88] tracking-[-0.06em] sm:text-[5.4rem] lg:text-[7.1rem]"
                       style={{ color: cream }}
                     >
-                      <span className="block">One</span>
+                      <span className="block">The project</span>
                       <span className="block italic" style={{ color: coral }}>
-                        continuous
+                        shouldn&apos;t stop
                       </span>
-                      <span className="xv-outline-text block">workspace.</span>
+                      <span className="xv-outline-text block">when the model does.</span>
                     </h1>
                   </div>
                 </Reveal>
 
                 <Reveal delay={120}>
                   <p className="xv-home-muted mt-8 max-w-[620px] text-balance text-[18px] font-light leading-[1.9]">
-                    Switch between Claude, GPT-4o, Gemini without losing a single byte of context, memory, or momentum.
+                    Continue AI-powered projects without losing context, decisions, files, progress, or memory.
                   </p>
                 </Reveal>
 
@@ -484,25 +481,29 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                   <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
                     <Link
                       className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium text-white transition hover:-translate-y-0.5"
-                      href="/chat"
+                      href="/signup"
                       style={{ backgroundColor: coral, boxShadow: "0 16px 48px var(--site-accent-glow)" }}
                     >
-                      Enter Xeivora
+                      Get started
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                     <Link
                       className="xv-home-border xv-home-ghost xv-home-text inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:border-[color:var(--site-border-strong)]"
-                      href="#how-it-works"
+                      href="#demo"
                     >
-                      See how it works
+                      Watch demo
                     </Link>
                   </div>
+                </Reveal>
+
+                <Reveal className="mt-10 lg:hidden" delay={190}>
+                  <ContinueProjectPreview />
                 </Reveal>
               </div>
 
               <Reveal delay={110}>
-                <div className="pointer-events-none hidden lg:flex lg:min-h-[420px] lg:items-start lg:justify-center lg:pt-2 xl:min-h-[460px] xl:pt-5">
-                  <HeroOrbitField />
+                <div className="hidden lg:flex lg:min-h-[420px] lg:items-start lg:justify-center lg:pt-2 xl:min-h-[460px] xl:pt-5">
+                  <ContinueProjectPreview />
                 </div>
               </Reveal>
             </div>
@@ -558,21 +559,19 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
         <RevealSection className="px-6 py-20 sm:px-8 lg:px-12" id="demo">
           <section className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
             <div>
-              <div className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.24em]">
-                Continuity demo
-              </div>
+              <div className="xv-home-subtle mb-5 text-[12px] font-medium uppercase tracking-[0.24em]">Continue Project</div>
               <h2 className="xv-home-text font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.02] tracking-[-0.05em] sm:text-[3.5rem]">
-                Context never dies
+                The screen that tells you where to resume
               </h2>
               <p className="xv-home-muted mt-6 max-w-[520px] text-[17px] font-light leading-8">
-                Xeivora tracks the shape of the work, preserves the state of the conversation, and continues the exact
-                same thread when one model reaches a boundary. No reset. No copy-paste. No re-explaining the task.
+                Xeivora brings back the current state of the project, the decisions already made, the files that changed,
+                and the next recommended step before you ask the AI anything else.
               </p>
               <Link
                 className="xv-home-border-strong xv-home-text mt-8 inline-flex h-12 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:bg-[color:var(--site-accent-soft)]"
                 href="/chat"
               >
-                Watch continuity in action
+                See the project resume flow
               </Link>
             </div>
 
@@ -585,7 +584,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <div className="mb-12 max-w-[700px]">
               <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">How it works</div>
               <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
-                The workspace that protects momentum
+                Designed to help a project survive every interruption
               </h2>
             </div>
 
@@ -602,7 +601,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <div className="mb-12 max-w-[720px]">
               <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Models</div>
               <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
-                Every model. One brain.
+                The model can change. The project stays intact.
               </h2>
             </div>
 
@@ -619,7 +618,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <div className="mb-12 max-w-[760px]">
               <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Features</div>
               <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
-                Built to keep work alive
+                Projects first. Continuity always.
               </h2>
             </div>
 
@@ -636,7 +635,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <div className="mb-12 max-w-[720px]">
               <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Pricing</div>
               <h2 className="xv-home-text mt-4 font-[Georgia,'Times New Roman',serif] text-[3rem] leading-[1.04] tracking-[-0.05em] sm:text-[3.5rem]">
-                Start free. Scale without losing continuity.
+                Start free. Keep every project moving.
               </h2>
             </div>
 
@@ -659,15 +658,14 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <div className="relative z-10 mx-auto max-w-[760px] text-center">
               <div className="xv-home-subtle text-[12px] font-medium uppercase tracking-[0.24em]">Ready to enter</div>
               <h2 className="xv-home-text mt-5 font-[Georgia,'Times New Roman',serif] text-[3.1rem] leading-[1.02] tracking-[-0.06em] sm:text-[4rem]">
-                Stop starting over.
+                The project shouldn&apos;t stop when the model does.
               </h2>
               <p className="mt-3 text-[1.8rem] italic leading-tight" style={{ color: coral }}>
-                Never lose context.
+                Continue Project.
               </p>
-              <p className="xv-home-text mt-2 text-[1.35rem]">Never restart.</p>
+              <p className="xv-home-text mt-2 text-[1.35rem]">Never rebuild context.</p>
               <p className="xv-home-muted mx-auto mt-6 max-w-[620px] text-[17px] font-light leading-8">
-                Bring your thinking, files, and workflows into one environment that remembers what matters and keeps
-                moving when the model changes.
+                Bring your chats, files, decisions, and momentum into one workspace that remembers exactly where the work left off.
               </p>
 
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -1226,6 +1224,103 @@ function rgbaString(rgb: readonly [number, number, number], alpha: number) {
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${Math.max(0, Math.min(1, alpha))})`;
 }
 
+function ContinueProjectPreview() {
+  return (
+    <div className="relative flex w-full max-w-[400px] justify-center">
+      <div className="pointer-events-none absolute right-[-8%] top-[-10%] scale-[0.7] opacity-70">
+        <HeroOrbitField />
+      </div>
+      <div className="xv-home-border xv-home-card relative z-10 w-full overflow-hidden rounded-[32px] border p-6 shadow-[0_28px_120px_rgba(0,0,0,0.18)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="xv-home-subtle text-[11px] font-medium uppercase tracking-[0.24em]">Continue Project</div>
+            <h3 className="xv-home-text mt-3 font-[Georgia,'Times New Roman',serif] text-[2rem] tracking-[-0.05em]">
+              AI Startup Platform
+            </h3>
+          </div>
+          <span className="rounded-full bg-[color:var(--site-accent-soft)] px-3 py-1 text-[11px] font-medium text-[color:var(--site-accent)]">
+            Last active 14 days ago
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "Progress", value: "72%" },
+            { label: "Files", value: "12" },
+            { label: "Decisions", value: "8" }
+          ].map((item) => (
+            <div className="xv-home-border rounded-[20px] border bg-[color:var(--site-ghost-bg)] px-4 py-3" key={item.label}>
+              <div className="xv-home-subtle text-[10px] font-medium uppercase tracking-[0.16em]">{item.label}</div>
+              <div className="xv-home-text mt-2 text-[18px] font-medium">{item.value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <SnapshotGroup
+            title="Completed"
+            items={["Authentication", "PostgreSQL", "Dashboard shell"]}
+            tone="success"
+          />
+          <SnapshotGroup title="Blocked" items={["OAuth callback issue"]} tone="warning" />
+          <SnapshotGroup
+            title="Recent Decisions"
+            items={["Switched from MongoDB to PostgreSQL", "Committed to Next.js app router"]}
+            tone="neutral"
+          />
+          <SnapshotGroup title="Files Updated" items={["auth.ts", "dashboard.tsx", "billing-route.ts"]} tone="neutral" />
+        </div>
+
+        <div className="xv-home-border mt-6 rounded-[22px] border bg-[color:var(--site-panel)] px-4 py-4">
+          <div className="xv-home-subtle text-[10px] font-medium uppercase tracking-[0.16em]">Recommended Next Step</div>
+          <p className="xv-home-muted mt-2 text-[14px] font-light leading-6">
+            Fix token refresh flow before building billing so the continuity layer survives authentication handoffs.
+          </p>
+          <Link
+            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-medium text-white transition hover:-translate-y-0.5"
+            href="/chat"
+            style={{ backgroundColor: coral, boxShadow: "0 12px 36px var(--site-accent-glow)" }}
+          >
+            Continue Project
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SnapshotGroup({
+  items,
+  title,
+  tone
+}: {
+  items: readonly string[];
+  title: string;
+  tone: "neutral" | "success" | "warning";
+}) {
+  const toneClasses =
+    tone === "success"
+      ? "bg-[rgba(34,197,94,0.10)] text-[#16a34a]"
+      : tone === "warning"
+        ? "bg-[rgba(245,158,11,0.12)] text-[#d97706]"
+        : "bg-[color:var(--site-accent-soft)] text-[color:var(--site-accent)]";
+
+  return (
+    <div>
+      <div className="xv-home-subtle text-[10px] font-medium uppercase tracking-[0.16em]">{title}</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {items.map((item) => (
+          <span className={cn("rounded-full px-3 py-1 text-[12px] font-medium", toneClasses)} key={item}>
+            {tone === "success" ? "✓ " : tone === "warning" ? "✗ " : ""}
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CursorFollower() {
   const [visible, setVisible] = useState(false);
   const cursorRef = useRef<HTMLDivElement | null>(null);
@@ -1308,19 +1403,47 @@ function TerminalWindow() {
         <span className="h-3 w-3 rounded-full bg-[#28c840]" />
       </div>
 
-      <div className="xv-home-text space-y-3 px-5 py-6 font-mono text-[14px] leading-7">
-        <div>
-          <span className="xv-home-subtle">$</span> xvr session --model claude-3.5
+      <div className="px-5 py-6">
+        <div className="xv-home-subtle text-[11px] font-medium uppercase tracking-[0.22em]">Project timeline</div>
+        <div className="mt-5 space-y-4">
+          {[
+            "Created Login Page",
+            "Added Dashboard",
+            "Updated Sidebar",
+            "Fixed Authentication Bug",
+            "Preview Version 12 Approved"
+          ].map((item, index) => (
+            <div className="flex items-start gap-3" key={item}>
+              <span
+                className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: index === 4 ? "rgba(34,197,94,0.95)" : "rgba(var(--site-accent-rgb),0.92)",
+                  boxShadow: `0 0 18px ${index === 4 ? "rgba(34,197,94,0.22)" : "rgba(var(--site-accent-rgb),0.18)"}`
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="xv-home-text text-[15px] font-medium leading-6">✓ {item}</div>
+                <div className="xv-home-muted mt-1 text-[13px] font-light leading-6">
+                  {index === 0
+                    ? "Authentication work started and captured in project history."
+                    : index === 1
+                      ? "Project shell and navigation became the next continuity checkpoint."
+                      : index === 2
+                        ? "The workspace structure changed and the new layout was preserved."
+                        : index === 3
+                          ? "A blocker was resolved and saved for future resume sessions."
+                          : "The approved visual state is now part of the project memory."}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="xv-home-muted">→ Session initialized</div>
-        <div className="xv-home-muted">→ Memory layer active</div>
-        <div className="text-[#ffbe85]">⚠ Token limit: 199k / 200k</div>
-        <div className="text-[#ffbe85]">⚠ Initiating context transfer...</div>
-        <div className="xv-home-accent">⇄ claude-3.5 → gpt-4o</div>
-        <div className="text-[#9fe3c1]">✓ Context compressed and restored</div>
-        <div className="xv-home-muted">
-          gpt-4o: Continuing...
-          <span className="xv-terminal-cursor xv-home-accent ml-1 inline-block">|</span>
+
+        <div className="xv-home-border mt-6 rounded-[22px] border bg-[color:var(--site-ghost-bg)] px-4 py-4">
+          <div className="xv-home-subtle text-[10px] font-medium uppercase tracking-[0.16em]">Why this matters</div>
+          <p className="xv-home-muted mt-2 text-[14px] font-light leading-6">
+            When you return later, Xeivora shows the visual and decision history of the project before you continue the next step.
+          </p>
         </div>
       </div>
     </div>

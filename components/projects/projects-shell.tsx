@@ -98,6 +98,21 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const activitySeries = useMemo(() => buildActivitySeries(toolLogs), [toolLogs]);
   const activityFeed = useMemo(() => buildActivityFeed(toolLogs), [toolLogs]);
   const leadProject = filteredProjects[0] || projects[0] || null;
+  const leadProjectFiles = useMemo(
+    () => (leadProject ? sortedFiles.filter((file) => file.projectId === leadProject.id).slice(0, 3) : []),
+    [leadProject, sortedFiles]
+  );
+  const leadProjectHighlights = useMemo(() => {
+    if (!leadProject) {
+      return [];
+    }
+
+    return [
+      `${leadProject.chatCount} context threads preserved`,
+      `${leadProject.memoryCount} Project Brain entries available`,
+      `${leadProject.fileCount} files attached to the workspace`
+    ];
+  }, [leadProject]);
 
   async function handleCreateProject() {
     const name = window.prompt("Project name", "New Xeivora project");
@@ -189,6 +204,125 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
             <ArrowRight className="h-4 w-4" />
             Continue Project
           </button>
+        </motion.section>
+
+        <motion.section
+          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 14 }}
+          transition={{ duration: 0.38, ease: "easeOut", delay: 0.08 }}
+        >
+          <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+            <section className="rounded-[14px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-5 py-5 md:px-6">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-[520px]">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--site-accent)] opacity-85">
+                    Continue Recent Project
+                  </div>
+                  <h2 className="mt-3 font-[Georgia,'Times New Roman',serif] text-[28px] leading-[1.02] tracking-[-0.03em] text-[var(--site-text)]">
+                    {leadProject?.name || "No project continuity saved yet"}
+                  </h2>
+                  <p className="mt-3 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
+                    {leadProject
+                      ? `Last active ${formatRelativeTime(leadProject.updatedAt)}. Xeivora can resume this project with saved conversations, decisions, files, and momentum.`
+                      : "Create a project once, then Xeivora will remember its conversations, files, decisions, and progress here."}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                  <button
+                    className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[var(--site-accent)] px-5 py-2.5 text-[13px] font-medium text-[var(--site-inverse)] transition duration-150 hover:scale-[1.02] hover:bg-[var(--site-accent-strong)]"
+                    onClick={() => handleContinueProject(leadProject?.id || null)}
+                    type="button"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    Continue Project
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[color:var(--site-border-strong)] px-5 py-2.5 text-[13px] font-medium text-[var(--site-text)] transition duration-150 hover:bg-[var(--site-ghost-bg)]"
+                    onClick={() => router.push("/memory")}
+                    type="button"
+                  >
+                    <BrainCircuit className="h-4 w-4" />
+                    Open Project Brain
+                  </button>
+                </div>
+              </div>
+
+              {leadProject ? (
+                <>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                    {[
+                      { label: "Status", value: leadProject.status === "active" ? "Active" : leadProject.status },
+                      { label: "Model handoff", value: "Claude → GPT ready" },
+                      { label: "Files saved", value: `${leadProject.fileCount}` }
+                    ].map((item) => (
+                      <div className="rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-3" key={item.label}>
+                        <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">{item.label}</div>
+                        <div className="mt-2 text-[14px] font-medium text-[var(--site-text)]">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_0.88fr]">
+                    <div>
+                      <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">Saved continuity snapshot</div>
+                      <div className="mt-3 space-y-2">
+                        {leadProjectHighlights.map((item) => (
+                          <div className="flex items-start gap-3 text-[13px] font-light text-[var(--site-text)]" key={item}>
+                            <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--site-accent)]" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-5 rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-4">
+                        <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">Recommended next step</div>
+                        <p className="mt-2 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
+                          Reopen the latest continuity thread, review the saved Project Brain decisions, and continue the next implementation step without rebuilding context.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--site-subtle)]">Recently attached files</div>
+                      <div className="mt-3 space-y-2">
+                        {leadProjectFiles.length ? (
+                          leadProjectFiles.map((file) => (
+                            <div
+                              className="rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-3"
+                              key={file.id}
+                            >
+                              <div className="truncate text-[13px] font-medium text-[var(--site-text)]">{file.name}</div>
+                              <div className="mt-1 text-[12px] font-light text-[var(--site-subtle)]">
+                                {file.kind.toUpperCase()} · {formatRelativeTime(file.updatedAt || file.createdAt)}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="rounded-[12px] border border-dashed border-[color:var(--site-border)] px-4 py-4 text-[13px] font-light text-[var(--site-subtle)]">
+                            No files are attached yet, but the project is ready to preserve them once you add them.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </section>
+
+            <section className="rounded-[14px] border border-[color:var(--site-border)] bg-[var(--site-card)] px-5 py-5 md:px-6">
+              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[color:var(--site-accent)] opacity-85">
+                Why Xeivora
+              </div>
+              <h2 className="mt-3 font-[Georgia,'Times New Roman',serif] text-[24px] leading-[1.06] tracking-[-0.02em] text-[var(--site-text)]">
+                The project should not stop when the model does.
+              </h2>
+              <div className="mt-5 space-y-3 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
+                <p>Projects are the center of Xeivora. Chats, files, summaries, and decisions stay attached to the same work.</p>
+                <p>Project Brain keeps the context you should never have to reconstruct: goals, technical choices, progress, and next steps.</p>
+                <p>When you return later, the workspace tells you what happened, what changed, and where to continue.</p>
+              </div>
+            </section>
+          </div>
         </motion.section>
 
         <motion.label
