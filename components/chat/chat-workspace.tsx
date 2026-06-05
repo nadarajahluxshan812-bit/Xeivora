@@ -18,6 +18,7 @@ import {
   Command,
   Download,
   Ellipsis,
+  ExternalLink,
   Folder,
   FolderOpen,
   FileText,
@@ -65,6 +66,7 @@ import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { useXeivoraTheme } from "@/components/theme/theme-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import { useElectron, type DesktopFileNode } from "@/hooks/useElectron";
 import type { AuthUser } from "@/lib/auth-types";
 import type {
@@ -429,6 +431,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       : selectedProjectId
         ? `Continue ${projects.find((project) => project.id === selectedProjectId)?.name || "Project"}`
         : "Continue project";
+  const workspaceProjectId = selectedProjectId || activeSession?.projectId || projects[0]?.id || null;
   const showDesktopPreview = isDesktop && Boolean(activeFile);
   const searchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
@@ -1336,6 +1339,11 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     const abortController = new AbortController();
     abortRef.current = abortController;
     let assistantDraftId = "";
+    const shouldOpenPreview = looksLikeCodeContinuationPrompt(input);
+    const previewWindow =
+      shouldOpenPreview && typeof window !== "undefined"
+        ? window.open(buildPreviewHref(selectedProjectId, activeSession?.id || null), "_blank")
+        : null;
 
     try {
       const session = activeSession ?? (await createSession());
@@ -1387,6 +1395,10 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           ...current,
           [assistantDraftId]: [pendingImageExecution]
         }));
+      }
+
+      if (previewWindow && !previewWindow.closed) {
+        previewWindow.location.href = buildPreviewHref(selectedProjectId || session.projectId || null, session.id);
       }
 
       setPrompt("");
@@ -1716,7 +1728,15 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             workflowMode={workflowMode}
           />
 
-          <div className="min-h-0 flex-1 pt-[50px]">
+          <div className="border-b border-[var(--xv-chat-border)] px-4 py-3 md:px-6">
+            <ProjectWorkspaceTabs
+              active="chat"
+              projectId={workspaceProjectId}
+              sessionId={activeSession?.id || null}
+            />
+          </div>
+
+          <div className="min-h-0 flex-1 pt-[8px]">
             <div className={cn("flex h-full min-h-0", showDesktopPreview ? "xl:grid xl:grid-cols-[minmax(0,1fr)_380px]" : "")}>
               <div className="min-h-0 min-w-0 flex-1">
                 {hasMessages ? (
@@ -4090,6 +4110,25 @@ function ToolExecutionGroup({
               </span>
             </div>
 
+            {execution.name === "code_assistant" && typeof execution.payload?.previewHref === "string" ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <a
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                  href={execution.payload.previewHref}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Open Preview</span>
+                </a>
+                {typeof execution.payload?.previewVersion === "object" && execution.payload.previewVersion ? (
+                  <span className="inline-flex items-center rounded-full bg-[var(--xv-chat-inline-code-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--xv-chat-accent)]">
+                    Version {(execution.payload.previewVersion as { versionNumber?: number }).versionNumber || 1}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
             {previewImages.length ? (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {previewImages.map((image) => (
@@ -4422,6 +4461,24 @@ function groupSessions(sessions: ChatSessionSummary[]) {
   }
 
   return Object.entries(groups).filter(([, items]) => items.length > 0);
+}
+
+function looksLikeCodeContinuationPrompt(prompt = "") {
+  return /\bcode\b|\bdebug\b|\bbug\b|\bfix\b|\bcomponent\b|\bpage\b|\bui\b|\bnext\.?js\b|\breact\b|\btypescript\b|\bpython\b/i.test(
+    prompt
+  );
+}
+
+function buildPreviewHref(projectId?: string | null, sessionId?: string | null) {
+  const params = new URLSearchParams();
+  if (projectId) {
+    params.set("project", projectId);
+  }
+  if (sessionId) {
+    params.set("session", sessionId);
+  }
+  const query = params.toString();
+  return query ? `/preview?${query}` : "/preview";
 }
 
 

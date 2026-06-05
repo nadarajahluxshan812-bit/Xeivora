@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import {
   WorkspaceBadge,
@@ -13,7 +14,9 @@ import {
   WorkspaceSearchInput,
   WorkspaceSectionTitle
 } from "@/components/workspace/workspace-page-ui";
+import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import type { AuthUser } from "@/lib/auth-types";
+import type { WorkspaceProject } from "@/lib/chat-types";
 
 type MemoryItem = {
   id: string;
@@ -26,14 +29,23 @@ type MemoryItem = {
 };
 
 export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<MemoryItem[]>([]);
+  const [projects, setProjects] = useState<WorkspaceProject[]>([]);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     void fetch("/api/memory", { cache: "no-store" })
       .then((response) => response.json())
       .then((payload) => setItems(payload || []));
+
+    void fetch("/api/projects", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => setProjects(Array.isArray(payload) ? payload : []));
   }, []);
+
+  const projectId = searchParams.get("project") || projects[0]?.id || null;
+  const activeProject = projects.find((project) => project.id === projectId) || null;
 
   const filteredItems = useMemo(() => {
     const lower = query.toLowerCase();
@@ -77,6 +89,17 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           eyebrow="Project memory"
           title="Persistent memory that survives model switches"
         />
+
+        <ProjectWorkspaceTabs active="memory" projectId={projectId} className="pt-1" />
+
+        {activeProject ? (
+          <WorkspaceCard className="p-6">
+            <WorkspaceSectionTitle>{activeProject.name}</WorkspaceSectionTitle>
+            <p className="mt-3 max-w-[42rem] text-sm leading-7 text-[var(--site-subtle)]">
+              Project Brain is the permanent memory of this project. It keeps decisions, files, goals, progress, and next actions available whenever you continue the work.
+            </p>
+          </WorkspaceCard>
+        ) : null}
 
         <WorkspaceCard className="p-6">
           <WorkspaceSectionTitle>What Project Brain stores</WorkspaceSectionTitle>

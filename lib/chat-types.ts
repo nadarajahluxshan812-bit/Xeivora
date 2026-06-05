@@ -120,6 +120,23 @@ export type WorkspaceProject = {
   memoryCount: number;
 };
 
+export type WorkspacePreviewVersion = {
+  id: string;
+  projectId?: string | null;
+  sessionId?: string | null;
+  versionNumber: number;
+  title: string;
+  summary: string;
+  status: "live" | "approved" | "deployed";
+  routePath: string;
+  changedFiles: string[];
+  notes?: string | null;
+  approvedAt?: string | null;
+  deployedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type UploadedFileSummary = {
   id: string;
   sessionId?: string | null;
