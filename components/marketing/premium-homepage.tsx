@@ -38,7 +38,7 @@ const featureCards = [
 ] as const;
 
 const fragmentedItems = ["Chat", "Files", "Notes", "Repositories", "AI Tools"] as const;
-const projectTabs = ["Project workspace", "Chat", "Files", "Timeline", "Memory", "Preview"] as const;
+const projectTabs = ["Project workspace", "Chat", "Files", "Timeline", "Project Memory", "Preview"] as const;
 const footerLinks = [
   { label: "Privacy", href: "#" },
   { label: "Terms", href: "#" },
@@ -306,25 +306,34 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
             <div className="flex h-full flex-col justify-center rounded-[32px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-6 md:p-8">
               <div className="mx-auto flex w-full max-w-[400px] flex-col items-center text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--site-text)]/45">
-                  Continue your project
+                  Project workspace
                 </p>
                 <h2 className="mt-4 font-[Georgia,'Times_New_Roman',serif] text-3xl tracking-[-0.04em] text-[color:var(--site-text)] md:text-[2.25rem]">
-                  Continue your project
+                  Enter Your Workspace
                 </h2>
                 <p className="mt-3 max-w-[340px] text-sm leading-7 text-[color:var(--site-text)]/62">
-                  Sign in to keep your conversations, files, memory, timeline, and progress connected.
+                  Sign in to access your projects, memory, files, timeline, previews, and progress.
                 </p>
 
                 <div className="mt-8 w-full rounded-[26px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface-strong)] p-5 md:p-6">
-                  <Link
-                    className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[16px] border border-[color:var(--site-border)] bg-[color:var(--site-bg)] text-sm font-medium text-[color:var(--site-text)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[color:var(--site-ghost-hover)]"
-                    href="/api/auth/google"
-                  >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] text-[11px] font-semibold text-[color:var(--site-text)]">
-                      G
-                    </span>
-                    Continue with Google
-                  </Link>
+                  <div className="space-y-3">
+                    {[
+                      { href: "/api/auth/google?next=%2Fchat", label: "Continue with Google", symbol: "G" },
+                      { href: "/api/auth/github?next=%2Fchat", label: "Continue with GitHub", symbol: "GH" },
+                      { href: "/api/auth/apple?next=%2Fchat", label: "Continue with Apple", symbol: "A" }
+                    ].map((provider) => (
+                      <Link
+                        className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[16px] border border-[color:var(--site-border)] bg-[color:var(--site-bg)] text-sm font-medium text-[color:var(--site-text)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[color:var(--site-ghost-hover)]"
+                        href={provider.href}
+                        key={provider.label}
+                      >
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] text-[11px] font-semibold text-[color:var(--site-text)]">
+                          {provider.symbol}
+                        </span>
+                        {provider.label}
+                      </Link>
+                    ))}
+                  </div>
 
                   <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-[color:var(--site-text)]/38">
                     <span className="h-px flex-1 bg-[color:var(--site-border-soft)]" />
@@ -419,9 +428,9 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                   <div className="grid gap-0 lg:grid-cols-[230px_minmax(0,1fr)]">
                     <aside className="border-b border-[color:var(--site-border-soft)] bg-[color:var(--site-surface-strong)] p-4 lg:border-b-0 lg:border-r">
                       <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-surface)] p-4">
-                        <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Continue Project</div>
-                        <div className="mt-2 text-base font-semibold text-[color:var(--site-text)]">Xeivora Core</div>
-                        <div className="mt-1 text-xs text-[color:var(--site-text)]/58">Resume from the latest checkpoint.</div>
+                        <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Current project</div>
+                        <div className="mt-2 text-base font-semibold text-[color:var(--site-text)]">Current project</div>
+                        <div className="mt-1 text-xs text-[color:var(--site-text)]/58">Resume from the latest approved checkpoint.</div>
                       </div>
 
                       <div className="mt-4 space-y-2">
@@ -443,7 +452,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
 
                     <div className="p-4 md:p-5">
                       <div className="flex flex-wrap gap-2">
-                        {["Chat", "Files", "Timeline", "Memory", "Preview"].map((tab, index) => (
+                        {["Chat", "Files", "Timeline", "Project Memory", "Preview"].map((tab, index) => (
                           <span
                             className={cn(
                               "rounded-full border px-3 py-1.5 text-xs font-medium",
@@ -487,7 +496,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                         <div className="rounded-[18px] border border-[color:var(--site-border-soft)] bg-[color:var(--site-bg)]/28 p-4">
                           <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--site-text)]/42">Timeline</div>
                           <div className="mt-3 space-y-2 text-sm text-[color:var(--site-text)]/72">
-                            {["Created login page", "Updated sidebar", "Saved memory checkpoint"].map((item) => (
+                            {["Captured requirements", "Approved preview checkpoint", "Saved project summary"].map((item) => (
                               <div className="flex items-start gap-3" key={item}>
                                 <span className="mt-2 h-2 w-2 rounded-full bg-[color:var(--site-accent)]" />
                                 <span>{item}</span>

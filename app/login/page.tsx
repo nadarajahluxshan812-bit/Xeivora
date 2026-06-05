@@ -20,8 +20,8 @@ export default async function LoginPage({
   return (
     <AuthShell
       eyebrow="Secure access"
-      subtitle="Enter your workspace to continue conversations, files, projects, orchestrations, and memory with the same momentum."
-      title="Sign in to the Xeivora operating system"
+      subtitle="Enter your workspace to continue projects, files, Project Memory, timeline, previews, and progress with the same momentum."
+      title="Enter your workspace"
     >
       <LoginForm initialError={error} mode="login" nextPath={nextPath} />
     </AuthShell>

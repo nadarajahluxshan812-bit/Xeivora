@@ -3331,7 +3331,7 @@ function DesktopWelcomeOverlay({
 
         <h2 className="text-[32px] font-semibold tracking-[-0.03em] text-[var(--xv-chat-text)]">Welcome to Xeivora</h2>
         <p className="mt-3 max-w-[44ch] text-[15px] leading-7 text-[var(--xv-chat-muted)]">
-          Your AI operating system is ready. Sign in, open a project folder when you want desktop context, and keep your workflows continuous.
+          Your workspace is ready. Sign in, open a project folder when you want desktop context, and continue project work without losing context.
         </p>
 
         <div className="mt-6 space-y-3 rounded-[20px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] p-5">

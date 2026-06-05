@@ -2,14 +2,18 @@
 
 import { motion } from "framer-motion";
 import {
+  Archive,
+  ArchiveRestore,
   ArrowRight,
   BrainCircuit,
+  Pencil,
   FileText,
   FolderKanban,
   GitBranch,
   MessageSquareText,
   Plus,
   Search,
+  Trash2,
   Upload
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -98,7 +102,12 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
   const activitySeries = useMemo(() => buildActivitySeries(toolLogs), [toolLogs]);
   const activityFeed = useMemo(() => buildActivityFeed(toolLogs), [toolLogs]);
-  const leadProject = filteredProjects[0] || projects[0] || null;
+  const leadProject =
+    filteredProjects.find((project) => project.status !== "archived") ||
+    projects.find((project) => project.status !== "archived") ||
+    filteredProjects[0] ||
+    projects[0] ||
+    null;
   const leadProjectFiles = useMemo(
     () => (leadProject ? sortedFiles.filter((file) => file.projectId === leadProject.id).slice(0, 3) : []),
     [leadProject, sortedFiles]
@@ -133,6 +142,53 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
     const project = (await response.json()) as WorkspaceProject;
     setProjects((current) => [project, ...current]);
+  }
+
+  async function handleUpdateProject(projectId: string, updates: Partial<WorkspaceProject>) {
+    const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+
+    const payload = (await response.json()) as { project?: WorkspaceProject | null; projects?: WorkspaceProject[] };
+    if (Array.isArray(payload.projects)) {
+      setProjects(payload.projects);
+    } else if (payload.project) {
+      setProjects((current) => current.map((project) => (project.id === payload.project?.id ? payload.project : project)));
+    }
+  }
+
+  async function handleRenameProject(project: WorkspaceProject) {
+    const nextName = window.prompt("Rename project", project.name);
+    if (!nextName || !nextName.trim() || nextName.trim() === project.name) {
+      return;
+    }
+
+    await handleUpdateProject(project.id, { name: nextName.trim() });
+  }
+
+  async function handleToggleArchiveProject(project: WorkspaceProject) {
+    await handleUpdateProject(project.id, {
+      status: project.status === "archived" ? "active" : "archived"
+    });
+  }
+
+  async function handleDeleteProject(project: WorkspaceProject) {
+    const confirmed = window.confirm(`Delete "${project.name}"? This removes the project workspace from Xeivora.`);
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+      method: "DELETE"
+    });
+    const payload = (await response.json()) as { projects?: WorkspaceProject[] };
+    if (Array.isArray(payload.projects)) {
+      setProjects(payload.projects);
+    } else {
+      setProjects((current) => current.filter((entry) => entry.id !== project.id));
+    }
   }
 
   function handleContinueProject(projectId: string | null) {
@@ -258,7 +314,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   <div className="mt-6 grid gap-3 sm:grid-cols-3">
                     {[
                       { label: "Status", value: leadProject.status === "active" ? "Active" : leadProject.status },
-                      { label: "Model handoff", value: "Claude → GPT ready" },
+                      { label: "Last active", value: formatRelativeTime(leadProject.updatedAt) },
                       { label: "Files saved", value: `${leadProject.fileCount}` }
                     ].map((item) => (
                       <div className="rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-panel)] px-4 py-3" key={item.label}>
@@ -397,15 +453,62 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="truncate text-[13px] font-medium text-[var(--site-text)]">{project.name}</div>
-                            <StatusBadge status={project.status} />
-                            <span className="rounded-full bg-[var(--site-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--site-accent)]">
-                              {project.chatCount} chats
-                            </span>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="truncate text-[13px] font-medium text-[var(--site-text)]">{project.name}</div>
+                                <StatusBadge status={project.status} />
+                                <span className="rounded-full bg-[var(--site-accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--site-accent)]">
+                                  {project.chatCount} chats
+                                </span>
+                              </div>
+                              <div className="mt-2 text-[11px] font-light text-[var(--site-subtle)]">
+                                Last active {formatRelativeTime(project.updatedAt)}
+                              </div>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                              <button
+                                aria-label={`Rename ${project.name}`}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[var(--site-card)] hover:text-[var(--site-text)]"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleRenameProject(project);
+                                }}
+                                type="button"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                aria-label={project.status === "archived" ? `Restore ${project.name}` : `Archive ${project.name}`}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--site-border)] text-[var(--site-subtle)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[var(--site-card)] hover:text-[var(--site-text)]"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleToggleArchiveProject(project);
+                                }}
+                                type="button"
+                              >
+                                {project.status === "archived" ? (
+                                  <ArchiveRestore className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Archive className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                              <button
+                                aria-label={`Delete ${project.name}`}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:rgba(239,68,68,0.28)] text-[#ef4444] transition hover:bg-[rgba(239,68,68,0.08)]"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleDeleteProject(project);
+                                }}
+                                type="button"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </div>
                           <p className="mt-2 line-clamp-2 text-[13px] font-light leading-6 text-[var(--site-subtle)]">
-                            {project.description || "Workspace for durable context, memory checkpoints, and model-to-model continuity."}
+                            {project.description || "Workspace for durable context, memory checkpoints, files, and project continuity."}
                           </p>
                           <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] font-light text-[var(--site-subtle)]">
                             <span>

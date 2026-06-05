@@ -10,7 +10,7 @@ const tabs: Array<{ key: WorkspaceTabKey; href: string; label: string }> = [
   { key: "chat", href: "/chat", label: "Chat" },
   { key: "files", href: "/files", label: "Files" },
   { key: "timeline", href: "/timeline", label: "Timeline" },
-  { key: "memory", href: "/memory", label: "Memory" },
+  { key: "memory", href: "/memory", label: "Project Memory" },
   { key: "preview", href: "/preview", label: "Preview" }
 ];
 

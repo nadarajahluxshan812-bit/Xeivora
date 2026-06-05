@@ -20,7 +20,7 @@ type ComingSoonShellProps = {
 const focusAreas = [
   {
     title: "AI continuity",
-    description: "Resume work across Claude, GPT-4o, Gemini, and future models without re-explaining anything."
+    description: "Resume work without rebuilding context, even after long breaks between sessions."
   },
   {
     title: "Persistent memory",

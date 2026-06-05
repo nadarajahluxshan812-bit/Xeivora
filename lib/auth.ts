@@ -8,6 +8,7 @@ const authStore = require("@/lib/server/auth-store");
 
 export const AUTH_COOKIE_NAME = "xeivora_session";
 const GOOGLE_STATE_COOKIE_NAME = "xeivora_google_state";
+const GITHUB_STATE_COOKIE_NAME = "xeivora_github_state";
 
 export function sanitizeNextPath(value?: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -102,6 +103,28 @@ export function getGoogleRedirectUri(request: Request) {
   return configured;
 }
 
+export function getGitHubRedirectUri(request: Request) {
+  const publicOrigin = getPublicOrigin(request);
+  const configured = process.env.GITHUB_REDIRECT_URI;
+
+  if (!configured) {
+    return `${publicOrigin}/api/auth/github/callback`;
+  }
+
+  try {
+    const configuredUrl = new URL(configured);
+    const publicUrl = new URL(publicOrigin);
+
+    if (!isLocalHost(publicUrl.hostname) && isLocalHost(configuredUrl.hostname)) {
+      return `${publicOrigin}/api/auth/github/callback`;
+    }
+  } catch {
+    return `${publicOrigin}/api/auth/github/callback`;
+  }
+
+  return configured;
+}
+
 export async function getViewer(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
@@ -187,6 +210,31 @@ export async function readGoogleStateCookie() {
 
 export function clearGoogleStateCookie(response: NextResponse) {
   response.cookies.set(GOOGLE_STATE_COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0
+  });
+}
+
+export function setGitHubStateCookie(response: NextResponse, value: string) {
+  response.cookies.set(GITHUB_STATE_COOKIE_NAME, value, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 10
+  });
+}
+
+export async function readGitHubStateCookie() {
+  const cookieStore = await cookies();
+  return cookieStore.get(GITHUB_STATE_COOKIE_NAME)?.value ?? null;
+}
+
+export function clearGitHubStateCookie(response: NextResponse) {
+  response.cookies.set(GITHUB_STATE_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

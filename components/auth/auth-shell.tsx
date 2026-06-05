@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Sparkles, Workflow } from "lucide-react";
+import { ArrowRight, FileClock, FolderKanban, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -33,19 +33,19 @@ type AuthState = {
 
 const authHighlights = [
   {
-    title: "Continuous workspace",
-    detail: "Resume the same reasoning, memory, files, and workflows across every session.",
-    icon: Workflow
+    title: "Project-first workspace",
+    detail: "Every project keeps its chat history, files, notes, and progress attached to the same place.",
+    icon: FolderKanban
   },
   {
-    title: "Protected intelligence layer",
-    detail: "Your provider routing, memory lanes, and files stay secured behind a durable session.",
+    title: "Persistent project memory",
+    detail: "Requirements, decisions, architecture notes, and next steps stay available whenever you return.",
     icon: ShieldCheck
   },
   {
-    title: "Orchestrated by default",
-    detail: "OpenAI, Claude, Gemini, tools, and continuity operate as one surface.",
-    icon: Sparkles
+    title: "Timeline you can trust",
+    detail: "Files, preview checkpoints, milestones, and approvals form a real project history instead of disappearing into chat.",
+    icon: FileClock
   }
 ];
 
@@ -131,9 +131,9 @@ export function AuthShell({ children, eyebrow, title, subtitle }: AuthShellProps
               </div>
 
               <div className="mt-auto flex items-center gap-3 pt-10 text-sm" style={{ color: authMuted }}>
-                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>AI Operating System</span>
+                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>Project-first</span>
                 <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>Memory-native</span>
-                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>Provider-orchestrated</span>
+                <span className="rounded-full border px-3 py-1.5" style={{ borderColor: authBorder, backgroundColor: authCard }}>Timeline-ready</span>
               </div>
             </motion.section>
 
@@ -207,10 +207,13 @@ export function LoginForm({ nextPath = "/chat", initialError = null }: AuthFormP
         </div>
       }
       state={state}
-      subtitle="Sign in to continue your chats, memory lanes, files, and orchestrated workflows."
+      subtitle="Sign in to access your projects, files, timeline, Project Memory, and the work you already started."
       title="Welcome back"
     >
-      <GoogleButton href={`/api/auth/google?next=${encodeURIComponent(nextPath)}`} label="Continue with Google" />
+      <div className="space-y-3">
+        <OAuthButton href={`/api/auth/google?next=${encodeURIComponent(nextPath)}`} label="Continue with Google" symbol="G" />
+        <OAuthButton href={`/api/auth/github?next=${encodeURIComponent(nextPath)}`} label="Continue with GitHub" symbol="GH" />
+      </div>
       <Divider />
       <AuthForm action={handleSubmit} submitLabel="Sign in" submittingLabel="Signing in..." state={state}>
         <Field label="Email address" name="email" placeholder="you@xeivora.com" type="email" />
@@ -267,10 +270,13 @@ export function SignupForm({ nextPath = "/chat", initialError = null }: AuthForm
       eyebrow="Create account"
       footer={<span className="text-xs uppercase tracking-[0.18em]" style={{ color: "rgba(240,234,216,0.35)" }}>Password-secured workspace</span>}
       state={state}
-      subtitle="Create your Xeivora workspace to unify memory, providers, tools, projects, and conversations."
-      title="Start inside the AI operating system"
+      subtitle="Create your Xeivora workspace to keep projects, files, Project Memory, previews, and progress connected."
+      title="Create your workspace"
     >
-      <GoogleButton href={`/api/auth/google?next=${encodeURIComponent(nextPath)}`} label="Continue with Google" />
+      <div className="space-y-3">
+        <OAuthButton href={`/api/auth/google?next=${encodeURIComponent(nextPath)}`} label="Continue with Google" symbol="G" />
+        <OAuthButton href={`/api/auth/github?next=${encodeURIComponent(nextPath)}`} label="Continue with GitHub" symbol="GH" />
+      </div>
       <Divider />
       <AuthForm action={handleSubmit} submitLabel="Create account" submittingLabel="Creating account..." state={state}>
         <Field label="Full name" name="name" placeholder="Luxshan Nadarajah" type="text" />
@@ -550,7 +556,7 @@ function Divider() {
   );
 }
 
-function GoogleButton({ href, label }: { href: string; label: string }) {
+function OAuthButton({ href, label, symbol }: { href: string; label: string; symbol: string }) {
   return (
     <Link
       className="flex h-14 items-center justify-center gap-3 rounded-full border text-[15px] font-medium transition hover:bg-[rgba(201,100,66,0.08)]"
@@ -558,7 +564,7 @@ function GoogleButton({ href, label }: { href: string; label: string }) {
       style={{ borderColor: "rgba(201,100,66,0.3)", backgroundColor: authCard, color: authText }}
     >
       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold" style={{ backgroundColor: authText, color: authBg }}>
-        G
+        {symbol}
       </span>
       {label}
     </Link>

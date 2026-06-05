@@ -20,8 +20,8 @@ export default async function SignupPage({
   return (
     <AuthShell
       eyebrow="Create your workspace"
-      subtitle="Set up Xeivora once and carry memory, workflows, tools, and model orchestration through every conversation."
-      title="Create your AI operating system account"
+      subtitle="Set up Xeivora once and keep projects, files, Project Memory, timeline, previews, and progress connected."
+      title="Start free"
     >
       <SignupForm initialError={error} mode="signup" nextPath={nextPath} />
     </AuthShell>
