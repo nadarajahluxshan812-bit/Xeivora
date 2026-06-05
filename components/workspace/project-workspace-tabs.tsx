@@ -29,31 +29,46 @@ function withQuery(baseHref: string, projectId?: string | null, sessionId?: stri
 export function ProjectWorkspaceTabs({
   active,
   className = "",
+  onPreviewSelect,
   projectId = null,
   sessionId = null
 }: {
   active: WorkspaceTabKey;
   className?: string;
+  onPreviewSelect?: (() => void) | null;
   projectId?: string | null;
   sessionId?: string | null;
 }) {
   return (
     <div className={cn("overflow-x-auto", className)}>
       <div className="inline-flex min-w-full items-center gap-1 rounded-[12px] border border-[color:var(--site-border)] bg-[var(--site-card)] p-1">
-        {tabs.map((tab) => (
-          <Link
-            className={cn(
-              "inline-flex h-9 items-center rounded-[10px] px-3 text-[12px] font-medium transition",
-              active === tab.key
-                ? "bg-[var(--site-accent-soft)] text-[var(--site-accent)]"
-                : "text-[var(--site-subtle)] hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
-            )}
-            href={withQuery(tab.href, projectId, sessionId)}
-            key={tab.key}
-          >
-            {tab.label}
-          </Link>
-        ))}
+        {tabs.map((tab) => {
+          const className = cn(
+            "inline-flex h-9 items-center rounded-[10px] px-3 text-[12px] font-medium transition",
+            active === tab.key
+              ? "bg-[var(--site-accent-soft)] text-[var(--site-accent)]"
+              : "text-[var(--site-subtle)] hover:bg-[var(--site-ghost-bg)] hover:text-[var(--site-text)]"
+          );
+
+          if (tab.key === "preview" && onPreviewSelect) {
+            return (
+              <button
+                className={className}
+                key={tab.key}
+                onClick={onPreviewSelect}
+                type="button"
+              >
+                {tab.label}
+              </button>
+            );
+          }
+
+          return (
+            <Link className={className} href={withQuery(tab.href, projectId, sessionId)} key={tab.key}>
+              {tab.label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

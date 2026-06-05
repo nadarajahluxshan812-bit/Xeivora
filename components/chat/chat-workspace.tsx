@@ -85,6 +85,7 @@ import type {
   StreamContinuityPayload,
   StreamEvent,
   UploadedFileSummary,
+  WorkspacePreviewVersion,
   WorkspaceProject
 } from "@/lib/chat-types";
 import { cn } from "@/lib/utils";
@@ -315,6 +316,21 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [autoSwitchNotice, setAutoSwitchNotice] = useState<ModelSwitch | null>(null);
   const [modelPulseActive, setModelPulseActive] = useState(false);
   const [toolExecutionsByMessageId, setToolExecutionsByMessageId] = useState<Record<string, ChatToolExecution[]>>({});
+  const [livePreviewOpen, setLivePreviewOpen] = useState(false);
+  const [livePreviewContext, setLivePreviewContext] = useState<{ projectId: string | null; sessionId: string | null }>({
+    projectId: null,
+    sessionId: null
+  });
+  const [livePreviewVersions, setLivePreviewVersions] = useState<WorkspacePreviewVersion[]>([]);
+  const [livePreviewLoading, setLivePreviewLoading] = useState(false);
+  const [livePreviewInitializing, setLivePreviewInitializing] = useState(false);
+  const [livePreviewError, setLivePreviewError] = useState<string | null>(null);
+  const [livePreviewRefreshKey, setLivePreviewRefreshKey] = useState(0);
+  const [livePreviewUpdatingId, setLivePreviewUpdatingId] = useState<string | null>(null);
+  const [livePreviewSavingVersion, setLivePreviewSavingVersion] = useState(false);
+  const [livePreviewFrameLoading, setLivePreviewFrameLoading] = useState(false);
+  const [livePreviewFrameError, setLivePreviewFrameError] = useState<string | null>(null);
+  const [viewportWidth, setViewportWidth] = useState(0);
   const [desktopExpandedFolders, setDesktopExpandedFolders] = useState<Record<string, boolean>>({});
   const [desktopSaveState, setDesktopSaveState] = useState<DesktopSaveState>("idle");
   const [desktopApplyDraft, setDesktopApplyDraft] = useState<DesktopApplyDraft | null>(null);
@@ -394,7 +410,13 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         ? `Continue ${projects.find((project) => project.id === selectedProjectId)?.name || "Project"}`
         : "Continue project";
   const workspaceProjectId = selectedProjectId || activeSession?.projectId || projects[0]?.id || null;
-  const showDesktopPreview = isDesktop && Boolean(activeFile);
+  const livePreviewProjectId = livePreviewContext.projectId || workspaceProjectId;
+  const livePreviewSessionId = livePreviewContext.sessionId || activeSession?.id || null;
+  const livePreviewDocked = livePreviewOpen && viewportWidth >= 1280;
+  const livePreviewSheetSide = viewportWidth >= 768 ? "right" : "bottom";
+  const livePreviewDesktopWidth = viewportWidth ? Math.max(400, Math.min(560, Math.round(viewportWidth * 0.38))) : 460;
+  const latestLivePreview = livePreviewVersions[0] || null;
+  const showDesktopFilePreview = isDesktop && Boolean(activeFile) && !livePreviewDocked;
   const searchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
     if (!term) {
@@ -422,6 +444,66 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       }));
     }
   }, [openFolderPath]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    updateViewportWidth();
+    window.addEventListener("resize", updateViewportWidth);
+
+    return () => window.removeEventListener("resize", updateViewportWidth);
+  }, []);
+
+  useEffect(() => {
+    if (!livePreviewOpen) {
+      return;
+    }
+
+    const resolvedProjectId = livePreviewContext.projectId || workspaceProjectId;
+    const resolvedSessionId = livePreviewContext.sessionId || activeSession?.id || null;
+
+    if (
+      resolvedProjectId !== livePreviewContext.projectId ||
+      resolvedSessionId !== livePreviewContext.sessionId
+    ) {
+      setLivePreviewContext({
+        projectId: resolvedProjectId,
+        sessionId: resolvedSessionId
+      });
+    }
+  }, [
+    activeSession?.id,
+    livePreviewContext.projectId,
+    livePreviewContext.sessionId,
+    livePreviewOpen,
+    workspaceProjectId
+  ]);
+
+  useEffect(() => {
+    if (!livePreviewOpen || (!livePreviewProjectId && !livePreviewSessionId)) {
+      return undefined;
+    }
+
+    void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
+    const interval = window.setInterval(() => {
+      void loadLivePreviews(livePreviewProjectId, livePreviewSessionId, { silent: true });
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [livePreviewOpen, livePreviewProjectId, livePreviewSessionId]);
+
+  useEffect(() => {
+    if (!latestLivePreview) {
+      setLivePreviewFrameLoading(false);
+      return;
+    }
+
+    setLivePreviewFrameError(null);
+    setLivePreviewFrameLoading(true);
+  }, [latestLivePreview?.id, latestLivePreview?.updatedAt, livePreviewRefreshKey]);
 
   useEffect(() => {
     if (!isDesktop || typeof window === "undefined" || !window.xeivora) {
@@ -574,6 +656,129 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     setEnabledIntegrationProviders((current) =>
       current.includes(provider) ? current.filter((entry) => entry !== provider) : [...current, provider]
     );
+  }
+
+  function openLivePreview(next?: { projectId?: string | null; sessionId?: string | null }) {
+    setLivePreviewContext({
+      projectId: next?.projectId ?? workspaceProjectId ?? null,
+      sessionId: next?.sessionId ?? activeSession?.id ?? null
+    });
+    setLivePreviewOpen(true);
+    setLivePreviewError(null);
+  }
+
+  async function loadLivePreviews(
+    projectId = livePreviewProjectId,
+    sessionId = livePreviewSessionId,
+    options: { silent?: boolean } = {}
+  ) {
+    if (!projectId && !sessionId) {
+      setLivePreviewVersions([]);
+      setLivePreviewLoading(false);
+      return;
+    }
+
+    if (!options.silent) {
+      setLivePreviewLoading(true);
+    }
+
+    try {
+      const params = new URLSearchParams();
+      if (projectId) {
+        params.set("projectId", projectId);
+      }
+      if (sessionId) {
+        params.set("sessionId", sessionId);
+      }
+      params.set("limit", "24");
+
+      const response = await fetch(`/api/previews?${params.toString()}`, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Xeivora could not load the latest preview checkpoints.");
+      }
+
+      const payload = (await response.json()) as WorkspacePreviewVersion[];
+      const nextVersions = Array.isArray(payload) ? payload : [];
+      setLivePreviewVersions(nextVersions);
+      if (nextVersions.length > 0) {
+        setLivePreviewInitializing(false);
+      }
+      setLivePreviewError(null);
+    } catch (nextError) {
+      setLivePreviewError(
+        nextError instanceof Error ? nextError.message : "Xeivora could not load the latest preview checkpoints."
+      );
+    } finally {
+      if (!options.silent) {
+        setLivePreviewLoading(false);
+      }
+    }
+  }
+
+  async function updateLivePreviewStatus(previewId: string, status: WorkspacePreviewVersion["status"]) {
+    setLivePreviewUpdatingId(previewId);
+    try {
+      const response = await fetch(`/api/previews/${previewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          approvedAt: status === "approved" ? new Date().toISOString() : undefined,
+          deployedAt: status === "deploy_ready" ? new Date().toISOString() : undefined
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Xeivora could not update this preview checkpoint.");
+      }
+
+      const updated = (await response.json()) as WorkspacePreviewVersion;
+      setLivePreviewVersions((current) => mergePreviewVersions(current, [updated]));
+      setLivePreviewError(null);
+    } catch (nextError) {
+      setLivePreviewError(
+        nextError instanceof Error ? nextError.message : "Xeivora could not update this preview checkpoint."
+      );
+    } finally {
+      setLivePreviewUpdatingId(null);
+    }
+  }
+
+  async function saveLivePreviewVersion() {
+    if (!latestLivePreview) {
+      return;
+    }
+
+    setLivePreviewSavingVersion(true);
+    try {
+      const response = await fetch("/api/previews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: latestLivePreview.projectId,
+          sessionId: latestLivePreview.sessionId,
+          title: latestLivePreview.title,
+          summary: latestLivePreview.summary,
+          routePath: latestLivePreview.routePath,
+          changedFiles: latestLivePreview.changedFiles,
+          notes: latestLivePreview.notes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Xeivora could not save a new preview version.");
+      }
+
+      const saved = (await response.json()) as WorkspacePreviewVersion;
+      setLivePreviewVersions((current) => mergePreviewVersions(current, [saved]));
+      setLivePreviewError(null);
+    } catch (nextError) {
+      setLivePreviewError(
+        nextError instanceof Error ? nextError.message : "Xeivora could not save a new preview version."
+      );
+    } finally {
+      setLivePreviewSavingVersion(false);
+    }
   }
 
   async function handleRegenerateImageExecution(
@@ -1302,16 +1507,23 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     abortRef.current = abortController;
     let assistantDraftId = "";
     const shouldOpenPreview = looksLikeCodeContinuationPrompt(input);
-    const previewWindow =
-      shouldOpenPreview && typeof window !== "undefined"
-        ? window.open(buildPreviewHref(selectedProjectId, activeSession?.id || null), "_blank")
-        : null;
 
     try {
       const session = activeSession ?? (await createSession());
       const desktopContext = await buildDesktopContext(input);
       const pendingImageExecution = buildPendingImageExecution(input);
       assistantDraftId = `draft-${Date.now()}`;
+
+      if (shouldOpenPreview) {
+        setLivePreviewOpen(true);
+        setLivePreviewInitializing(true);
+        setLivePreviewError(null);
+        setLivePreviewVersions([]);
+        setLivePreviewContext({
+          projectId: selectedProjectId || session.projectId || null,
+          sessionId: session.id
+        });
+      }
 
       startTransition(() => {
         setActiveSession((current) => {
@@ -1357,10 +1569,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           ...current,
           [assistantDraftId]: [pendingImageExecution]
         }));
-      }
-
-      if (previewWindow && !previewWindow.closed) {
-        previewWindow.location.href = buildPreviewHref(selectedProjectId || session.projectId || null, session.id);
       }
 
       setPrompt("");
@@ -1425,6 +1633,28 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         }
 
         if (typedEvent.type === "tool") {
+          const codePreviewExecutions = typedEvent.payload.executions.filter(
+            (execution) => execution.name === "code_assistant"
+          );
+          if (codePreviewExecutions.length > 0) {
+            const previewVersions = codePreviewExecutions
+              .map((execution) => getExecutionPreviewVersion(execution))
+              .filter((preview): preview is WorkspacePreviewVersion => Boolean(preview));
+
+            openLivePreview({
+              projectId: previewVersions[0]?.projectId || selectedProjectId || session.projectId || null,
+              sessionId: previewVersions[0]?.sessionId || session.id
+            });
+            setLivePreviewInitializing(false);
+            setLivePreviewFrameError(null);
+
+            if (previewVersions.length > 0) {
+              setLivePreviewVersions((current) => mergePreviewVersions(current, previewVersions));
+            } else {
+              void loadLivePreviews(selectedProjectId || session.projectId || null, session.id, { silent: true });
+            }
+          }
+
           setToolExecutionsByMessageId((current) => ({
             ...current,
             [typedEvent.payload.assistantMessageId]: typedEvent.payload.executions
@@ -1479,6 +1709,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
         }
 
         if (typedEvent.type === "done") {
+          setLivePreviewInitializing(false);
           startTransition(() => {
             setActiveSession({
               ...typedEvent.payload.session,
@@ -1538,6 +1769,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       abortRef.current = null;
       setIsStreaming(false);
       setThinking(false);
+      setLivePreviewInitializing(false);
     }
   }
 
@@ -1692,14 +1924,32 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
           <div className="border-b border-[var(--xv-chat-border)] px-4 py-3 md:px-6">
             <ProjectWorkspaceTabs
-              active="chat"
+              active={livePreviewOpen ? "preview" : "chat"}
+              onPreviewSelect={() => {
+                openLivePreview({
+                  projectId: workspaceProjectId,
+                  sessionId: activeSession?.id || null
+                });
+                if (!latestLivePreview) {
+                  setLivePreviewInitializing(true);
+                }
+              }}
               projectId={workspaceProjectId}
               sessionId={activeSession?.id || null}
             />
           </div>
 
           <div className="min-h-0 flex-1 pt-[8px]">
-            <div className={cn("flex h-full min-h-0", showDesktopPreview ? "xl:grid xl:grid-cols-[minmax(0,1fr)_380px]" : "")}>
+            <div
+              className={cn("flex h-full min-h-0", livePreviewDocked || showDesktopFilePreview ? "xl:grid" : "")}
+              style={
+                livePreviewDocked
+                  ? { gridTemplateColumns: `minmax(0, 1fr) ${livePreviewDesktopWidth}px` }
+                  : showDesktopFilePreview
+                    ? { gridTemplateColumns: "minmax(0, 1fr) 380px" }
+                    : undefined
+              }
+            >
               <div className="min-h-0 min-w-0 flex-1">
                 {hasMessages ? (
                   <ChatThreadView
@@ -1707,6 +1957,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     autoSwitchNotice={autoSwitchNotice}
                     composerRef={composerRef}
                     copiedResponseId={copiedResponseId}
+                    desktopRightInset={livePreviewDocked ? livePreviewDesktopWidth : 0}
                     desktopFolderOpen={Boolean(openFolderPath)}
                     desktopToolBar={
                       isDesktop ? (
@@ -1738,6 +1989,10 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                       setMessageFeedback((current) => ({ ...current, [messageId]: value }))
                     }
                     onFilesSelected={(files) => void handleUploadFiles(files)}
+                    onOpenPreview={(projectId, sessionId) => {
+                      openLivePreview({ projectId, sessionId });
+                      setLivePreviewInitializing(!latestLivePreview);
+                    }}
                     onPromptChange={setPrompt}
                     onRegenerate={() => void handleSend(true)}
                     onRegenerateImage={(messageId, executionId, nextPrompt, count) =>
@@ -1766,6 +2021,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                           : null) || null
                     }
                     composerRef={composerRef}
+                    desktopRightInset={livePreviewDocked ? livePreviewDesktopWidth : 0}
                     projects={projects}
                     desktopToolBar={
                       isDesktop ? (
@@ -1801,7 +2057,40 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 )}
               </div>
 
-              {showDesktopPreview ? (
+              {livePreviewDocked ? (
+                <LivePreviewPanel
+                  error={livePreviewError}
+                  frameError={livePreviewFrameError}
+                  frameLoading={livePreviewFrameLoading}
+                  initializing={livePreviewInitializing}
+                  latestPreview={latestLivePreview}
+                  loading={livePreviewLoading}
+                  onApprove={(previewId) => void updateLivePreviewStatus(previewId, "approved")}
+                  onClose={() => setLivePreviewOpen(false)}
+                  onExternalOpen={(routePath) => {
+                    if (typeof window !== "undefined") {
+                      window.open(routePath, "_blank", "noopener,noreferrer");
+                    }
+                  }}
+                  onFrameLoad={() => setLivePreviewFrameLoading(false)}
+                  onFrameError={() => {
+                    setLivePreviewFrameLoading(false);
+                    setLivePreviewFrameError("Xeivora could not render this preview yet.");
+                  }}
+                  onMarkDeployReady={(previewId) => void updateLivePreviewStatus(previewId, "deploy_ready")}
+                  onRefresh={() => {
+                    setLivePreviewRefreshKey((value) => value + 1);
+                    void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
+                  }}
+                  onSaveVersion={() => void saveLivePreviewVersion()}
+                  previewProjectName={projects.find((project) => project.id === livePreviewProjectId)?.name || "Live Preview"}
+                  refreshKey={livePreviewRefreshKey}
+                  savingVersion={livePreviewSavingVersion}
+                  updatingId={livePreviewUpdatingId}
+                />
+              ) : null}
+
+              {showDesktopFilePreview ? (
                 <DesktopFilePreviewPanel
                   content={activeFileContent}
                   filePath={activeFile}
@@ -1812,6 +2101,47 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                 />
               ) : null}
             </div>
+
+            {!livePreviewDocked && livePreviewOpen ? (
+              <Sheet onOpenChange={setLivePreviewOpen} open={livePreviewOpen}>
+                <SheetContent
+                  className="border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] p-0 text-[var(--xv-chat-text)]"
+                  side={livePreviewSheetSide}
+                >
+                  <LivePreviewPanel
+                    compact
+                    error={livePreviewError}
+                    frameError={livePreviewFrameError}
+                    frameLoading={livePreviewFrameLoading}
+                    initializing={livePreviewInitializing}
+                    latestPreview={latestLivePreview}
+                    loading={livePreviewLoading}
+                    onApprove={(previewId) => void updateLivePreviewStatus(previewId, "approved")}
+                    onClose={() => setLivePreviewOpen(false)}
+                    onExternalOpen={(routePath) => {
+                      if (typeof window !== "undefined") {
+                        window.open(routePath, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                    onFrameLoad={() => setLivePreviewFrameLoading(false)}
+                    onFrameError={() => {
+                      setLivePreviewFrameLoading(false);
+                      setLivePreviewFrameError("Xeivora could not render this preview yet.");
+                    }}
+                    onMarkDeployReady={(previewId) => void updateLivePreviewStatus(previewId, "deploy_ready")}
+                    onRefresh={() => {
+                      setLivePreviewRefreshKey((value) => value + 1);
+                      void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
+                    }}
+                    onSaveVersion={() => void saveLivePreviewVersion()}
+                    previewProjectName={projects.find((project) => project.id === livePreviewProjectId)?.name || "Live Preview"}
+                    refreshKey={livePreviewRefreshKey}
+                    savingVersion={livePreviewSavingVersion}
+                    updatingId={livePreviewUpdatingId}
+                  />
+                </SheetContent>
+              </Sheet>
+            ) : null}
 
             {isDesktop && !firstLaunchComplete ? (
               <DesktopWelcomeOverlay onComplete={() => void completeFirstLaunch()} onOpenFolder={() => void openFolder()} />
@@ -2571,6 +2901,215 @@ function SessionMenuButton({
   );
 }
 
+function LivePreviewPanel({
+  compact = false,
+  error,
+  frameError,
+  frameLoading,
+  initializing,
+  latestPreview,
+  loading,
+  onApprove,
+  onClose,
+  onExternalOpen,
+  onFrameError,
+  onFrameLoad,
+  onMarkDeployReady,
+  onRefresh,
+  onSaveVersion,
+  previewProjectName,
+  refreshKey,
+  savingVersion,
+  updatingId
+}: {
+  compact?: boolean;
+  error: string | null;
+  frameError: string | null;
+  frameLoading: boolean;
+  initializing: boolean;
+  latestPreview: WorkspacePreviewVersion | null;
+  loading: boolean;
+  onApprove: (previewId: string) => void;
+  onClose: () => void;
+  onExternalOpen: (routePath: string) => void;
+  onFrameError: () => void;
+  onFrameLoad: () => void;
+  onMarkDeployReady: (previewId: string) => void;
+  onRefresh: () => void;
+  onSaveVersion: () => void;
+  previewProjectName: string;
+  refreshKey: number;
+  savingVersion: boolean;
+  updatingId: string | null;
+}) {
+  const previewStatusLabel = latestPreview ? formatPreviewStatusLabel(latestPreview.status) : "Standby";
+
+  return (
+    <aside
+      className={cn(
+        "flex min-h-0 flex-col border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface-soft)]",
+        compact ? "h-full" : "border-l"
+      )}
+    >
+      <div className="border-b border-[var(--xv-chat-border)] px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">
+              Live Preview
+            </div>
+            <div className="mt-1 truncate text-[15px] font-medium text-[var(--xv-chat-text)]">{previewProjectName}</div>
+            <div className="mt-1 text-[12px] text-[var(--xv-chat-muted)]">
+              While AI codes, the project updates live.
+            </div>
+          </div>
+          <button
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[var(--xv-chat-border)] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 p-3">
+        <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] shadow-[var(--xv-chat-shadow)]">
+          <div className="flex items-center gap-3 border-b border-[var(--xv-chat-border)] px-4 py-3">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+            </div>
+            <div className="min-w-0 flex-1 truncate rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-1.5 text-[11px] text-[var(--xv-chat-muted)]">
+              {latestPreview?.routePath || "/preview"}
+            </div>
+            <button
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+              onClick={onRefresh}
+              type="button"
+            >
+              <RefreshCcw className="h-4 w-4" />
+            </button>
+            {latestPreview?.routePath ? (
+              <button
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                onClick={() => onExternalOpen(latestPreview.routePath)}
+                type="button"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="relative min-h-0 flex-1 bg-[var(--xv-chat-panel)]">
+            {latestPreview ? (
+              <>
+                <iframe
+                  className="h-full w-full bg-white"
+                  key={`${latestPreview.id}-${latestPreview.updatedAt}-${refreshKey}`}
+                  onError={onFrameError}
+                  onLoad={onFrameLoad}
+                  src={latestPreview.routePath}
+                  title={`Live preview for ${previewProjectName}`}
+                />
+                {frameLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(14,11,8,0.16)] backdrop-blur-[2px]">
+                    <div className="rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center shadow-[var(--xv-chat-shadow)]">
+                      <LoaderCircle className="mx-auto h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
+                      <div className="mt-3 text-[13px] font-medium text-[var(--xv-chat-text)]">Updating preview…</div>
+                    </div>
+                  </div>
+                ) : null}
+                {frameError ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[color:rgba(14,11,8,0.18)] p-5 backdrop-blur-[2px]">
+                    <div className="max-w-[280px] rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-5 py-4 text-center text-[13px] leading-6 text-[var(--xv-chat-text)] shadow-[var(--xv-chat-shadow)]">
+                      {frameError}
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center p-6">
+                <div className="max-w-[280px] text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
+                    {initializing || loading ? (
+                      <LoaderCircle className="h-5 w-5 animate-spin text-[var(--xv-chat-accent)]" />
+                    ) : (
+                      <Laptop className="h-5 w-5 text-[var(--xv-chat-accent)]" />
+                    )}
+                  </div>
+                  <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">
+                    {initializing || loading ? "Generating your live preview…" : "Preview will appear here"}
+                  </div>
+                  <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
+                    {initializing || loading
+                      ? "Xeivora is creating a coding checkpoint so you can watch the UI change without leaving chat."
+                      : "Start or continue a coding task and Xeivora will keep the visual progress here."}
+                  </p>
+                  {error ? <p className="mt-3 text-[12px] text-[#ef4444]">{error}</p> : null}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--xv-chat-border)] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[12px] font-medium text-[var(--xv-chat-text)]">
+              {latestPreview
+                ? `Version ${latestPreview.versionNumber} · ${previewStatusLabel}`
+                : "Waiting for the first preview checkpoint"}
+            </div>
+            <div className="mt-1 text-[11px] text-[var(--xv-chat-muted)]">
+              {latestPreview
+                ? `${latestPreview.title} · ${formatRelativeTime(latestPreview.updatedAt)}`
+                : "The project remembers visual progress alongside chat, files, and timeline."}
+            </div>
+          </div>
+
+          {latestPreview ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {latestPreview.status !== "approved" ? (
+                <button
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                  disabled={updatingId === latestPreview.id}
+                  onClick={() => onApprove(latestPreview.id)}
+                  type="button"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Approve checkpoint
+                </button>
+              ) : null}
+              <button
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={savingVersion}
+                onClick={onSaveVersion}
+                type="button"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Save version
+              </button>
+              {latestPreview.status !== "deploy_ready" ? (
+                <button
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--xv-chat-accent)] px-3 py-1.5 text-[11px] font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={updatingId === latestPreview.id}
+                  onClick={() => onMarkDeployReady(latestPreview.id)}
+                  type="button"
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                  Mark deploy-ready
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function DesktopFileExplorerSection({
   activeFilePath,
   expandedFolders,
@@ -3263,6 +3802,7 @@ function ChatTopbar({
 function ChatHomeView({
   activeProject,
   composerRef,
+  desktopRightInset = 0,
   projects,
   desktopToolBar,
   error,
@@ -3286,6 +3826,7 @@ function ChatHomeView({
 }: {
   activeProject: WorkspaceProject | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
+  desktopRightInset?: number;
   projects: WorkspaceProject[];
   desktopToolBar?: ReactNode;
   error: string | null;
@@ -3429,7 +3970,10 @@ function ChatHomeView({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:px-6"
+        style={desktopRightInset > 0 ? { right: `${desktopRightInset}px` } : undefined}
+      >
         <ChatComposer
           composerRef={composerRef}
           connectedIntegrations={connectedIntegrations}
@@ -3461,6 +4005,7 @@ function ChatThreadView({
   autoSwitchNotice,
   composerRef,
   copiedResponseId,
+  desktopRightInset = 0,
   desktopFolderOpen,
   desktopToolBar,
   error,
@@ -3476,6 +4021,7 @@ function ChatThreadView({
   onCopyResponse,
   onFeedback,
   onFilesSelected,
+  onOpenPreview,
   onPromptChange,
   onRegenerate,
   onRegenerateImage,
@@ -3495,6 +4041,7 @@ function ChatThreadView({
   autoSwitchNotice: ModelSwitch | null;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   copiedResponseId: string | null;
+  desktopRightInset?: number;
   desktopFolderOpen: boolean;
   desktopToolBar?: ReactNode;
   error: string | null;
@@ -3509,6 +4056,7 @@ function ChatThreadView({
   onCopyResponse: (message: ChatMessage) => Promise<void>;
   onFeedback: (messageId: string, value: "good" | "bad") => void;
   onFilesSelected: (files: FileList | File[]) => void;
+  onOpenPreview: (projectId?: string | null, sessionId?: string | null) => void;
   onPromptChange: (value: string) => void;
   onRegenerate: () => void;
   onRegenerateImage: (messageId: string, executionId: string, prompt: string, count?: number) => Promise<void> | void;
@@ -3609,6 +4157,7 @@ function ChatThreadView({
                           <ToolExecutionGroup
                             executions={toolExecutions}
                             messageId={message.id}
+                            onOpenPreview={onOpenPreview}
                             onRegenerateImage={onRegenerateImage}
                           />
                         ) : null}
@@ -3697,7 +4246,10 @@ function ChatThreadView({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:w-[calc(100%-260px)] md:px-6">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] px-4 pb-4 pt-4 md:left-[260px] md:px-6"
+        style={desktopRightInset > 0 ? { right: `${desktopRightInset}px` } : undefined}
+      >
         <ChatComposer
           composerRef={composerRef}
           desktopToolBar={desktopToolBar}
@@ -3930,10 +4482,12 @@ function ChatComposer({
 function ToolExecutionGroup({
   executions,
   messageId,
+  onOpenPreview,
   onRegenerateImage
 }: {
   executions: ChatToolExecution[];
   messageId: string;
+  onOpenPreview: (projectId?: string | null, sessionId?: string | null) => void;
   onRegenerateImage: (messageId: string, executionId: string, prompt: string, count?: number) => Promise<void> | void;
 }) {
   const [expandedImage, setExpandedImage] = useState<ExecutionImage | null>(null);
@@ -4132,15 +4686,28 @@ function ToolExecutionGroup({
 
             {execution.name === "code_assistant" && typeof execution.payload?.previewHref === "string" ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <a
+                <button
                   className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
-                  href={execution.payload.previewHref}
-                  rel="noreferrer"
-                  target="_blank"
+                  onClick={() => {
+                    const previewVersion = getExecutionPreviewVersion(execution);
+                    onOpenPreview(previewVersion?.projectId || null, previewVersion?.sessionId || null);
+                  }}
+                  type="button"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span>Open Preview</span>
-                </a>
+                  <Laptop className="h-3.5 w-3.5" />
+                  <span>Open in workspace</span>
+                </button>
+                {typeof execution.payload?.routePath === "string" ? (
+                  <a
+                    className="inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]"
+                    href={execution.payload.routePath}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span>Open external</span>
+                  </a>
+                ) : null}
                 {typeof execution.payload?.previewVersion === "object" && execution.payload.previewVersion ? (
                   <span className="inline-flex items-center rounded-full bg-[var(--xv-chat-inline-code-bg)] px-2.5 py-1 text-[11px] font-medium text-[var(--xv-chat-accent)]">
                     Version {(execution.payload.previewVersion as { versionNumber?: number }).versionNumber || 1}
@@ -4494,16 +5061,65 @@ function looksLikeCodeContinuationPrompt(prompt = "") {
   return codingKeywords.test(lower) || (projectSurfaceKeywords.test(lower) && actionKeywords.test(lower));
 }
 
-function buildPreviewHref(projectId?: string | null, sessionId?: string | null) {
-  const params = new URLSearchParams();
-  if (projectId) {
-    params.set("project", projectId);
+function getExecutionPreviewVersion(execution: ChatToolExecution): WorkspacePreviewVersion | null {
+  const raw = execution.payload?.previewVersion;
+  if (!raw || typeof raw !== "object") {
+    return null;
   }
-  if (sessionId) {
-    params.set("session", sessionId);
+
+  const preview = raw as Partial<WorkspacePreviewVersion>;
+  if (!preview.id || typeof preview.routePath !== "string") {
+    return null;
   }
-  const query = params.toString();
-  return query ? `/preview?${query}` : "/preview";
+
+  return {
+    approvedAt: preview.approvedAt || null,
+    changedFiles: Array.isArray(preview.changedFiles) ? preview.changedFiles : [],
+    createdAt: typeof preview.createdAt === "string" ? preview.createdAt : new Date().toISOString(),
+    deployedAt: preview.deployedAt || null,
+    id: preview.id,
+    notes: preview.notes || null,
+    projectId: preview.projectId || null,
+    routePath: preview.routePath,
+    sessionId: preview.sessionId || null,
+    status:
+      preview.status === "approved" || preview.status === "deploy_ready" ? preview.status : "live",
+    summary: typeof preview.summary === "string" ? preview.summary : "Live preview checkpoint",
+    title: typeof preview.title === "string" ? preview.title : "Preview checkpoint",
+    updatedAt: typeof preview.updatedAt === "string" ? preview.updatedAt : new Date().toISOString(),
+    versionNumber: Number(preview.versionNumber || 1)
+  };
+}
+
+function mergePreviewVersions(
+  current: WorkspacePreviewVersion[],
+  incoming: WorkspacePreviewVersion[]
+) {
+  const map = new Map<string, WorkspacePreviewVersion>();
+
+  [...incoming, ...current].forEach((preview) => {
+    map.set(preview.id, preview);
+  });
+
+  return [...map.values()].sort((left, right) => {
+    const updatedDelta = new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    if (updatedDelta !== 0) {
+      return updatedDelta;
+    }
+    return right.versionNumber - left.versionNumber;
+  });
+}
+
+function formatPreviewStatusLabel(status: WorkspacePreviewVersion["status"]) {
+  if (status === "deploy_ready") {
+    return "Deploy-ready";
+  }
+
+  if (status === "approved") {
+    return "Approved";
+  }
+
+  return "Live";
 }
 
 
