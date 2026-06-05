@@ -127,7 +127,7 @@ export type WorkspacePreviewVersion = {
   versionNumber: number;
   title: string;
   summary: string;
-  status: "live" | "approved" | "deployed";
+  status: "live" | "approved" | "deploy_ready";
   routePath: string;
   changedFiles: string[];
   notes?: string | null;

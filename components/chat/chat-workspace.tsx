@@ -4464,9 +4464,14 @@ function groupSessions(sessions: ChatSessionSummary[]) {
 }
 
 function looksLikeCodeContinuationPrompt(prompt = "") {
-  return /\bcode\b|\bdebug\b|\bbug\b|\bfix\b|\bcomponent\b|\bpage\b|\bui\b|\bnext\.?js\b|\breact\b|\btypescript\b|\bpython\b/i.test(
-    prompt
-  );
+  const lower = `${prompt}`.toLowerCase();
+  const codingKeywords =
+    /\b(code|debug|bug|fix|refactor|implement|function|component|frontend|backend|api|database|schema|sql|next\.?js|react|typescript|javascript|python|tailwind|css|html)\b/;
+  const projectSurfaceKeywords =
+    /\b(login|sign in|signup|sign up|auth|authentication|dashboard|sidebar|composer|message|conversation|page|screen|layout|header|footer|form|modal|preview|timeline|memory)\b/;
+  const actionKeywords = /\b(build|create|add|update|change|continue|resume|fix|debug|refactor|implement|ship)\b/;
+
+  return codingKeywords.test(lower) || (projectSurfaceKeywords.test(lower) && actionKeywords.test(lower));
 }
 
 function buildPreviewHref(projectId?: string | null, sessionId?: string | null) {

@@ -19,6 +19,14 @@ import type { WorkspacePreviewVersion, WorkspaceProject } from "@/lib/chat-types
 
 type PreviewStatus = WorkspacePreviewVersion["status"];
 
+function formatPreviewStatus(status: PreviewStatus) {
+  if (status === "deploy_ready") {
+    return "deploy-ready";
+  }
+
+  return status;
+}
+
 export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const searchParams = useSearchParams();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
@@ -72,8 +80,8 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
     if (latestPreview.status === "approved") {
       return `Preview Version ${latestPreview.versionNumber} approved`;
     }
-    if (latestPreview.status === "deployed") {
-      return `Preview Version ${latestPreview.versionNumber} deployed`;
+    if (latestPreview.status === "deploy_ready") {
+      return `Preview Version ${latestPreview.versionNumber} is deploy-ready`;
     }
     return `Preview Version ${latestPreview.versionNumber} live`;
   }, [latestPreview]);
@@ -86,7 +94,7 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
       body: JSON.stringify({
         status,
         approvedAt: status === "approved" ? new Date().toISOString() : undefined,
-        deployedAt: status === "deployed" ? new Date().toISOString() : undefined
+        deployedAt: status === "deploy_ready" ? new Date().toISOString() : undefined
       })
     });
     setUpdatingId(null);
@@ -97,7 +105,7 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
     <WorkspacePageShell statusLabel="Preview" viewer={viewer}>
       <div className="space-y-6 md:space-y-7">
         <WorkspacePageHero
-          description="Watch your project evolve in real time. Xeivora tracks visual checkpoints while AI is working, then remembers which preview was approved and which version was deployed."
+          description="Watch your project evolve in real time. Xeivora tracks visual checkpoints while AI is working, then remembers which preview was approved and which version was marked deploy-ready."
           eyebrow="Project workspace"
           title="Live Preview keeps visual progress inside project continuity"
         />
@@ -161,7 +169,7 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
                 <div>
                   <WorkspaceSectionTitle>Preview memory</WorkspaceSectionTitle>
                   <p className="mt-2 text-sm leading-7 text-[var(--site-subtle)]">
-                    Preview versions become part of project history, so you can later see what changed, which version was approved, and what reached deployment.
+                    Preview versions become part of project history, so you can later see what changed, which version was approved, and which version was ready for the next handoff.
                   </p>
                 </div>
               </div>
@@ -183,8 +191,8 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
                           </div>
                           <p className="mt-2 text-[13px] leading-6 text-[var(--site-subtle)]">{preview.summary}</p>
                         </div>
-                        <WorkspaceBadge tone={preview.status === "approved" || preview.status === "deployed" ? "learning" : "standby"}>
-                          {preview.status}
+                        <WorkspaceBadge tone={preview.status === "approved" || preview.status === "deploy_ready" ? "learning" : "standby"}>
+                          {formatPreviewStatus(preview.status)}
                         </WorkspaceBadge>
                       </div>
 
@@ -215,15 +223,15 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
                             Approve
                           </WorkspaceButton>
                         ) : null}
-                        {preview.status !== "deployed" ? (
+                        {preview.status !== "deploy_ready" ? (
                           <WorkspaceButton
                             className="px-3 py-2 text-[12px]"
                             disabled={updatingId === preview.id}
-                            onClick={() => void updatePreview(preview.id, "deployed")}
+                            onClick={() => void updatePreview(preview.id, "deploy_ready")}
                             variant="secondary"
                           >
                             <Rocket className="h-4 w-4" />
-                            Mark deployed
+                            Mark deploy-ready
                           </WorkspaceButton>
                         ) : null}
                       </div>

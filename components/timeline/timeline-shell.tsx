@@ -31,8 +31,12 @@ type TimelineEntry = {
   label: string;
   detail: string;
   createdAt: string;
-  state: "live" | "approved" | "deployed";
+  state: "live" | "approved" | "deploy_ready";
 };
+
+function formatTimelineState(state: TimelineEntry["state"]) {
+  return state === "deploy_ready" ? "deploy-ready" : state;
+}
 
 function buildTimelineEntries(previews: WorkspacePreviewVersion[], logs: ToolLog[]) {
   const previewEntries: TimelineEntry[] = previews.map((preview) => ({
@@ -41,8 +45,8 @@ function buildTimelineEntries(previews: WorkspacePreviewVersion[], logs: ToolLog
     label:
       preview.status === "approved"
         ? `Preview Version ${preview.versionNumber} Approved`
-        : preview.status === "deployed"
-          ? `Preview Version ${preview.versionNumber} Deployed`
+        : preview.status === "deploy_ready"
+          ? `Preview Version ${preview.versionNumber} Marked Deploy-Ready`
           : preview.title || `Preview Version ${preview.versionNumber}`,
     detail: preview.summary,
     createdAt: preview.updatedAt || preview.createdAt,
@@ -105,7 +109,7 @@ export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
     <WorkspacePageShell statusLabel="Timeline" viewer={viewer}>
       <div className="space-y-6 md:space-y-7">
         <WorkspacePageHero
-          description="Every coding checkpoint, preview version, approval, and deploy note becomes part of the project memory so you can resume later with the full visual history intact."
+          description="Every coding checkpoint, preview version, approval, and deploy-ready note becomes part of the project memory so you can resume later with the full visual history intact."
           eyebrow="Project workspace"
           title="Visual progress is part of the continuity record"
         />
@@ -133,7 +137,7 @@ export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
               <WorkspaceCard className="p-5" key={entry.id}>
                 <div className="flex items-start gap-4">
                   <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
-                    {entry.state === "deployed" ? (
+                    {entry.state === "deploy_ready" ? (
                       <Rocket className="h-4 w-4" />
                     ) : entry.state === "approved" ? (
                       <CheckCircle2 className="h-4 w-4" />
@@ -146,8 +150,8 @@ export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-[15px] font-medium text-[var(--site-text)]">{entry.label}</h2>
-                      <WorkspaceBadge tone={entry.state === "approved" || entry.state === "deployed" ? "learning" : "standby"}>
-                        {entry.state}
+                      <WorkspaceBadge tone={entry.state === "approved" || entry.state === "deploy_ready" ? "learning" : "standby"}>
+                        {formatTimelineState(entry.state)}
                       </WorkspaceBadge>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-[var(--site-subtle)]">{entry.detail}</p>
