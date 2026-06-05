@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { OrbitLogo } from "@/components/orbit-logo";
+import UpgradeButton from "@/components/payments/UpgradeButton";
 import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import type { WorkspaceProject } from "@/lib/chat-types";
@@ -46,32 +47,42 @@ const footerLinks = [
   { label: "Twitter", href: "#" }
 ] as const;
 
-const pricingPlans = [
+type PricingPlan = {
+  bullets: string[];
+  cta: string;
+  featured: boolean;
+  href: string;
+  name: "Free" | "Pro" | "Team";
+  planKey: "pro" | null;
+  summary: string;
+};
+
+const pricingPlans: PricingPlan[] = [
   {
     name: "Free",
     summary: "For trying Xeivora.",
-    price: "Coming soon",
-    cta: "Start free",
+    cta: "Start Free",
     href: "/signup",
     featured: false,
-    bullets: ["Limited projects", "Project Memory", "Timeline", "Continue Project"]
+    planKey: null,
+    bullets: ["3 Projects", "Project Memory", "Timeline", "Continue Project"]
   },
   {
     name: "Pro",
     summary: "For builders using AI every day.",
-    price: "Coming soon",
-    cta: "Get Pro",
+    cta: "Upgrade to Pro",
     href: "/pricing",
     featured: true,
-    bullets: ["More projects", "Larger project memory", "Files", "Preview workspace", "Priority access"]
+    planKey: "pro",
+    bullets: ["Unlimited Projects", "Larger project memory", "Files", "Preview workspace", "Priority access"]
   },
   {
     name: "Team",
     summary: "For teams building together.",
-    price: "Coming soon",
-    cta: "Contact us",
+    cta: "Contact Sales",
     href: "/contact",
     featured: false,
+    planKey: null,
     bullets: ["Shared projects", "Team memory", "Team timeline", "Collaboration", "Admin controls"]
   }
 ] as const;
@@ -769,7 +780,6 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                       ) : null}
                     </div>
                     <p className="text-sm leading-7 text-[color:var(--site-text)]/66">{plan.summary}</p>
-                    <p className="text-sm font-medium uppercase tracking-[0.22em] text-[color:var(--site-text)]/45">{plan.price}</p>
                   </div>
 
                   <div className="mt-8 space-y-3">
@@ -782,7 +792,9 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                   </div>
 
                   <div className="mt-8">
-                    {plan.featured ? (
+                    {plan.planKey === "pro" ? (
+                      <UpgradeButton fullWidth label={plan.cta} planKey={plan.planKey} variant="primary" />
+                    ) : plan.featured ? (
                       <PrimaryButton className="w-full justify-center" href={plan.href}>
                         {plan.cta}
                       </PrimaryButton>
