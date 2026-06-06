@@ -6,7 +6,7 @@
   "author": "Xeivora Ltd",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "electron": "electron .",
