@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getViewer } from "@/lib/auth";
+import { resolveOwnedProject } from "@/lib/project-access";
 import { isIntegrationConfigured } from "@/lib/integrations/config";
 
 const { getUserIntegration } = require("@/lib/server/integration-store");
@@ -19,12 +19,13 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
-  const viewer = await getViewer();
-  if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
   const { projectId } = await params;
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
+  }
+  const viewer = gate.viewer;
+
   const configured = isIntegrationConfigured("github");
   const integration = await getUserIntegration(viewer.id, "github");
   const connected = Boolean(integration?.accessToken);
@@ -63,12 +64,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pro
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ projectId: string }> }) {
-  const viewer = await getViewer();
-  if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
   const { projectId } = await params;
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
+  }
+  const viewer = gate.viewer;
+
   const integration = await getUserIntegration(viewer.id, "github");
   if (!integration?.accessToken) {
     return NextResponse.json({ error: "Connect your GitHub account first." }, { status: 400 });
@@ -117,12 +119,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
-  const viewer = await getViewer();
-  if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  const { projectId } = await params;
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
   }
 
-  const { projectId } = await params;
   const disconnected = await removeProjectRepo(projectId);
   return NextResponse.json({ disconnected });
 }

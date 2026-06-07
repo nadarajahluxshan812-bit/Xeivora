@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 
+import { resolveOwnedProject } from "@/lib/project-access";
+
 const {
   deleteProject,
   listFiles,
-  listProjects,
+  listVisibleProjects,
   updateProject
 } = require("@/lib/server/workspace-store");
 const { listSessions } = require("@/lib/server/chat-store");
@@ -38,9 +40,14 @@ type TimelineEvent = {
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
 
-  const [projects, allSessions, files, previews, memory, repoLink, vercelLink, deploymentRecords] =
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
+  }
+  const project = gate.project;
+
+  const [allSessions, files, previews, memory, repoLink, vercelLink, deploymentRecords] =
     await Promise.all([
-      listProjects(),
       listSessions({ includeArchived: true }),
       listFiles({ projectId, limit: 200 }),
       listPreviewVersions({ projectId, limit: 100 }),
@@ -49,12 +56,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pro
       getProjectVercel(projectId),
       listDeploymentRecords(projectId)
     ]);
-
-  const project = projects.find((item: { id: string }) => item.id === projectId);
-
-  if (!project) {
-    return NextResponse.json({ error: "Project not found." }, { status: 404 });
-  }
 
   const chats = allSessions.filter(
     (session: { projectId?: string | null }) => session.projectId === projectId
@@ -198,12 +199,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pro
 export async function PATCH(request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const body = await request.json().catch(() => ({}));
   const { projectId } = await params;
+
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
+  }
+
   const project = await updateProject(projectId, body || {});
 
   return NextResponse.json(
     {
       project,
-      projects: await listProjects()
+      projects: await listVisibleProjects(gate.viewer.id)
     },
     {
       status: project ? 200 : 404,
@@ -216,12 +223,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
+
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
+  }
+
   const deleted = await deleteProject(projectId);
 
   return NextResponse.json(
     {
       deleted,
-      projects: await listProjects()
+      projects: await listVisibleProjects(gate.viewer.id)
     },
     {
       status: deleted ? 200 : 404,

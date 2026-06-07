@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getViewer } from "@/lib/auth";
+import { resolveOwnedProject } from "@/lib/project-access";
 
-const { listProjects } = require("@/lib/server/workspace-store");
 const {
   getProject,
   getProjectVercel,
@@ -14,18 +13,13 @@ const {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Authenticated user must exist and the project must exist before any Vercel access.
+// Authenticated viewer must own the project before any Vercel access.
 async function guard(projectId: string) {
-  const viewer = await getViewer();
-  if (!viewer) {
-    return { error: NextResponse.json({ error: "Not authenticated." }, { status: 401 }) };
+  const resolved = await resolveOwnedProject(projectId);
+  if (!resolved.ok) {
+    return { error: resolved.response };
   }
-  const projects = await listProjects();
-  const project = projects.find((item: { id: string }) => item.id === projectId);
-  if (!project) {
-    return { error: NextResponse.json({ error: "Project not found." }, { status: 404 }) };
-  }
-  return { viewer, project };
+  return { viewer: resolved.viewer, project: resolved.project };
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
