@@ -66,6 +66,7 @@ import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { useXeivoraTheme } from "@/components/theme/theme-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { PreviewSideTab, type PreviewSideTabKey } from "@/components/chat/preview-side-tabs";
 import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import { useElectron, type DesktopFileNode } from "@/hooks/useElectron";
 import type { AuthUser } from "@/lib/auth-types";
@@ -329,6 +330,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const [livePreviewSavingVersion, setLivePreviewSavingVersion] = useState(false);
   const [livePreviewFrameLoading, setLivePreviewFrameLoading] = useState(false);
   const [livePreviewFrameError, setLivePreviewFrameError] = useState<string | null>(null);
+  const [livePreviewWidth, setLivePreviewWidth] = useState<number | null>(null);
+  const [isResizingPreview, setIsResizingPreview] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [desktopExpandedFolders, setDesktopExpandedFolders] = useState<Record<string, boolean>>({});
   const [desktopSaveState, setDesktopSaveState] = useState<DesktopSaveState>("idle");
@@ -420,8 +423,34 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
     projects.find((project) => project.id === linkedPreviewProjectId)?.name || "Live Preview";
   const livePreviewDocked = livePreviewOpen && viewportWidth >= 1280;
   const livePreviewSheetSide = viewportWidth >= 768 ? "right" : "bottom";
-  const livePreviewDesktopWidth = viewportWidth ? Math.max(400, Math.min(560, Math.round(viewportWidth * 0.38))) : 460;
+  // Resizable chat/preview split. Default is 60% chat / 40% preview, draggable between ~25% and ~75%.
+  const previewContentWidth = Math.max((viewportWidth || 1280) - 260, 320);
+  const livePreviewDesktopWidth = Math.min(
+    Math.max(livePreviewWidth ?? Math.round(previewContentWidth * 0.4), 360),
+    Math.round(previewContentWidth * 0.75)
+  );
   const showDesktopFilePreview = isDesktop && Boolean(activeFile) && !livePreviewDocked;
+
+  useEffect(() => {
+    if (!isResizingPreview) {
+      return;
+    }
+    function handleMove(event: MouseEvent) {
+      setLivePreviewWidth(window.innerWidth - event.clientX);
+    }
+    function handleUp() {
+      setIsResizingPreview(false);
+    }
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [isResizingPreview]);
   const searchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
     if (!term) {
@@ -2134,7 +2163,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               className={cn("flex h-full min-h-0 overflow-hidden", livePreviewDocked || showDesktopFilePreview ? "xl:grid" : "")}
               style={
                 livePreviewDocked
-                  ? { gridTemplateColumns: `minmax(0, 1fr) ${livePreviewDesktopWidth}px` }
+                  ? { gridTemplateColumns: `minmax(0, 1fr) 6px ${livePreviewDesktopWidth}px` }
                   : showDesktopFilePreview
                     ? { gridTemplateColumns: "minmax(0, 1fr) 380px" }
                     : undefined
@@ -2247,6 +2276,24 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
               </div>
 
               {livePreviewDocked ? (
+                <div
+                  aria-orientation="vertical"
+                  className="hidden cursor-col-resize select-none xl:flex xl:items-stretch xl:justify-center"
+                  onMouseDown={() => setIsResizingPreview(true)}
+                  role="separator"
+                >
+                  <div
+                    className={cn(
+                      "w-px transition",
+                      isResizingPreview
+                        ? "bg-[var(--xv-chat-accent)]"
+                        : "bg-[var(--xv-chat-border)] hover:bg-[var(--xv-chat-accent)]"
+                    )}
+                  />
+                </div>
+              ) : null}
+
+              {livePreviewDocked ? (
                 <LivePreviewPanel
                   error={livePreviewError}
                   frameError={livePreviewFrameError}
@@ -2280,6 +2327,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                   renderPayload={effectiveLivePreviewPayload}
                   savingVersion={livePreviewSavingVersion}
                   updatingId={livePreviewUpdatingId}
+                  versions={livePreviewVersions}
                 />
               ) : null}
 
@@ -2335,6 +2383,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     renderPayload={effectiveLivePreviewPayload}
                     savingVersion={livePreviewSavingVersion}
                     updatingId={livePreviewUpdatingId}
+                    versions={livePreviewVersions}
                   />
                 </SheetContent>
               </Sheet>
@@ -3336,7 +3385,8 @@ function LivePreviewPanel({
   refreshKey,
   renderPayload,
   savingVersion,
-  updatingId
+  updatingId,
+  versions
 }: {
   compact?: boolean;
   error: string | null;
@@ -3360,11 +3410,12 @@ function LivePreviewPanel({
   renderPayload: WorkspacePreviewPayload | null;
   savingVersion: boolean;
   updatingId: string | null;
+  versions: WorkspacePreviewVersion[];
 }) {
+  const [activeTab, setActiveTab] = useState<"preview" | PreviewSideTabKey>("preview");
   const previewStatusLabel = latestPreview ? formatPreviewStatusLabel(latestPreview.status) : "Standby";
   const renderMode = renderPayload?.renderMode ?? null;
   const renderTypeLabel = formatPreviewModeLabel(renderMode);
-  const renderLabel = renderPayload?.entryLabel || latestPreview?.routePath || "preview";
   const showRenderableFrame = renderMode === "browser" && Boolean(renderPayload?.srcDoc);
   const copyableSource =
     renderPayload?.sourceCode ||
@@ -3380,6 +3431,8 @@ function LivePreviewPanel({
     (latestPreview ? "Preview could not render this output." : "Start a coding task and a live preview will appear here.");
   const actionButtonClass =
     "inline-flex items-center gap-1 rounded-full border border-[var(--xv-chat-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)]";
+  const iconButtonClass =
+    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)] disabled:cursor-not-allowed disabled:opacity-60";
 
   function renderPreviewContent(): ReactNode {
     if (showRenderableFrame) {
@@ -3453,9 +3506,9 @@ function LivePreviewPanel({
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)]">
               <Laptop className="h-5 w-5 text-[var(--xv-chat-accent)]" />
             </div>
-            <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">Preview will appear here</div>
+            <div className="mt-4 text-[15px] font-medium text-[var(--xv-chat-text)]">Start building to generate a preview.</div>
             <p className="mt-2 text-[13px] leading-6 text-[var(--xv-chat-muted)]">
-              Start a coding or documentation task and Xeivora will render the output in the most useful format.
+              Ask Xeivora to build a UI, script, API, schema, or document and it renders here in the most useful format.
             </p>
             {error ? <p className="mt-3 text-[12px] text-[#ef4444]">{error}</p> : null}
           </div>
@@ -3711,94 +3764,25 @@ function LivePreviewPanel({
       )}
     >
       <div className="border-b border-[var(--xv-chat-border)] px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-[var(--xv-chat-muted)]">
-              Live Preview
-            </div>
-            <div className="mt-1 truncate text-[15px] font-medium text-[var(--xv-chat-text)]">{previewProjectName}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[var(--xv-chat-muted)]">
+            <div className="truncate text-[15px] font-semibold text-[var(--xv-chat-text)]">{previewProjectName}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-[var(--xv-chat-muted)]">
+              <span>{latestPreview ? `Version ${latestPreview.versionNumber}` : "No checkpoint yet"}</span>
+              <span>•</span>
               <span>{renderTypeLabel}</span>
               <span>•</span>
-              <span>While AI codes, the project updates live.</span>
+              <span className="text-[var(--xv-chat-text)]">{previewStatusLabel}</span>
             </div>
           </div>
-          <button
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[var(--xv-chat-border)] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="border-b border-[var(--xv-chat-border)] px-2">
-        <div className="flex items-center gap-1 overflow-x-auto py-1.5">
-          {[
-            { key: "preview", label: "Preview", href: null as string | null },
-            { key: "files", label: "Files", href: previewProjectId ? `/files?project=${previewProjectId}` : null },
-            { key: "timeline", label: "Timeline", href: previewProjectId ? `/timeline?project=${previewProjectId}` : null },
-            { key: "memory", label: "Memory", href: previewProjectId ? `/memory?project=${previewProjectId}` : null },
-            {
-              key: "deployments",
-              label: "Deployments",
-              href: previewProjectId ? `/dashboard/${previewProjectId}?tab=deployments` : null
-            }
-          ].map((tab) =>
-            tab.key === "preview" ? (
-              <span
-                className="inline-flex h-7 shrink-0 items-center rounded-[8px] bg-[var(--xv-chat-ghost-bg)] px-2.5 text-[11px] font-medium text-[var(--xv-chat-text)]"
-                key={tab.key}
-              >
-                {tab.label}
-              </span>
-            ) : tab.href ? (
-              <Link
-                className="inline-flex h-7 shrink-0 items-center rounded-[8px] px-2.5 text-[11px] font-medium text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
-                href={tab.href}
-                key={tab.key}
-              >
-                {tab.label}
-              </Link>
-            ) : (
-              <span
-                className="inline-flex h-7 shrink-0 cursor-not-allowed items-center rounded-[8px] px-2.5 text-[11px] font-medium text-[var(--xv-chat-muted)] opacity-40"
-                key={tab.key}
-                title="Attach this chat to a project to open this tab"
-              >
-                {tab.label}
-              </span>
-            )
-          )}
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 p-3">
-        <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] shadow-[var(--xv-chat-shadow)]">
-          <div className="flex items-center gap-3 border-b border-[var(--xv-chat-border)] px-4 py-3">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-          </div>
-            <div className="min-w-0 flex-1 truncate rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] px-3 py-1.5 text-[11px] text-[var(--xv-chat-muted)]">
-              {renderLabel}
-            </div>
-            <div className="hidden rounded-full border border-[var(--xv-chat-border)] bg-[var(--xv-chat-panel)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--xv-chat-muted)] xl:inline-flex">
-              {renderTypeLabel}
-            </div>
-            <button
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
-              onClick={onRefresh}
-              type="button"
-            >
+          <div className="flex shrink-0 items-center gap-1">
+            <button aria-label="Refresh" className={iconButtonClass} onClick={onRefresh} title="Refresh" type="button">
               <RefreshCcw className="h-4 w-4" />
             </button>
             {latestPreview ? (
               <button
                 aria-label="Open external"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                className={iconButtonClass}
                 onClick={() => onExternalOpen(latestPreview, renderPayload)}
                 title="Open external"
                 type="button"
@@ -3809,25 +3793,75 @@ function LivePreviewPanel({
             {hasRenderablePreview ? (
               <button
                 aria-label="Save checkpoint"
-                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--xv-chat-border)] px-2.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+                className={iconButtonClass}
                 disabled={savingVersion}
                 onClick={onSaveVersion}
                 title="Save checkpoint"
                 type="button"
               >
-                <Save className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline">Save checkpoint</span>
+                <Save className="h-4 w-4" />
               </button>
             ) : null}
-          </div>
-
-          <div className="relative min-h-0 flex-1 bg-[var(--xv-chat-panel)]">
-            {renderPreviewContent()}
+            <button aria-label="Close preview" className={iconButtonClass} onClick={onClose} title="Close" type="button">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
 
+      <div className="border-b border-[var(--xv-chat-border)] px-2">
+        <div className="flex items-center gap-1 overflow-x-auto py-1.5">
+          {(["preview", "files", "timeline", "memory", "deployments"] as const).map((key) => (
+            <button
+              className={cn(
+                "inline-flex h-7 shrink-0 items-center rounded-[8px] px-2.5 text-[11px] font-medium capitalize transition",
+                activeTab === key
+                  ? "bg-[var(--xv-chat-ghost-bg)] text-[var(--xv-chat-text)]"
+                  : "text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+              )}
+              key={key}
+              onClick={() => setActiveTab(key)}
+              type="button"
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {activeTab === "preview" ? (
+          <div className="relative h-full min-h-0 bg-[var(--xv-chat-panel)]">{renderPreviewContent()}</div>
+        ) : (
+          <PreviewSideTab projectId={previewProjectId} tab={activeTab} />
+        )}
+      </div>
+
+      {activeTab === "preview" ? (
       <div className="border-t border-[var(--xv-chat-border)] px-4 py-3">
+        {versions.length ? (
+          <div className="mb-2 flex items-center gap-1 overflow-x-auto">
+            {versions
+              .slice()
+              .sort((left, right) => left.versionNumber - right.versionNumber)
+              .map((version) => (
+                <button
+                  className={cn(
+                    "inline-flex h-6 shrink-0 items-center rounded-full border px-2 text-[10px] font-medium transition",
+                    latestPreview?.id === version.id
+                      ? "border-[var(--xv-chat-accent)] text-[var(--xv-chat-accent)]"
+                      : "border-[var(--xv-chat-border)] text-[var(--xv-chat-muted)] hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                  )}
+                  key={version.id}
+                  onClick={() => onExternalOpen(version, version.previewPayload || null)}
+                  title={`Open Version ${version.versionNumber}`}
+                  type="button"
+                >
+                  v{version.versionNumber}
+                </button>
+              ))}
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-[12px] font-medium text-[var(--xv-chat-text)]">
@@ -3883,6 +3917,7 @@ function LivePreviewPanel({
           ) : null}
         </div>
       </div>
+      ) : null}
     </aside>
   );
 }
