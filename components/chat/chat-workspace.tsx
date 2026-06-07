@@ -413,6 +413,11 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
   const workspaceProjectId = selectedProjectId || activeSession?.projectId || projects[0]?.id || null;
   const livePreviewProjectId = livePreviewContext.projectId || workspaceProjectId;
   const livePreviewSessionId = livePreviewContext.sessionId || activeSession?.id || null;
+  // Only treat the project as "linked" when the chat is genuinely attached to one,
+  // so the preview never mislabels itself with the default seed project.
+  const linkedPreviewProjectId = livePreviewContext.projectId || activeSession?.projectId || null;
+  const previewDisplayName =
+    projects.find((project) => project.id === linkedPreviewProjectId)?.name || "Live Preview";
   const livePreviewDocked = livePreviewOpen && viewportWidth >= 1280;
   const livePreviewSheetSide = viewportWidth >= 768 ? "right" : "bottom";
   const livePreviewDesktopWidth = viewportWidth ? Math.max(400, Math.min(560, Math.round(viewportWidth * 0.38))) : 460;
@@ -2269,7 +2274,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                     void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
                   }}
                   onSaveVersion={() => void saveLivePreviewVersion()}
-                  previewProjectName={projects.find((project) => project.id === livePreviewProjectId)?.name || "Live Preview"}
+                  previewProjectName={previewDisplayName}
+                  previewProjectId={linkedPreviewProjectId}
                   refreshKey={livePreviewRefreshKey}
                   renderPayload={effectiveLivePreviewPayload}
                   savingVersion={livePreviewSavingVersion}
@@ -2323,7 +2329,8 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
                       void loadLivePreviews(livePreviewProjectId, livePreviewSessionId);
                     }}
                     onSaveVersion={() => void saveLivePreviewVersion()}
-                    previewProjectName={projects.find((project) => project.id === livePreviewProjectId)?.name || "Live Preview"}
+                    previewProjectName={previewDisplayName}
+                    previewProjectId={linkedPreviewProjectId}
                     refreshKey={livePreviewRefreshKey}
                     renderPayload={effectiveLivePreviewPayload}
                     savingVersion={livePreviewSavingVersion}
@@ -3324,6 +3331,7 @@ function LivePreviewPanel({
   onMarkDeployReady,
   onRefresh,
   onSaveVersion,
+  previewProjectId,
   previewProjectName,
   refreshKey,
   renderPayload,
@@ -3346,6 +3354,7 @@ function LivePreviewPanel({
   onMarkDeployReady: (previewId: string) => void;
   onRefresh: () => void;
   onSaveVersion: () => void;
+  previewProjectId: string | null;
   previewProjectName: string;
   refreshKey: number;
   renderPayload: WorkspacePreviewPayload | null;
@@ -3724,6 +3733,47 @@ function LivePreviewPanel({
         </div>
       </div>
 
+      <div className="border-b border-[var(--xv-chat-border)] px-2">
+        <div className="flex items-center gap-1 overflow-x-auto py-1.5">
+          {[
+            { key: "preview", label: "Preview", href: null as string | null },
+            { key: "files", label: "Files", href: previewProjectId ? `/files?project=${previewProjectId}` : null },
+            { key: "timeline", label: "Timeline", href: previewProjectId ? `/timeline?project=${previewProjectId}` : null },
+            { key: "memory", label: "Memory", href: previewProjectId ? `/memory?project=${previewProjectId}` : null },
+            {
+              key: "deployments",
+              label: "Deployments",
+              href: previewProjectId ? `/dashboard/${previewProjectId}?tab=deployments` : null
+            }
+          ].map((tab) =>
+            tab.key === "preview" ? (
+              <span
+                className="inline-flex h-7 shrink-0 items-center rounded-[8px] bg-[var(--xv-chat-ghost-bg)] px-2.5 text-[11px] font-medium text-[var(--xv-chat-text)]"
+                key={tab.key}
+              >
+                {tab.label}
+              </span>
+            ) : tab.href ? (
+              <Link
+                className="inline-flex h-7 shrink-0 items-center rounded-[8px] px-2.5 text-[11px] font-medium text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
+                href={tab.href}
+                key={tab.key}
+              >
+                {tab.label}
+              </Link>
+            ) : (
+              <span
+                className="inline-flex h-7 shrink-0 cursor-not-allowed items-center rounded-[8px] px-2.5 text-[11px] font-medium text-[var(--xv-chat-muted)] opacity-40"
+                key={tab.key}
+                title="Attach this chat to a project to open this tab"
+              >
+                {tab.label}
+              </span>
+            )
+          )}
+        </div>
+      </div>
+
       <div className="min-h-0 flex-1 p-3">
         <div className="flex h-full min-h-[420px] flex-col overflow-hidden rounded-[18px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-bg)] shadow-[var(--xv-chat-shadow)]">
           <div className="flex items-center gap-3 border-b border-[var(--xv-chat-border)] px-4 py-3">
@@ -3747,11 +3797,26 @@ function LivePreviewPanel({
             </button>
             {latestPreview ? (
               <button
+                aria-label="Open external"
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-ghost-bg)] hover:text-[var(--xv-chat-text)]"
                 onClick={() => onExternalOpen(latestPreview, renderPayload)}
+                title="Open external"
                 type="button"
               >
                 <ExternalLink className="h-4 w-4" />
+              </button>
+            ) : null}
+            {hasRenderablePreview ? (
+              <button
+                aria-label="Save checkpoint"
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--xv-chat-border)] px-2.5 text-[11px] font-medium text-[var(--xv-chat-text)] transition hover:bg-[var(--xv-chat-ghost-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={savingVersion}
+                onClick={onSaveVersion}
+                title="Save checkpoint"
+                type="button"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span className="hidden xl:inline">Save checkpoint</span>
               </button>
             ) : null}
           </div>
@@ -3801,7 +3866,7 @@ function LivePreviewPanel({
                 type="button"
               >
                 <Save className="h-3.5 w-3.5" />
-                Save version
+                Save checkpoint
               </button>
               {latestPreview.status !== "deploy_ready" ? (
                 <button
