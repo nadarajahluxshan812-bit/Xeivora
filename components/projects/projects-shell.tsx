@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
+import { ContinueProjectBriefing } from "@/components/projects/continue-project-briefing";
 import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
 import { WorkspacePageShell } from "@/components/workspace/workspace-page-ui";
 import type { AuthUser } from "@/lib/auth-types";
@@ -43,6 +44,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const [files, setFiles] = useState<UploadedFileSummary[]>([]);
   const [toolLogs, setToolLogs] = useState<ToolLog[]>([]);
   const [query, setQuery] = useState("");
+  const [briefing, setBriefing] = useState<{ id: string; name: string | null } | null>(null);
 
   useEffect(() => {
     void Promise.all([
@@ -192,11 +194,17 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
   function handleContinueProject(projectId: string | null) {
     if (projectId) {
-      router.push(`/chat?project=${encodeURIComponent(projectId)}`);
+      const match = projects.find((project) => project.id === projectId) || null;
+      setBriefing({ id: projectId, name: match?.name ?? null });
       return;
     }
 
     router.push("/chat");
+  }
+
+  function handleResumeInChat(projectId: string) {
+    setBriefing(null);
+    router.push(`/chat?project=${encodeURIComponent(projectId)}`);
   }
 
   function handleOpenProject(projectId: string) {
@@ -673,6 +681,15 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
           ))}
         </div>
       </div>
+
+      {briefing ? (
+        <ContinueProjectBriefing
+          onClose={() => setBriefing(null)}
+          onResume={handleResumeInChat}
+          projectId={briefing.id}
+          projectName={briefing.name}
+        />
+      ) : null}
     </WorkspacePageShell>
   );
 }
