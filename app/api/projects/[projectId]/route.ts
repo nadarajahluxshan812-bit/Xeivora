@@ -8,6 +8,7 @@ const {
 } = require("@/lib/server/workspace-store");
 const { listSessions } = require("@/lib/server/chat-store");
 const { listPreviewVersions } = require("@/lib/server/preview-store");
+const { getProjectRepo } = require("@/lib/server/github");
 const mvpStore = require("@/lib/server/mvp-store");
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,13 @@ export const runtime = "nodejs";
 
 type TimelineEvent = {
   id: string;
-  kind: "project_created" | "chat_created" | "file_uploaded" | "preview_generated" | "memory_updated";
+  kind:
+    | "project_created"
+    | "chat_created"
+    | "file_uploaded"
+    | "preview_generated"
+    | "memory_updated"
+    | "github_connected";
   title: string;
   detail: string;
   at: string;
@@ -24,12 +31,13 @@ type TimelineEvent = {
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
 
-  const [projects, allSessions, files, previews, memory] = await Promise.all([
+  const [projects, allSessions, files, previews, memory, repoLink] = await Promise.all([
     listProjects(),
     listSessions({ includeArchived: true }),
     listFiles({ projectId, limit: 200 }),
     listPreviewVersions({ projectId, limit: 100 }),
-    mvpStore.list("memory")
+    mvpStore.list("memory"),
+    getProjectRepo(projectId)
   ]);
 
   const project = projects.find((item: { id: string }) => item.id === projectId);
@@ -88,6 +96,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pro
       title: "Memory updated",
       detail: item.title,
       at: item.updatedAt || item.createdAt
+    });
+  }
+  if (repoLink) {
+    timeline.push({
+      id: `github-${repoLink.id}`,
+      kind: "github_connected",
+      title: "GitHub repository connected",
+      detail: repoLink.fullName,
+      at: repoLink.createdAt || repoLink.updatedAt
     });
   }
   timeline.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime());

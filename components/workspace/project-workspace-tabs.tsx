@@ -11,6 +11,7 @@ export type WorkspaceTabKey =
   | "timeline"
   | "memory"
   | "preview"
+  | "github"
   | "deployments";
 
 const tabs: Array<{ key: WorkspaceTabKey; href: string; label: string }> = [
@@ -20,6 +21,7 @@ const tabs: Array<{ key: WorkspaceTabKey; href: string; label: string }> = [
   { key: "timeline", href: "/timeline", label: "Timeline" },
   { key: "memory", href: "/memory", label: "Project Memory" },
   { key: "preview", href: "/preview", label: "Preview" },
+  { key: "github", href: "/dashboard", label: "GitHub" },
   { key: "deployments", href: "/dashboard", label: "Deployments" }
 ];
 
@@ -43,6 +45,9 @@ function tabHref(
 ) {
   if (tab.key === "overview") {
     return projectId ? `/dashboard/${projectId}` : "/dashboard";
+  }
+  if (tab.key === "github") {
+    return projectId ? `/dashboard/${projectId}?tab=github` : "/dashboard";
   }
   if (tab.key === "deployments") {
     return projectId ? `/dashboard/${projectId}?tab=deployments` : "/dashboard";
