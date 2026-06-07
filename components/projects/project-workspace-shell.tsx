@@ -7,6 +7,7 @@ import {
   Clock,
   FileText,
   FolderKanban,
+  GitGraph,
   MessageSquareText,
   Monitor,
   Plus,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { GitHubTab } from "@/components/projects/github-tab";
 import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import {
   WorkspaceBadge,
@@ -46,7 +48,13 @@ type MemoryItem = {
 
 type TimelineEvent = {
   id: string;
-  kind: "project_created" | "chat_created" | "file_uploaded" | "preview_generated" | "memory_updated";
+  kind:
+    | "project_created"
+    | "chat_created"
+    | "file_uploaded"
+    | "preview_generated"
+    | "memory_updated"
+    | "github_connected";
   title: string;
   detail: string;
   at: string;
@@ -102,7 +110,8 @@ const TIMELINE_ICON: Record<TimelineEvent["kind"], typeof Clock> = {
   chat_created: MessageSquareText,
   file_uploaded: FileText,
   preview_generated: Monitor,
-  memory_updated: Clock
+  memory_updated: Clock,
+  github_connected: GitGraph
 };
 
 export function ProjectWorkspaceShell({
@@ -114,7 +123,8 @@ export function ProjectWorkspaceShell({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tab = searchParams.get("tab") === "deployments" ? "deployments" : "overview";
+  const rawTab = searchParams.get("tab");
+  const tab = rawTab === "deployments" ? "deployments" : rawTab === "github" ? "github" : "overview";
 
   const [data, setData] = useState<ProjectWorkspaceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -252,7 +262,9 @@ export function ProjectWorkspaceShell({
 
             <ProjectWorkspaceTabs active={tab} projectId={projectId} />
 
-            {tab === "deployments" ? (
+            {tab === "github" ? (
+              <GitHubTab projectId={projectId} />
+            ) : tab === "deployments" ? (
               <DeploymentsTab deployReadyCount={deployReadyCount} previewCount={previews.length} />
             ) : (
               <OverviewTab

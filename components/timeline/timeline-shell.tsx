@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, FolderKanban, MessageSquareText, Monitor, NotebookPen } from "lucide-react";
+import { FileText, FolderKanban, GitGraph, MessageSquareText, Monitor, NotebookPen } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -21,7 +21,8 @@ type TimelineEventKind =
   | "chat_created"
   | "file_uploaded"
   | "preview_generated"
-  | "memory_updated";
+  | "memory_updated"
+  | "github_connected";
 
 type TimelineEvent = {
   id: string;
@@ -36,7 +37,8 @@ const EVENT_META: Record<TimelineEventKind, { icon: typeof FileText; label: stri
   chat_created: { icon: MessageSquareText, label: "Chat" },
   file_uploaded: { icon: FileText, label: "File" },
   preview_generated: { icon: Monitor, label: "Preview" },
-  memory_updated: { icon: NotebookPen, label: "Memory" }
+  memory_updated: { icon: NotebookPen, label: "Memory" },
+  github_connected: { icon: GitGraph, label: "GitHub" }
 };
 
 export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
@@ -69,7 +71,8 @@ export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
       chat_created: 0,
       file_uploaded: 0,
       preview_generated: 0,
-      memory_updated: 0
+      memory_updated: 0,
+      github_connected: 0
     };
     for (const event of events) {
       if (event.kind in map) {
