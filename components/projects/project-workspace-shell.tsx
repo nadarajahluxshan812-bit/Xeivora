@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { DeploymentsTab } from "@/components/projects/deployments-tab";
 import { GitHubTab } from "@/components/projects/github-tab";
 import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import {
@@ -54,7 +55,13 @@ type TimelineEvent = {
     | "file_uploaded"
     | "preview_generated"
     | "memory_updated"
-    | "github_connected";
+    | "github_connected"
+    | "vercel_linked"
+    | "deployment_started"
+    | "build_running"
+    | "deployment_succeeded"
+    | "deployment_failed"
+    | "production_url_created";
   title: string;
   detail: string;
   at: string;
@@ -111,7 +118,13 @@ const TIMELINE_ICON: Record<TimelineEvent["kind"], typeof Clock> = {
   file_uploaded: FileText,
   preview_generated: Monitor,
   memory_updated: Clock,
-  github_connected: GitGraph
+  github_connected: GitGraph,
+  vercel_linked: Rocket,
+  deployment_started: Rocket,
+  build_running: Clock,
+  deployment_succeeded: Rocket,
+  deployment_failed: Rocket,
+  production_url_created: Rocket
 };
 
 export function ProjectWorkspaceShell({
@@ -265,7 +278,7 @@ export function ProjectWorkspaceShell({
             {tab === "github" ? (
               <GitHubTab projectId={projectId} />
             ) : tab === "deployments" ? (
-              <DeploymentsTab deployReadyCount={deployReadyCount} previewCount={previews.length} />
+              <DeploymentsTab projectId={projectId} />
             ) : (
               <OverviewTab
                 chats={chats}
@@ -496,30 +509,6 @@ function OverviewTab({
         </div>
       </div>
     </div>
-  );
-}
-
-function DeploymentsTab({ deployReadyCount, previewCount }: { deployReadyCount: number; previewCount: number }) {
-  return (
-    <WorkspaceCard>
-      <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
-          <Rocket className="h-5 w-5" />
-        </div>
-        <div>
-          <WorkspaceSectionTitle>Deployments</WorkspaceSectionTitle>
-          <p className="mt-2 max-w-[46rem] text-sm leading-7 text-[var(--site-subtle)]">
-            No deployments yet.
-            {deployReadyCount > 0
-              ? ` ${deployReadyCount} of ${previewCount} preview version${previewCount === 1 ? "" : "s"} ${deployReadyCount === 1 ? "is" : "are"} marked deploy-ready and ready to ship.`
-              : " Mark a preview version as deploy-ready to prepare it for shipping."}
-          </p>
-          <div className="mt-4">
-            <WorkspaceBadge tone="standby">Vercel integration coming soon</WorkspaceBadge>
-          </div>
-        </div>
-      </div>
-    </WorkspaceCard>
   );
 }
 

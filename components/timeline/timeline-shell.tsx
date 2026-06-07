@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, FolderKanban, GitGraph, MessageSquareText, Monitor, NotebookPen } from "lucide-react";
+import { FileText, FolderKanban, GitGraph, MessageSquareText, Monitor, NotebookPen, Rocket } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -22,7 +22,13 @@ type TimelineEventKind =
   | "file_uploaded"
   | "preview_generated"
   | "memory_updated"
-  | "github_connected";
+  | "github_connected"
+  | "vercel_linked"
+  | "deployment_started"
+  | "build_running"
+  | "deployment_succeeded"
+  | "deployment_failed"
+  | "production_url_created";
 
 type TimelineEvent = {
   id: string;
@@ -38,7 +44,13 @@ const EVENT_META: Record<TimelineEventKind, { icon: typeof FileText; label: stri
   file_uploaded: { icon: FileText, label: "File" },
   preview_generated: { icon: Monitor, label: "Preview" },
   memory_updated: { icon: NotebookPen, label: "Memory" },
-  github_connected: { icon: GitGraph, label: "GitHub" }
+  github_connected: { icon: GitGraph, label: "GitHub" },
+  vercel_linked: { icon: Rocket, label: "Vercel" },
+  deployment_started: { icon: Rocket, label: "Deploy" },
+  build_running: { icon: Rocket, label: "Build" },
+  deployment_succeeded: { icon: Rocket, label: "Deploy" },
+  deployment_failed: { icon: Rocket, label: "Deploy" },
+  production_url_created: { icon: Rocket, label: "Production" }
 };
 
 export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
@@ -72,7 +84,13 @@ export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
       file_uploaded: 0,
       preview_generated: 0,
       memory_updated: 0,
-      github_connected: 0
+      github_connected: 0,
+      vercel_linked: 0,
+      deployment_started: 0,
+      build_running: 0,
+      deployment_succeeded: 0,
+      deployment_failed: 0,
+      production_url_created: 0
     };
     for (const event of events) {
       if (event.kind in map) {

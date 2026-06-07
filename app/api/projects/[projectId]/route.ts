@@ -9,6 +9,7 @@ const {
 const { listSessions } = require("@/lib/server/chat-store");
 const { listPreviewVersions } = require("@/lib/server/preview-store");
 const { getProjectRepo } = require("@/lib/server/github");
+const { getProjectVercel, listDeploymentRecords } = require("@/lib/server/vercel");
 const mvpStore = require("@/lib/server/mvp-store");
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,13 @@ type TimelineEvent = {
     | "file_uploaded"
     | "preview_generated"
     | "memory_updated"
-    | "github_connected";
+    | "github_connected"
+    | "vercel_linked"
+    | "deployment_started"
+    | "build_running"
+    | "deployment_succeeded"
+    | "deployment_failed"
+    | "production_url_created";
   title: string;
   detail: string;
   at: string;
@@ -31,14 +38,17 @@ type TimelineEvent = {
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
 
-  const [projects, allSessions, files, previews, memory, repoLink] = await Promise.all([
-    listProjects(),
-    listSessions({ includeArchived: true }),
-    listFiles({ projectId, limit: 200 }),
-    listPreviewVersions({ projectId, limit: 100 }),
-    mvpStore.list("memory"),
-    getProjectRepo(projectId)
-  ]);
+  const [projects, allSessions, files, previews, memory, repoLink, vercelLink, deploymentRecords] =
+    await Promise.all([
+      listProjects(),
+      listSessions({ includeArchived: true }),
+      listFiles({ projectId, limit: 200 }),
+      listPreviewVersions({ projectId, limit: 100 }),
+      mvpStore.list("memory"),
+      getProjectRepo(projectId),
+      getProjectVercel(projectId),
+      listDeploymentRecords(projectId)
+    ]);
 
   const project = projects.find((item: { id: string }) => item.id === projectId);
 
@@ -106,6 +116,61 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pro
       detail: repoLink.fullName,
       at: repoLink.createdAt || repoLink.updatedAt
     });
+  }
+  if (vercelLink) {
+    timeline.push({
+      id: `vercel-${vercelLink.id}`,
+      kind: "vercel_linked",
+      title: "Vercel project linked",
+      detail: vercelLink.name,
+      at: vercelLink.createdAt || vercelLink.updatedAt
+    });
+  }
+  for (const record of deploymentRecords) {
+    const targetLabel = record.target === "production" ? "Production" : "Preview";
+    timeline.push({
+      id: `deploy-start-${record.id}`,
+      kind: "deployment_started",
+      title: `${targetLabel} deployment started`,
+      detail: record.url || record.vercelDeploymentId,
+      at: record.createdAt
+    });
+    const state = String(record.state || "").toUpperCase();
+    const at = record.updatedAt || record.createdAt;
+    if (state === "BUILDING") {
+      timeline.push({
+        id: `deploy-build-${record.id}`,
+        kind: "build_running",
+        title: `${targetLabel} build running`,
+        detail: record.url || record.vercelDeploymentId,
+        at
+      });
+    } else if (state === "READY") {
+      timeline.push({
+        id: `deploy-ok-${record.id}`,
+        kind: "deployment_succeeded",
+        title: `${targetLabel} deployment succeeded`,
+        detail: record.url || record.vercelDeploymentId,
+        at
+      });
+      if (record.target === "production" && record.url) {
+        timeline.push({
+          id: `deploy-prod-url-${record.id}`,
+          kind: "production_url_created",
+          title: "Production URL created",
+          detail: record.url,
+          at
+        });
+      }
+    } else if (state === "ERROR" || state === "CANCELED") {
+      timeline.push({
+        id: `deploy-fail-${record.id}`,
+        kind: "deployment_failed",
+        title: `${targetLabel} deployment failed`,
+        detail: record.url || record.vercelDeploymentId,
+        at
+      });
+    }
   }
   timeline.sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime());
 
