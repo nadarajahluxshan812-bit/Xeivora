@@ -17,7 +17,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { DeploymentsTab } from "@/components/projects/deployments-tab";
 import { GitHubTab } from "@/components/projects/github-tab";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import {
   WorkspaceBadge,
   WorkspaceButton,
@@ -272,8 +271,6 @@ export function ProjectWorkspaceShell({
                 </WorkspaceButton>
               </div>
             </header>
-
-            <ProjectWorkspaceTabs active={tab} projectId={projectId} />
 
             {tab === "github" ? (
               <GitHubTab projectId={projectId} />

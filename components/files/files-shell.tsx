@@ -13,7 +13,6 @@ import {
   WorkspaceSearchInput,
   WorkspaceSectionTitle
 } from "@/components/workspace/workspace-page-ui";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import type { AuthUser } from "@/lib/auth-types";
 import type { UploadedFileSummary, WorkspaceProject } from "@/lib/chat-types";
 
@@ -117,8 +116,6 @@ export function FilesShell({ viewer = null }: { viewer?: AuthUser | null }) {
           eyebrow="Project workspace"
           title="Files that travel with the work"
         />
-
-        <ProjectWorkspaceTabs active="files" projectId={projectId} className="pt-1" />
 
         <WorkspaceCard className="p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

@@ -12,7 +12,6 @@ import {
   WorkspacePageShell,
   WorkspaceSectionTitle
 } from "@/components/workspace/workspace-page-ui";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import type { AuthUser } from "@/lib/auth-types";
 import type { WorkspaceProject } from "@/lib/chat-types";
 
@@ -108,8 +107,6 @@ export function TimelineShell({ viewer = null }: { viewer?: AuthUser | null }) {
           eyebrow="Project workspace"
           title="The project's history, in order"
         />
-
-        <ProjectWorkspaceTabs active="timeline" projectId={projectId} className="pt-1" />
 
         <WorkspaceCard className="p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

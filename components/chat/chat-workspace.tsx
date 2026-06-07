@@ -67,7 +67,6 @@ import { useXeivoraTheme } from "@/components/theme/theme-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { PreviewSideTab, type PreviewSideTabKey } from "@/components/chat/preview-side-tabs";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import { useElectron, type DesktopFileNode } from "@/hooks/useElectron";
 import type { AuthUser } from "@/lib/auth-types";
 import type {
@@ -2165,23 +2164,6 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
             continuityStatus={continuityStatus}
             workflowMode={workflowMode}
           />
-
-          <div className="border-b border-[var(--xv-chat-border)] px-4 py-3 md:px-6">
-            <ProjectWorkspaceTabs
-              active={livePreviewOpen ? "preview" : "chat"}
-              onPreviewSelect={() => {
-                openLivePreview({
-                  projectId: workspaceProjectId,
-                  sessionId: activeSession?.id || null
-                });
-                if (!latestLivePreview) {
-                  setLivePreviewInitializing(true);
-                }
-              }}
-              projectId={workspaceProjectId}
-              sessionId={activeSession?.id || null}
-            />
-          </div>
 
           <div className="min-h-0 flex-1 overflow-hidden pt-[8px]">
             <div

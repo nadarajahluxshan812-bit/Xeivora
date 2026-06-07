@@ -13,7 +13,6 @@ import {
   WorkspacePageShell,
   WorkspaceSectionTitle
 } from "@/components/workspace/workspace-page-ui";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import type { AuthUser } from "@/lib/auth-types";
 import type { WorkspacePreviewVersion, WorkspaceProject } from "@/lib/chat-types";
 
@@ -110,8 +109,6 @@ export function PreviewShell({ viewer = null }: { viewer?: AuthUser | null }) {
           eyebrow="Project workspace"
           title="Live Preview keeps visual progress inside project continuity"
         />
-
-        <ProjectWorkspaceTabs active="preview" projectId={projectId} sessionId={sessionId} className="pt-1" />
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_360px]">
           <WorkspaceCard className="overflow-hidden p-0">

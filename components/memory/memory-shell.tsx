@@ -17,7 +17,6 @@ import {
   WorkspaceSectionTitle,
   WorkspaceTextArea
 } from "@/components/workspace/workspace-page-ui";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import type { AuthUser } from "@/lib/auth-types";
 import type { WorkspaceProject } from "@/lib/chat-types";
 
@@ -143,8 +142,6 @@ export function MemoryShell({ viewer = null }: { viewer?: AuthUser | null }) {
           eyebrow="Project memory"
           title="Persistent memory that survives model switches"
         />
-
-        <ProjectWorkspaceTabs active="memory" projectId={projectId} className="pt-1" />
 
         <WorkspaceCard className="p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
