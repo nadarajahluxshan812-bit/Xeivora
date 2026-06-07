@@ -15,7 +15,8 @@
     "electron:dist": "electron-builder --mac",
     "electron:dist:all": "electron-builder --mac --win",
     "lint": "eslint app components lib scripts db.ts instrumentation.ts next.config.mjs tailwind.config.ts postcss.config.mjs server.js",
-    "check:env": "node scripts/check-env.js"
+    "check:env": "node scripts/check-env.js",
+    "verify:search-scoping": "node scripts/verify-search-scoping.js"
   },
   "build": {
     "appId": "com.xeivora.app",
