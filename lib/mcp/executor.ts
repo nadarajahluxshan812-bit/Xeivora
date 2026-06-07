@@ -357,6 +357,7 @@ async function executePlannedTool(plan: PlannedToolCall, context: ExecutionConte
     case "save_memory": {
       await mvpStore.create("memory", {
         type: "reusable_context",
+        ownerId: context.viewerId || null,
         title: String(plan.input.title || "Workspace memory"),
         content: String(plan.input.content || ""),
         enabled: true
@@ -390,7 +391,8 @@ async function executePlannedTool(plan: PlannedToolCall, context: ExecutionConte
         name: String(plan.input.name || "New Project"),
         description: String(plan.input.description || ""),
         color: "#c96442",
-        status: "active"
+        status: "active",
+        ownerId: context.viewerId || null
       });
 
       return {
