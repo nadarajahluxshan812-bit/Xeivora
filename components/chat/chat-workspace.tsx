@@ -451,6 +451,31 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
       document.body.style.userSelect = previousUserSelect;
     };
   }, [isResizingPreview]);
+
+  // Restore the saved divider width on load, and persist it whenever it changes.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("xeivora:preview-width");
+      const parsed = stored ? Number(stored) : NaN;
+      if (Number.isFinite(parsed) && parsed > 0) {
+        setLivePreviewWidth(parsed);
+      }
+    } catch {
+      // Ignore storage access issues (private mode, disabled storage).
+    }
+  }, []);
+
+  useEffect(() => {
+    if (livePreviewWidth == null) {
+      return;
+    }
+    try {
+      window.localStorage.setItem("xeivora:preview-width", String(Math.round(livePreviewWidth)));
+    } catch {
+      // Ignore storage write failures.
+    }
+  }, [livePreviewWidth]);
+
   const searchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
     if (!term) {
