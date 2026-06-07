@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 
+import { getViewer } from "@/lib/auth";
+
 const { getProviderDebugState, getProviderStatusReport } = require("@/lib/server/ai-runtime");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
+  // Provider debug state is sensitive — require auth. Public callers get health only.
+  const viewer = await getViewer();
+  if (!viewer) {
+    return NextResponse.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   const { searchParams } = new URL(request.url);
   const modelKey = searchParams.get("modelKey") || "orbit-auto";
   const prompt = searchParams.get("prompt") || "hello";
