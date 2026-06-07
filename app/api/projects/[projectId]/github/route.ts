@@ -110,6 +110,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     type: "reusable_context",
     section: "architecture",
     projectId,
+    ownerId: viewer.id,
     title: `GitHub repository: ${meta.fullName}`,
     content: `Connected ${meta.url}. Default branch: ${meta.defaultBranch}.${meta.description ? ` ${meta.description}` : ""}`,
     enabled: true

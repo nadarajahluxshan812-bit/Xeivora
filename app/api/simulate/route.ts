@@ -190,10 +190,11 @@ async function runAgentCompletion({
   } satisfies SimulationAgentOutput;
 }
 
-async function createDiscussionSession(simulation: SimulationRecord) {
+async function createDiscussionSession(simulation: SimulationRecord, ownerId: string | null) {
   const session = await createSession({
     modelPreference: "orbit-auto",
-    projectId: null
+    projectId: null,
+    ownerId
   });
 
   await updateSessionMetadata(session.id, {
@@ -309,7 +310,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Simulation not found." }, { status: 404 });
     }
 
-    const sessionId = await createDiscussionSession(simulation);
+    const sessionId = await createDiscussionSession(simulation, viewer.id);
     return NextResponse.json({ sessionId });
   }
 

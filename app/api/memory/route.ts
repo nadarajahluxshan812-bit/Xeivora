@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { getViewer } from "@/lib/auth";
+
 const mvpStore = require("@/lib/server/mvp-store");
 
 export const dynamic = "force-dynamic";
@@ -35,12 +37,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const section = MEMORY_SECTIONS.includes(body?.section) ? body.section : "facts";
+  const viewer = await getViewer();
 
   return NextResponse.json(
     await mvpStore.create("memory", {
       type: body?.type || "reusable_context",
       section,
       projectId: body?.projectId || null,
+      ownerId: viewer?.id ?? null,
       title: body?.title || "Untitled memory",
       content: body?.content || "",
       enabled: body?.enabled ?? true

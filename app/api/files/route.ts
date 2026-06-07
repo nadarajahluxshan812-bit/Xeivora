@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 
+import { getViewer } from "@/lib/auth";
+
 const {
   createUploadedFile,
   createUploadTarget,
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
     );
   }
 
+  const viewer = await getViewer();
   const formData = await request.formData();
   const sessionId = (formData.get("sessionId") as string | null) || null;
   const projectId = (formData.get("projectId") as string | null) || null;
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
       id: target.fileId,
       sessionId,
       projectId,
+      ownerId: viewer?.id ?? null,
       name: file.name,
       mimeType: file.type || "application/octet-stream",
       kind: detectFileKind(file.name, file.type || "application/octet-stream"),
