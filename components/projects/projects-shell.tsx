@@ -21,7 +21,6 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { ThemeToggleButton } from "@/components/theme/theme-toggle-button";
-import { ProjectWorkspaceTabs } from "@/components/workspace/project-workspace-tabs";
 import { WorkspacePageShell } from "@/components/workspace/workspace-page-ui";
 import type { AuthUser } from "@/lib/auth-types";
 import type { UploadedFileSummary, WorkspaceProject } from "@/lib/chat-types";
@@ -311,10 +310,6 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
 
               {leadProject ? (
                 <>
-                  <div className="mt-5">
-                    <ProjectWorkspaceTabs active="chat" projectId={leadProject.id} />
-                  </div>
-
                   <div className="mt-6 grid gap-3 sm:grid-cols-3">
                     {[
                       { label: "Status", value: leadProject.status === "active" ? "Active" : leadProject.status },
