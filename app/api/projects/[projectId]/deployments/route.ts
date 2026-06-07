@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getViewer } from "@/lib/auth";
+import { resolveOwnedProject } from "@/lib/project-access";
 
-const { listProjects } = require("@/lib/server/workspace-store");
 const {
   getProjectVercel,
   isVercelConfigured,
@@ -25,15 +24,10 @@ type DeploymentRecord = {
 type LiveDeployment = { id: string; url: string | null; state: string };
 
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
-  const viewer = await getViewer();
-  if (!viewer) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
   const { projectId } = await params;
-  const projects = await listProjects();
-  if (!projects.find((item: { id: string }) => item.id === projectId)) {
-    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
   }
 
   const configured = isVercelConfigured();
