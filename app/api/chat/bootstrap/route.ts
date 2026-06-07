@@ -4,7 +4,7 @@ import { getViewer } from "@/lib/auth";
 import { listIntegrationSummaries } from "@/lib/integrations/oauth";
 
 const { getProviderStatus, listSessions } = require("@/lib/server/chat-store");
-const { listProjects } = require("@/lib/server/workspace-store");
+const { listVisibleProjects } = require("@/lib/server/workspace-store");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function GET() {
         defaultModel: "orbit-auto",
         providerStatus: getProviderStatus(),
         sessions: await listSessions(),
-        projects: await listProjects(),
+        projects: await listVisibleProjects(viewer?.id ?? null),
         integrations: viewer ? await listIntegrationSummaries(viewer.id) : []
       },
       {
