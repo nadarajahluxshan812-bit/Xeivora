@@ -319,8 +319,7 @@ export function PremiumHomepage({ initialSection }: { initialSection?: "pricing"
                   <div className="space-y-3">
                     {[
                       { href: "/api/auth/google?next=%2Fchat", label: "Continue with Google", symbol: "G" },
-                      { href: "/api/auth/github?next=%2Fchat", label: "Continue with GitHub", symbol: "GH" },
-                      { href: "/api/auth/apple?next=%2Fchat", label: "Continue with Apple", symbol: "A" }
+                      { href: "/api/auth/github?next=%2Fchat", label: "Continue with GitHub", symbol: "GH" }
                     ].map((provider) => (
                       <Link
                         className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[16px] border border-[color:var(--site-border)] bg-[color:var(--site-bg)] text-sm font-medium text-[color:var(--site-text)] transition hover:border-[color:var(--site-border-strong)] hover:bg-[color:var(--site-ghost-hover)]"
