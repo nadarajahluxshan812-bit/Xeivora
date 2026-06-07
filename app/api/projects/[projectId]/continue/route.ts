@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-const { listFiles, listProjects } = require("@/lib/server/workspace-store");
+import { resolveOwnedProject } from "@/lib/project-access";
+
+const { listFiles } = require("@/lib/server/workspace-store");
 const { listSessions } = require("@/lib/server/chat-store");
 const { listPreviewVersions } = require("@/lib/server/preview-store");
 const { getProjectRepo } = require("@/lib/server/github");
@@ -14,8 +16,13 @@ export const runtime = "nodejs";
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
 
-  const [projects, allSessions, files, previews, memory, repo, vercel, deployments] = await Promise.all([
-    listProjects(),
+  const gate = await resolveOwnedProject(projectId);
+  if (!gate.ok) {
+    return gate.response;
+  }
+  const project = gate.project;
+
+  const [allSessions, files, previews, memory, repo, vercel, deployments] = await Promise.all([
     listSessions({ includeArchived: true }),
     listFiles({ projectId, limit: 200 }),
     listPreviewVersions({ projectId, limit: 100 }),
@@ -24,12 +31,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pro
     getProjectVercel(projectId),
     listDeploymentRecords(projectId)
   ]);
-
-  const project = projects.find((item: { id: string }) => item.id === projectId);
-
-  if (!project) {
-    return NextResponse.json({ error: "Project not found." }, { status: 404 });
-  }
 
   const chats = allSessions.filter(
     (session: { projectId?: string | null }) => session.projectId === projectId
