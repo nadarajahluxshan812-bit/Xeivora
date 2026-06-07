@@ -2,13 +2,19 @@ import { NextResponse } from "next/server";
 
 import { getViewer } from "@/lib/auth";
 
-const { createProject, listProjects } = require("@/lib/server/workspace-store");
+const { createProject, listVisibleProjects } = require("@/lib/server/workspace-store");
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET() {
-  return NextResponse.json(await listProjects(), {
+  // The project list is user data — require auth and scope it to the viewer.
+  const viewer = await getViewer();
+  if (!viewer) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  return NextResponse.json(await listVisibleProjects(viewer.id), {
     headers: {
       "Cache-Control": "no-store"
     }

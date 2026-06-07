@@ -5,7 +5,7 @@ import { resolveOwnedProject } from "@/lib/project-access";
 const {
   deleteProject,
   listFiles,
-  listProjects,
+  listVisibleProjects,
   updateProject
 } = require("@/lib/server/workspace-store");
 const { listSessions } = require("@/lib/server/chat-store");
@@ -210,7 +210,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pr
   return NextResponse.json(
     {
       project,
-      projects: await listProjects()
+      projects: await listVisibleProjects(gate.viewer.id)
     },
     {
       status: project ? 200 : 404,
@@ -234,7 +234,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   return NextResponse.json(
     {
       deleted,
-      projects: await listProjects()
+      projects: await listVisibleProjects(gate.viewer.id)
     },
     {
       status: deleted ? 200 : 404,
