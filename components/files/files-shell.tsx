@@ -27,6 +27,36 @@ function formatBytes(value: number) {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+type FileCategory = "Code" | "Documents" | "Images" | "Audio" | "Video";
+
+const FILE_CATEGORY_ORDER: FileCategory[] = ["Code", "Documents", "Images", "Audio", "Video"];
+
+const CODE_EXTENSIONS = [
+  ".js", ".jsx", ".ts", ".tsx", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".c", ".h",
+  ".cpp", ".cc", ".cs", ".php", ".swift", ".html", ".css", ".scss", ".sass", ".json",
+  ".sh", ".bash", ".zsh", ".sql", ".yml", ".yaml", ".toml", ".vue", ".svelte", ".lua", ".r"
+];
+
+// Presentation-only categorisation derived from stored mimeType/name/kind. Storage is unchanged.
+function categorizeFile(file: UploadedFileSummary): FileCategory {
+  const mime = (file.mimeType || "").toLowerCase();
+  const name = (file.name || "").toLowerCase();
+
+  if (mime.startsWith("image/") || file.kind === "image") {
+    return "Images";
+  }
+  if (mime.startsWith("audio/")) {
+    return "Audio";
+  }
+  if (mime.startsWith("video/")) {
+    return "Video";
+  }
+  if (file.kind === "json" || CODE_EXTENSIONS.some((ext) => name.endsWith(ext))) {
+    return "Code";
+  }
+  return "Documents";
+}
+
 export function FilesShell({ viewer = null }: { viewer?: AuthUser | null }) {
   const searchParams = useSearchParams();
   const [projects, setProjects] = useState<WorkspaceProject[]>([]);
@@ -65,6 +95,20 @@ export function FilesShell({ viewer = null }: { viewer?: AuthUser | null }) {
     );
   }, [files, query]);
 
+  const groupedFiles = useMemo(() => {
+    const map: Record<FileCategory, UploadedFileSummary[]> = {
+      Code: [],
+      Documents: [],
+      Images: [],
+      Audio: [],
+      Video: []
+    };
+    for (const file of filteredFiles) {
+      map[categorizeFile(file)].push(file);
+    }
+    return map;
+  }, [filteredFiles]);
+
   return (
     <WorkspacePageShell statusLabel="Project Files" viewer={viewer}>
       <div className="space-y-6 md:space-y-7">
@@ -94,31 +138,41 @@ export function FilesShell({ viewer = null }: { viewer?: AuthUser | null }) {
         <WorkspaceSearchInput onChange={setQuery} placeholder="Search files, summaries, or extracted text" value={query} />
 
         {filteredFiles.length ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filteredFiles.map((file) => (
-              <WorkspaceCard className="p-5" key={file.id}>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
-                    <FileText className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-[15px] font-medium text-[var(--site-text)]">{file.name}</h2>
-                      <WorkspaceBadge tone={file.analysisStatus === "ready" ? "learning" : "standby"}>
-                        {file.analysisStatus}
-                      </WorkspaceBadge>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-3 text-[12px] text-[var(--site-subtle)]">
-                      <span>{file.kind.toUpperCase()}</span>
-                      <span>{formatBytes(file.size)}</span>
-                      <span>{new Date(file.updatedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</span>
-                    </div>
-                    <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">
-                      {file.summary || file.previewText || "Xeivora stored this file for continuity across the project."}
-                    </p>
-                  </div>
+          <div className="space-y-6">
+            {FILE_CATEGORY_ORDER.filter((category) => groupedFiles[category].length > 0).map((category) => (
+              <div key={category}>
+                <div className="mb-3 flex items-center gap-2">
+                  <WorkspaceSectionTitle>{category}</WorkspaceSectionTitle>
+                  <WorkspaceBadge tone="standby">{groupedFiles[category].length}</WorkspaceBadge>
                 </div>
-              </WorkspaceCard>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {groupedFiles[category].map((file) => (
+                    <WorkspaceCard className="p-5" key={file.id}>
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--site-accent-soft)] text-[var(--site-accent)]">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="truncate text-[15px] font-medium text-[var(--site-text)]">{file.name}</h2>
+                            <WorkspaceBadge tone={file.analysisStatus === "ready" ? "learning" : "standby"}>
+                              {file.analysisStatus}
+                            </WorkspaceBadge>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-3 text-[12px] text-[var(--site-subtle)]">
+                            <span>{file.kind.toUpperCase()}</span>
+                            <span>{formatBytes(file.size)}</span>
+                            <span>{new Date(file.updatedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</span>
+                          </div>
+                          <p className="mt-3 text-sm leading-7 text-[var(--site-subtle)]">
+                            {file.summary || file.previewText || "Xeivora stored this file for continuity across the project."}
+                          </p>
+                        </div>
+                      </div>
+                    </WorkspaceCard>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         ) : (
