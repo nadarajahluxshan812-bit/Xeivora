@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { CommandPalette } from "@/components/command/command-palette";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeScript } from "@/components/theme/theme-script";
 
@@ -22,7 +23,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html data-theme="dark" lang="en" suppressHydrationWarning>
       <body>
         <ThemeScript />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <CommandPalette />
+        </ThemeProvider>
       </body>
     </html>
   );
