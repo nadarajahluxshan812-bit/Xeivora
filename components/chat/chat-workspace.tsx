@@ -6703,20 +6703,25 @@ function getExecutionModelLabel(execution: ChatToolExecution) {
 const clientImageTriggerPrefixPattern =
   /^(?:\/image\b|(?:please\s+)?(?:generate|create|make|show|draw|illustrate|visual(?:ise|ize)))(?:\s+me)?(?:\s+(?:an?|the|some))?(?:\s+\d+)?(?:\s+(?:different|multiple))?(?:\s+(?:images?|pictures?|photos?|posters?|illustrations?|graphics?|art(?:work)?|visuals?)\b)?(?:\s+(?:of|for|showing))?\s*/i;
 
-const clientImageTriggerPatterns = [
-  clientImageTriggerPrefixPattern,
-  /\bdraw me\b/i,
-  /\billustrate\b/i,
-  /\bvisual(?:ise|ize)\b/i,
-  /^\/image\b/i
-];
+// An image request requires an EXPLICIT visual signal — a bare action verb
+// ("make/create/generate/show ...") is NOT enough, otherwise coding prompts
+// like "make a calculator" get misrouted into image generation. This mirrors
+// the server-side isImageGenerationPrompt() in lib/server/image-intent.js.
+const clientImageNounPattern =
+  /\b(images?|pictures?|photos?|posters?|illustrations?|graphics?|art(?:work)?|visuals?|logos?|icons?|banners?|thumbnails?|avatars?|wallpapers?|emojis?)\b/i;
+const clientVisualVerbPattern = /\b(draw|illustrate|visuali[sz]e|sketch)\b/i;
+const clientSlashImagePattern = /^\/image\b/i;
 
 const clientComboPattern =
   /\s*(?:,?\s*and\s+)(tell me about|tell me|explain|describe|write about|write me|give me|also tell me about|also explain|and then explain)\s+(.+)$/i;
 
 function parseClientImageIntent(prompt = ""): ImageIntent {
   const normalized = `${prompt}`.replace(/\s+/g, " ").trim();
-  const isImageRequest = normalized ? clientImageTriggerPatterns.some((pattern) => pattern.test(normalized)) : false;
+  const isImageRequest = normalized
+    ? clientSlashImagePattern.test(normalized) ||
+      clientImageNounPattern.test(normalized) ||
+      clientVisualVerbPattern.test(normalized)
+    : false;
   const count =
     normalized.match(/\b([2-4])\s+(?:different\s+|multiple\s+)?(?:images?|pictures?|versions?)\b/i)?.[1] !== undefined
       ? Number.parseInt(normalized.match(/\b([2-4])\s+(?:different\s+|multiple\s+)?(?:images?|pictures?|versions?)\b/i)?.[1] || "1", 10)
