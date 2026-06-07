@@ -200,6 +200,10 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
     router.push("/chat");
   }
 
+  function handleOpenProject(projectId: string) {
+    router.push(`/dashboard/${encodeURIComponent(projectId)}`);
+  }
+
   return (
     <WorkspacePageShell statusLabel="Projects" viewer={viewer}>
       <div className="space-y-6 md:space-y-7">
@@ -442,7 +446,7 @@ export function ProjectsShell({ viewer = null }: { viewer?: AuthUser | null }) {
                       <button
                         className="group flex w-full items-start gap-4 rounded-[10px] px-2 py-4 text-left transition duration-150 hover:bg-[var(--site-ghost-bg)]"
                         key={project.id}
-                        onClick={() => handleContinueProject(project.id)}
+                        onClick={() => handleOpenProject(project.id)}
                         type="button"
                       >
                         <div
