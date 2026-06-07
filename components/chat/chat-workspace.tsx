@@ -2019,10 +2019,10 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
 
   return (
     <div
-      className="min-h-screen bg-[var(--xv-chat-bg)] text-[var(--xv-chat-text)]"
+      className="h-dvh overflow-hidden bg-[var(--xv-chat-bg)] text-[var(--xv-chat-text)]"
       style={{ ...chatTheme, fontFamily: "Inter, system-ui, sans-serif" }}
     >
-      <div className="min-h-screen bg-[var(--xv-chat-bg)]">
+      <div className="h-dvh bg-[var(--xv-chat-bg)]">
         <aside className="fixed inset-y-0 left-0 z-50 hidden w-[260px] shrink-0 border-r border-[var(--xv-chat-border)] bg-[var(--xv-chat-sidebar)] md:flex">
           <SidebarContent
             activeSessionId={activeSession?.id ?? null}
@@ -2132,7 +2132,7 @@ export function ChatWorkspace({ viewer = null }: { viewer?: AuthUser | null }) {
           </SheetContent>
         </Sheet>
 
-        <main className="relative flex min-h-screen min-w-0 flex-1 flex-col bg-[var(--xv-chat-bg)] md:ml-[260px]">
+        <main className="relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-[var(--xv-chat-bg)] md:ml-[260px]">
           <button
             aria-label="Open sidebar"
             className="absolute left-3 top-[10px] z-30 inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-[var(--xv-chat-border)] bg-[var(--xv-chat-surface)] text-[var(--xv-chat-muted)] transition hover:bg-[var(--xv-chat-surface-soft)] md:hidden"
